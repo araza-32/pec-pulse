@@ -1,0 +1,50 @@
+
+export type WorkbodyType = 'committee' | 'working-group' | 'task-force';
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: 'admin' | 'secretary';
+  workbodyId?: string; // Only for secretaries
+}
+
+export interface Workbody {
+  id: string;
+  name: string;
+  type: WorkbodyType;
+  totalMeetings: number;
+  meetingsThisYear: number;
+  actionsAgreed: number;
+  actionsCompleted: number;
+  members: WorkbodyMember[];
+  description?: string;
+}
+
+export interface WorkbodyMember {
+  id: string;
+  name: string;
+  role: string;
+  email?: string;
+  phone?: string;
+  hasCV: boolean;
+}
+
+export interface MeetingMinutes {
+  id: string;
+  workbodyId: string;
+  date: string;
+  location: string;
+  agendaItems: string[];
+  actionsAgreed: string[];
+  documentUrl: string;
+  uploadedAt: string;
+  uploadedBy: string;
+}
+
+export interface DashboardStat {
+  label: string;
+  value: number;
+  icon: string;
+  color: string;
+}

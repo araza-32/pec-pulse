@@ -18,7 +18,36 @@ export default {
 			}
 		},
 		extend: {
+			fontFamily: {
+				sans: ['Aptos', 'Open Sans', 'sans-serif'],
+			},
 			colors: {
+				'pec-green': {
+					DEFAULT: '#218042',
+					50: '#E6F2EB',
+					100: '#C2E0CE',
+					200: '#9ACEAE',
+					300: '#72BC8E',
+					400: '#4AA96D',
+					500: '#218042',
+					600: '#1E753C',
+					700: '#1A6935',
+					800: '#165E2F',
+					900: '#124729',
+				},
+				'pec-gold': {
+					DEFAULT: '#d99e10',
+					50: '#FDF7E5',
+					100: '#FAEBBA',
+					200: '#F6DD8A',
+					300: '#F2CD59',
+					400: '#EEC019',
+					500: '#d99e10',
+					600: '#C38C0F',
+					700: '#AC7A0D',
+					800: '#96690B',
+					900: '#744F09',
+				},
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
 				ring: 'hsl(var(--ring))',
