@@ -168,7 +168,6 @@ export const usePdfMemberExtraction = () => {
         const page = await pdf.getPage(pageNum);
         const textContent = await page.getTextContent();
         
-        // Extract members from text content - match various patterns
         const extractedOnPage = extractMembersFromText(textContent);
         if (extractedOnPage.length > 0) {
           members.push(...extractedOnPage);
@@ -207,73 +206,63 @@ export const usePdfMemberExtraction = () => {
     }
   };
   
-  // Extract members from text content with specific roles
   const extractMembersFromText = (textContent: any): WorkbodyMember[] => {
     const members: WorkbodyMember[] = [];
-    const lines: string[] = [];
+    const roleKeywords = ['Convener', 'Deputy Convener', 'Member'];
     
-    // Collect all text into lines
-    textContent.items.forEach((textItem: any) => {
-      lines.push(textItem.str.trim());
+    // Group text items by their vertical position (y-coordinate)
+    const lineGroups: { [key: number]: { text: string, x: number }[] } = {};
+    
+    textContent.items.forEach((item: any) => {
+      const y = Math.round(item.transform[5]); // Round y-coordinate for grouping
+      if (!lineGroups[y]) {
+        lineGroups[y] = [];
+      }
+      lineGroups[y].push({
+        text: item.str.trim(),
+        x: item.transform[4]
+      });
     });
     
-    // Process lines to extract members
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim();
-      const nextLine = i < lines.length - 1 ? lines[i + 1].trim() : '';
+    // Sort line groups by y-coordinate (top to bottom)
+    const sortedYPositions = Object.keys(lineGroups)
+      .map(Number)
+      .sort((a, b) => b - a);
+    
+    sortedYPositions.forEach((y) => {
+      const line = lineGroups[y];
       
-      // Pattern 1: "Name - Role" or "Name: Role"
-      const pattern1 = line.match(/([A-Za-z\s.]+)[\s-:]+([A-Za-z\s]+)/);
+      // Sort items in line by x-coordinate (left to right)
+      line.sort((a, b) => a.x - b.x);
       
-      // Pattern 2: Role followed by name
-      const roleKeywords = ['Convener', 'Dy Convener', 'Member'];
-      const hasRole = roleKeywords.some(role => line.includes(role));
+      // Join text items in the line
+      const fullLine = line.map(item => item.text).join(' ').trim();
       
-      if (pattern1 && pattern1[1] && pattern1[2]) {
-        const name = pattern1[1].trim();
-        const role = pattern1[2].trim();
+      // Check for numbered entry pattern (e.g., "1.", "2.")
+      if (/^\d+\./.test(fullLine)) {
+        const role = roleKeywords.find(role => 
+          line.some(item => item.text.includes(role))
+        ) || 'Member';
         
-        // Only add if role matches our keywords
-        if (roleKeywords.some(keyword => role.includes(keyword))) {
+        // Remove the number prefix and extract the name
+        const nameMatch = fullLine.match(/^\d+\.\s+((?:Engr\.|Dr\.)?\s*[^,\n]+)/);
+        if (nameMatch) {
+          const name = nameMatch[1].trim();
+          
+          // Create member entry with role
           members.push({
             id: crypto.randomUUID(),
-            name,
-            role,
-            hasCV: false
-          });
-        }
-      } else if (hasRole) {
-        // If line contains role, look for name in next line
-        const roleFound = roleKeywords.find(role => line.includes(role)) || 'Member';
-        if (nextLine && /^[A-Z][a-z]+(\s[A-Z][a-z]+)+$/.test(nextLine)) {
-          members.push({
-            id: crypto.randomUUID(),
-            name: nextLine,
-            role: roleFound,
-            hasCV: false
-          });
-          i++; // Skip next line as we've used it
-        }
-      } else if (/^[A-Z][a-z]+(\s[A-Z][a-z]+)+$/.test(line)) {
-        // If line looks like a name, check if previous line had role
-        const prevLine = i > 0 ? lines[i - 1].trim() : '';
-        const roleInPrev = roleKeywords.find(role => prevLine.includes(role));
-        
-        if (roleInPrev) {
-          members.push({
-            id: crypto.randomUUID(),
-            name: line,
-            role: roleInPrev,
+            name: name,
+            role: role,
             hasCV: false
           });
         }
       }
-    }
+    });
     
     return members;
   };
   
-  // Fallback extraction when pattern matching fails
   const extractMembersWithFallback = async (pdf: any): Promise<WorkbodyMember[]> => {
     const members: WorkbodyMember[] = [];
     const allLines: string[] = [];
