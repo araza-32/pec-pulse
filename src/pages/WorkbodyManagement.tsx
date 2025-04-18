@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { PlusCircle, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -9,13 +9,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 
 import { WorkbodyForm } from "@/components/workbody/WorkbodyForm";
-import { Workbody, WorkbodyType } from "@/types";
+import { Workbody, WorkbodyType, WorkbodyMember } from "@/types";
 import { DocumentUpload } from "@/components/workbody/DocumentUpload";
 import { CompositionHistory } from "@/components/workbody/CompositionHistory";
 import { WorkbodyTable } from "@/components/workbody/WorkbodyTable";
 import { DeleteWorkbodyDialog } from "@/components/workbody/DeleteWorkbodyDialog";
 import { TermsOfReferenceDialog } from "@/components/workbody/TermsOfReferenceDialog";
 import { ExpiringTaskForceAlert } from "@/components/workbody/ExpiringTaskForceAlert";
+import { usePdfMemberExtraction } from "@/hooks/usePdfMemberExtraction";
 
 export default function WorkbodyManagement() {
   const { toast } = useToast();
@@ -36,7 +37,17 @@ export default function WorkbodyManagement() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('workbodies')
-        .select('*')
+        .select(`
+          *,
+          workbody_members (
+            id,
+            name,
+            role,
+            email,
+            phone,
+            has_cv
+          )
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -53,7 +64,14 @@ export default function WorkbodyManagement() {
         meetingsThisYear: item.meetings_this_year || 0,
         actionsAgreed: item.actions_agreed || 0,
         actionsCompleted: item.actions_completed || 0,
-        members: []
+        members: (item.workbody_members || []).map(member => ({
+          id: member.id,
+          name: member.name,
+          role: member.role,
+          email: member.email || undefined,
+          phone: member.phone || undefined,
+          hasCV: member.has_cv
+        }))
       })) as Workbody[];
     }
   });
@@ -122,6 +140,8 @@ export default function WorkbodyManagement() {
       queryClient.invalidateQueries({ queryKey: ['workbodies'] });
     }
   });
+
+  const { extractMembersFromPdf, isExtracting } = usePdfMemberExtraction();
 
   const handleAddSubmit = async (data: any) => {
     try {
@@ -251,6 +271,21 @@ export default function WorkbodyManagement() {
 
   const expiringTaskForces = checkExpiringTaskForces();
 
+  const handleNotificationUpload = async (documentId: string) => {
+    if (selectedWorkbody) {
+      await extractMembersFromPdf(documentId, selectedWorkbody.id);
+      
+      toast({
+        title: "Members Extracted",
+        description: "Members have been extracted from the notification document.",
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ['workbodies'] });
+      
+      setIsHistoryVisible(true);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -313,15 +348,7 @@ export default function WorkbodyManagement() {
             documentType="notification"
             isOpen={isUploadNotificationOpen}
             onClose={() => setIsUploadNotificationOpen(false)}
-            onUploadComplete={() => {
-              toast({
-                title: "Processing Notification",
-                description: "The document is being processed for member information.",
-              });
-              setTimeout(() => {
-                setIsHistoryVisible(true);
-              }, 1000);
-            }}
+            onUploadComplete={(documentId) => handleNotificationUpload(documentId)}
           />
 
           <DocumentUpload

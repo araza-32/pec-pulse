@@ -81,6 +81,57 @@ export type Database = {
         }
         Relationships: []
       }
+      workbody_members: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          has_cv: boolean | null
+          id: string
+          name: string
+          phone: string | null
+          role: string
+          source_document_id: string | null
+          workbody_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          has_cv?: boolean | null
+          id?: string
+          name: string
+          phone?: string | null
+          role: string
+          source_document_id?: string | null
+          workbody_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          has_cv?: boolean | null
+          id?: string
+          name?: string
+          phone?: string | null
+          role?: string
+          source_document_id?: string | null
+          workbody_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workbody_members_source_document_id_fkey"
+            columns: ["source_document_id"]
+            isOneToOne: false
+            referencedRelation: "workbody_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workbody_members_workbody_id_fkey"
+            columns: ["workbody_id"]
+            isOneToOne: false
+            referencedRelation: "workbodies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

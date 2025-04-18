@@ -17,7 +17,7 @@ interface DocumentUploadProps {
   documentType: 'notification' | 'tor';
   isOpen: boolean;
   onClose: () => void;
-  onUploadComplete: () => void;
+  onUploadComplete: (documentId: string) => void;
 }
 
 export function DocumentUpload({
@@ -54,13 +54,15 @@ export function DocumentUpload({
         .getPublicUrl(data.path);
 
       // Store document reference in the database
-      const { error: dbError } = await supabase
+      const { data: insertData, error: dbError } = await supabase
         .from('workbody_documents')
         .insert({
           workbody_id: workbodyId,
           document_type: documentType,
           file_url: publicUrl
-        });
+        })
+        .select('id')
+        .single();
 
       if (dbError) throw dbError;
 
@@ -69,7 +71,7 @@ export function DocumentUpload({
         description: `The ${documentType} has been successfully uploaded.`
       });
       
-      onUploadComplete();
+      onUploadComplete(insertData.id);
       onClose();
     } catch (error) {
       console.error('Upload error:', error);
