@@ -31,6 +31,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { WorkbodyForm } from "@/components/workbody/WorkbodyForm";
 import { Workbody, WorkbodyType } from "@/types";
 import { workbodies as mockWorkbodies } from "@/data/mockData";
+import { DocumentUpload } from "@/components/workbody/DocumentUpload";
+import { CompositionHistory } from "@/components/workbody/CompositionHistory";
 
 export default function WorkbodyManagement() {
   const { toast } = useToast();
@@ -41,6 +43,8 @@ export default function WorkbodyManagement() {
   const [isTorDialogOpen, setIsTorDialogOpen] = useState(false);
   const [selectedWorkbody, setSelectedWorkbody] = useState<Workbody | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isUploadNotificationOpen, setIsUploadNotificationOpen] = useState(false);
+  const [isUploadTorOpen, setIsUploadTorOpen] = useState(false);
 
   const filteredWorkbodies = workbodies.filter(
     (workbody) =>
@@ -194,10 +198,12 @@ export default function WorkbodyManagement() {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <Button onClick={() => setIsAddDialogOpen(true)}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Add Workbody
-        </Button>
+        <div className="space-x-2">
+          <Button onClick={() => setIsAddDialogOpen(true)}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Add Workbody
+          </Button>
+        </div>
       </div>
 
       <Table>
@@ -275,6 +281,34 @@ export default function WorkbodyManagement() {
           ))}
         </TableBody>
       </Table>
+
+      {selectedWorkbody && (
+        <>
+          <DocumentUpload
+            workbodyId={selectedWorkbody.id}
+            documentType="notification"
+            isOpen={isUploadNotificationOpen}
+            onClose={() => setIsUploadNotificationOpen(false)}
+            onUploadComplete={() => {
+              const updatedWorkbodies = [...workbodies];
+              setWorkbodies(updatedWorkbodies);
+            }}
+          />
+
+          <DocumentUpload
+            workbodyId={selectedWorkbody.id}
+            documentType="tor"
+            isOpen={isUploadTorOpen}
+            onClose={() => setIsUploadTorOpen(false)}
+            onUploadComplete={() => {
+              const updatedWorkbodies = [...workbodies];
+              setWorkbodies(updatedWorkbodies);
+            }}
+          />
+
+          <CompositionHistory workbodyId={selectedWorkbody.id} />
+        </>
+      )}
 
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
