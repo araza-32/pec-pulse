@@ -38,21 +38,41 @@ export function DocumentUpload({
     try {
       console.log(`Uploading ${documentType} for workbody ${workbodyId}`);
       
-      // First, check if storage bucket exists, create if it doesn't
-      const { data: buckets } = await supabase.storage.listBuckets();
-      const bucketExists = buckets?.some(bucket => bucket.name === 'workbody-documents');
+      // Create bucket with public access as authenticated user
+      // Note: This requires the user to be authenticated with appropriate permissions
+      const bucketId = 'workbody-documents';
       
-      if (!bucketExists) {
-        console.log('Creating workbody-documents bucket');
-        const { error: bucketError } = await supabase.storage.createBucket(
-          'workbody-documents', 
-          { public: true }
-        );
+      try {
+        const { data: buckets } = await supabase.storage.listBuckets();
+        const bucketExists = buckets?.some(bucket => bucket.name === bucketId);
         
-        if (bucketError) {
-          console.error('Error creating bucket:', bucketError);
-          throw bucketError;
+        if (!bucketExists) {
+          console.log('Creating workbody-documents bucket');
+          await supabase.storage.createBucket(bucketId, { 
+            public: true,
+            fileSizeLimit: 10485760 // 10MB
+          });
+          
+          // Add policy to make bucket publicly accessible
+          // Note: In production, you might want to restrict this further
+          const { error: policyError } = await supabase.rpc('create_storage_policy', {
+            bucket_id: bucketId,
+            policy_name: 'public_access',
+            definition: {
+              name: 'Public Access',
+              allow_upload: true,
+              allow_download: true
+            }
+          });
+          
+          if (policyError) {
+            console.log('Could not set policy automatically, manual setup may be required');
+          }
         }
+      } catch (bucketError) {
+        console.error('Bucket operation error:', bucketError);
+        // Continue with upload attempt even if bucket creation fails
+        // as it might already exist but we don't have permission to check
       }
       
       // Upload file to Supabase Storage
@@ -60,7 +80,7 @@ export function DocumentUpload({
       const fileName = `${workbodyId}/${documentType}-${Date.now()}.${fileExt}`;
       
       const { error: uploadError, data } = await supabase.storage
-        .from('workbody-documents')
+        .from(bucketId)
         .upload(fileName, file);
 
       if (uploadError) {
@@ -76,7 +96,7 @@ export function DocumentUpload({
 
       // Get the public URL for the uploaded file
       const { data: { publicUrl } } = supabase.storage
-        .from('workbody-documents')
+        .from(bucketId)
         .getPublicUrl(data.path);
 
       console.log('Public URL generated:', publicUrl);
@@ -87,7 +107,8 @@ export function DocumentUpload({
         .insert({
           workbody_id: workbodyId,
           document_type: documentType,
-          file_url: publicUrl
+          file_url: publicUrl,
+          uploaded_at: new Date().toISOString()
         })
         .select('id')
         .single();
@@ -101,16 +122,16 @@ export function DocumentUpload({
 
       toast({
         title: 'Document Uploaded',
-        description: `The ${documentType} has been successfully uploaded.`
+        description: `The ${documentType === 'notification' ? 'notification' : 'terms of reference'} has been successfully uploaded.`
       });
       
       onUploadComplete(insertData.id);
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Upload error:', error);
       toast({
         title: 'Upload Failed',
-        description: 'There was an error uploading the document.',
+        description: error.message || 'There was an error uploading the document. This may be due to missing permissions.',
         variant: 'destructive'
       });
     } finally {
