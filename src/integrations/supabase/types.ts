@@ -9,6 +9,51 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      workbodies: {
+        Row: {
+          actions_agreed: number | null
+          actions_completed: number | null
+          created_at: string | null
+          created_date: string
+          description: string | null
+          end_date: string | null
+          id: string
+          meetings_this_year: number | null
+          name: string
+          terms_of_reference: string | null
+          total_meetings: number | null
+          type: string
+        }
+        Insert: {
+          actions_agreed?: number | null
+          actions_completed?: number | null
+          created_at?: string | null
+          created_date: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          meetings_this_year?: number | null
+          name: string
+          terms_of_reference?: string | null
+          total_meetings?: number | null
+          type: string
+        }
+        Update: {
+          actions_agreed?: number | null
+          actions_completed?: number | null
+          created_at?: string | null
+          created_date?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          meetings_this_year?: number | null
+          name?: string
+          terms_of_reference?: string | null
+          total_meetings?: number | null
+          type?: string
+        }
+        Relationships: []
+      }
       workbody_documents: {
         Row: {
           document_type: string

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   PlusCircle,
   Edit,
@@ -9,6 +9,7 @@ import {
   Upload,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -37,7 +38,6 @@ import { CompositionHistory } from "@/components/workbody/CompositionHistory";
 
 export default function WorkbodyManagement() {
   const { toast } = useToast();
-  const [workbodies, setWorkbodies] = useState<Workbody[]>(mockWorkbodies);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -48,97 +48,169 @@ export default function WorkbodyManagement() {
   const [isUploadTorOpen, setIsUploadTorOpen] = useState(false);
   const [isHistoryVisible, setIsHistoryVisible] = useState(false);
 
+  const queryClient = useQueryClient();
+
+  const { data: workbodies = [], isLoading } = useQuery({
+    queryKey: ['workbodies'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('workbodies')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data as Workbody[];
+    }
+  });
+
+  const createWorkbodyMutation = useMutation({
+    mutationFn: async (newWorkbody: Omit<Workbody, 'id' | 'members'>) => {
+      const { data, error } = await supabase
+        .from('workbodies')
+        .insert({
+          name: newWorkbody.name,
+          type: newWorkbody.type,
+          description: newWorkbody.description,
+          created_date: newWorkbody.createdDate,
+          end_date: newWorkbody.endDate,
+          terms_of_reference: newWorkbody.termsOfReference,
+          total_meetings: 0,
+          meetings_this_year: 0,
+          actions_agreed: 0,
+          actions_completed: 0
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workbodies'] });
+    }
+  });
+
+  const updateWorkbodyMutation = useMutation({
+    mutationFn: async (updatedWorkbody: Partial<Workbody> & { id: string }) => {
+      const { data, error } = await supabase
+        .from('workbodies')
+        .update({
+          name: updatedWorkbody.name,
+          type: updatedWorkbody.type,
+          description: updatedWorkbody.description,
+          created_date: updatedWorkbody.createdDate,
+          end_date: updatedWorkbody.endDate,
+          terms_of_reference: updatedWorkbody.termsOfReference
+        })
+        .eq('id', updatedWorkbody.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workbodies'] });
+    }
+  });
+
+  const deleteWorkbodyMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('workbodies')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workbodies'] });
+    }
+  });
+
+  const handleAddSubmit = async (data: any) => {
+    try {
+      await createWorkbodyMutation.mutateAsync({
+        name: data.name,
+        type: data.type,
+        description: data.description,
+        createdDate: data.createdDate.toISOString(),
+        endDate: data.endDate?.toISOString(),
+        termsOfReference: data.termsOfReference,
+      });
+
+      toast({
+        title: "Workbody Created",
+        description: `${data.name} has been successfully created.`,
+      });
+      setIsAddDialogOpen(false);
+    } catch (error) {
+      console.error('Error creating workbody:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create workbody. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditSubmit = async (data: any) => {
+    if (!selectedWorkbody) return;
+
+    try {
+      await updateWorkbodyMutation.mutateAsync({
+        id: selectedWorkbody.id,
+        name: data.name,
+        type: data.type,
+        description: data.description,
+        createdDate: data.createdDate.toISOString(),
+        endDate: data.endDate?.toISOString(),
+        termsOfReference: data.termsOfReference,
+      });
+
+      toast({
+        title: "Workbody Updated",
+        description: `${data.name} has been successfully updated.`,
+      });
+      setIsEditDialogOpen(false);
+      setSelectedWorkbody(null);
+    } catch (error) {
+      console.error('Error updating workbody:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update workbody. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteWorkbody = async () => {
+    if (!selectedWorkbody) return;
+
+    try {
+      await deleteWorkbodyMutation.mutateAsync(selectedWorkbody.id);
+      
+      toast({
+        title: "Workbody Deleted",
+        description: `${selectedWorkbody.name} has been successfully deleted.`,
+      });
+      setIsDeleteDialogOpen(false);
+      setSelectedWorkbody(null);
+    } catch (error) {
+      console.error('Error deleting workbody:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete workbody. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const filteredWorkbodies = workbodies.filter(
     (workbody) =>
       workbody.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       workbody.type.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
-  const handleAddSubmit = (data: any) => {
-    const newWorkbody: Workbody = {
-      id: `wb-${Date.now()}`,
-      name: data.name,
-      type: data.type as WorkbodyType,
-      totalMeetings: 0,
-      meetingsThisYear: 0,
-      actionsAgreed: 0,
-      actionsCompleted: 0,
-      members: [],
-      description: data.description,
-      createdDate: data.createdDate.toISOString(),
-      endDate: data.endDate ? data.endDate.toISOString() : undefined,
-      termsOfReference: data.termsOfReference,
-    };
-
-    setWorkbodies([...workbodies, newWorkbody]);
-    toast({
-      title: "Workbody Created",
-      description: `${newWorkbody.name} has been successfully created.`,
-    });
-    setIsAddDialogOpen(false);
-  };
-
-  const handleEditSubmit = (data: any) => {
-    if (!selectedWorkbody) return;
-
-    const updatedWorkbodies = workbodies.map((wb) =>
-      wb.id === selectedWorkbody.id
-        ? {
-            ...wb,
-            name: data.name,
-            type: data.type,
-            description: data.description,
-            createdDate: data.createdDate.toISOString(),
-            endDate: data.endDate ? data.endDate.toISOString() : undefined,
-            termsOfReference: data.termsOfReference,
-          }
-        : wb
-    );
-
-    setWorkbodies(updatedWorkbodies);
-    toast({
-      title: "Workbody Updated",
-      description: `${data.name} has been successfully updated.`,
-    });
-    setIsEditDialogOpen(false);
-    setSelectedWorkbody(null);
-  };
-
-  const handleDeleteWorkbody = () => {
-    if (!selectedWorkbody) return;
-
-    const updatedWorkbodies = workbodies.filter(
-      (wb) => wb.id !== selectedWorkbody.id
-    );
-    setWorkbodies(updatedWorkbodies);
-    toast({
-      title: "Workbody Deleted",
-      description: `${selectedWorkbody.name} has been successfully deleted.`,
-    });
-    setIsDeleteDialogOpen(false);
-    setSelectedWorkbody(null);
-  };
-
-  const handleTorSubmit = (data: any) => {
-    if (!selectedWorkbody) return;
-
-    const updatedWorkbodies = workbodies.map((wb) =>
-      wb.id === selectedWorkbody.id
-        ? {
-            ...wb,
-            termsOfReference: data.termsOfReference,
-          }
-        : wb
-    );
-
-    setWorkbodies(updatedWorkbodies);
-    toast({
-      title: "Terms of Reference Updated",
-      description: `Terms of Reference for ${selectedWorkbody.name} have been updated.`,
-    });
-    setIsTorDialogOpen(false);
-    setSelectedWorkbody(null);
-  };
 
   const checkExpiringTaskForces = () => {
     const today = new Date();
