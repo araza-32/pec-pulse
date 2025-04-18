@@ -35,7 +35,6 @@ export function DocumentUpload({
   const [uploadError, setUploadError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // Reset state when dialog opens
   const handleOpenChange = (open: boolean) => {
     if (!open) {
       setFileName('');
@@ -70,33 +69,14 @@ export function DocumentUpload({
       if (!validTypes.includes(file.type)) {
         throw new Error('Invalid file type. Please upload PDF, DOC, DOCX, JPG, or PNG');
       }
-      
+
       // Upload file to Supabase Storage
-      const bucketId = 'workbody-documents';
       const fileExt = file.name.split('.').pop();
-      const fileName = `${workbodyId}/${documentType}-${Date.now()}.${fileExt}`;
-      
-      // Check if bucket exists, create if not
-      const { data: buckets } = await supabase.storage.listBuckets();
-      const bucketExists = buckets?.some(b => b.name === bucketId);
-      
-      if (!bucketExists) {
-        console.log('Creating storage bucket:', bucketId);
-        const { error: createError } = await supabase.storage.createBucket(bucketId, {
-          public: true,
-          fileSizeLimit: 10485760, // 10MB
-          allowedMimeTypes: validTypes
-        });
-        
-        if (createError) {
-          console.error('Error creating bucket:', createError);
-          throw new Error('Failed to create storage bucket');
-        }
-      }
+      const filePath = `${workbodyId}/${documentType}-${Date.now()}.${fileExt}`;
       
       const { error: uploadError, data } = await supabase.storage
-        .from(bucketId)
-        .upload(fileName, file, {
+        .from('workbody-documents')
+        .upload(filePath, file, {
           cacheControl: '3600',
           upsert: false
         });
@@ -114,7 +94,7 @@ export function DocumentUpload({
 
       // Get the public URL for the uploaded file
       const { data: { publicUrl } } = supabase.storage
-        .from(bucketId)
+        .from('workbody-documents')
         .getPublicUrl(data.path);
 
       console.log('Public URL generated:', publicUrl);
@@ -213,4 +193,4 @@ export function DocumentUpload({
       </DialogContent>
     </Dialog>
   );
-};
+}
