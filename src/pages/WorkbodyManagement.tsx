@@ -206,8 +206,8 @@ export default function WorkbodyManagement() {
 
     try {
       await updateWorkbodyMutation.mutateAsync({
+        ...data,
         id: selectedWorkbody.id,
-        ...data
       });
 
       toast({
@@ -254,6 +254,11 @@ export default function WorkbodyManagement() {
     try {
       await updateWorkbodyMutation.mutateAsync({
         id: selectedWorkbody.id,
+        name: selectedWorkbody.name,
+        type: selectedWorkbody.type,
+        createdDate: new Date(selectedWorkbody.createdDate),
+        description: selectedWorkbody.description,
+        endDate: selectedWorkbody.endDate ? new Date(selectedWorkbody.endDate) : undefined,
         termsOfReference: data.termsOfReference?.toString(),
       });
       

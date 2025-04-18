@@ -11,4 +11,5 @@ export interface WorkbodyFormData {
   createdDate: Date;
   endDate?: Date;
   termsOfReference?: string;
+  id?: string; // Adding id as optional for update operations
 }
