@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { PlusCircle, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -395,7 +394,7 @@ export default function WorkbodyManagement() {
             documentType="notification"
             isOpen={isUploadNotificationOpen}
             onClose={() => setIsUploadNotificationOpen(false)}
-            onUploadComplete={(documentId) => handleNotificationUpload(documentId)}
+            onUploadComplete={handleNotificationUpload}
           />
 
           <DocumentUpload

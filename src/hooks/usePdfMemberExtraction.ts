@@ -96,10 +96,10 @@ export const usePdfMemberExtraction = () => {
   const extractFromPdf = async (fileUrl: string): Promise<WorkbodyMember[]> => {
     console.log('Starting PDF extraction');
     
-    // Load PDF.js
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
-
     try {
+      // Configure PDF.js worker
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+
       // Fetch PDF
       const loadingTask = pdfjsLib.getDocument(fileUrl);
       const pdf = await loadingTask.promise;
@@ -112,14 +112,14 @@ export const usePdfMemberExtraction = () => {
         const page = await pdf.getPage(pageNum);
         const textContent = await page.getTextContent();
         
-        // Simple example of extracting members 
+        // Extract members from text content
         textContent.items.forEach((textItem: any) => {
           const text = textItem.str;
-          // Example regex - adjust based on your actual PDF format
-          const memberMatch = text.match(/([A-Za-z\s]+)\s*-\s*([A-Za-z\s]+)/);
+          // Example pattern: "Name - Role" or "Name: Role"
+          const memberMatch = text.match(/([A-Za-z\s]+)[\s-:]+([A-Za-z\s]+)/);
           
           if (memberMatch) {
-            const member = {
+            const member: WorkbodyMember = {
               id: crypto.randomUUID(),
               name: memberMatch[1].trim(),
               role: memberMatch[2].trim(),
@@ -142,22 +142,17 @@ export const usePdfMemberExtraction = () => {
     console.log('Starting Word document extraction');
     
     try {
-      // For demonstration purposes, we'll simulate Word document extraction
-      // In a real implementation, you would use a library like mammoth.js
-      console.log('Note: Word document processing is simulated');
+      // This is a placeholder implementation. In a real application,
+      // you would use a service like mammoth.js or a cloud-based service
+      // to extract text from Word documents
+      console.log('Word document processing placeholder implementation');
       
-      // Mock extraction result - in a real implementation, this would parse the Word document
-      const members: WorkbodyMember[] = [
-        {
-          id: crypto.randomUUID(),
-          name: "Example Member From Word",
-          role: "Committee Member",
-          hasCV: false
-        }
-      ];
-      
-      console.log('Word extraction completed with simulated data');
-      return members;
+      return [{
+        id: crypto.randomUUID(),
+        name: "Extracted from Word",
+        role: "Member",
+        hasCV: false
+      }];
     } catch (error) {
       console.error('Error processing Word document:', error);
       throw error;
@@ -168,31 +163,25 @@ export const usePdfMemberExtraction = () => {
     console.log('Starting image extraction');
     
     try {
-      // For demonstration purposes, we'll simulate image OCR extraction
-      // In a real implementation, you would use a service like Tesseract.js or a cloud OCR API
-      console.log('Note: Image OCR processing is simulated');
+      // This is a placeholder implementation. In a real application,
+      // you would use a service like Tesseract.js or a cloud OCR service
+      console.log('Image OCR processing placeholder implementation');
       
-      // Mock extraction result - in a real implementation, this would use OCR on the image
-      const members: WorkbodyMember[] = [
-        {
-          id: crypto.randomUUID(),
-          name: "Example Member From Image",
-          role: "Committee Member",
-          hasCV: false
-        }
-      ];
-      
-      console.log('Image extraction completed with simulated data');
-      return members;
+      return [{
+        id: crypto.randomUUID(),
+        name: "Extracted from Image",
+        role: "Member",
+        hasCV: false
+      }];
     } catch (error) {
       console.error('Error processing image:', error);
       throw error;
     }
   };
 
-  return { 
-    extractMembersFromDocument: extractMembersFromDocument, 
-    isExtracting, 
-    extractedMembers 
+  return {
+    extractMembersFromDocument,
+    isExtracting,
+    extractedMembers
   };
 };
