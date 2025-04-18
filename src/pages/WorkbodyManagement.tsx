@@ -6,8 +6,9 @@ import {
   FileText,
   Clock,
   Search,
+  Upload,
 } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -45,6 +46,7 @@ export default function WorkbodyManagement() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isUploadNotificationOpen, setIsUploadNotificationOpen] = useState(false);
   const [isUploadTorOpen, setIsUploadTorOpen] = useState(false);
+  const [isHistoryVisible, setIsHistoryVisible] = useState(false);
 
   const filteredWorkbodies = workbodies.filter(
     (workbody) =>
@@ -213,7 +215,7 @@ export default function WorkbodyManagement() {
             <TableHead>Type</TableHead>
             <TableHead>Created</TableHead>
             <TableHead>End Date</TableHead>
-            <TableHead className="w-[150px]">Actions</TableHead>
+            <TableHead className="w-[200px]">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -252,6 +254,7 @@ export default function WorkbodyManagement() {
                       setSelectedWorkbody(workbody);
                       setIsEditDialogOpen(true);
                     }}
+                    title="Edit workbody"
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
@@ -262,6 +265,7 @@ export default function WorkbodyManagement() {
                       setSelectedWorkbody(workbody);
                       setIsTorDialogOpen(true);
                     }}
+                    title="Terms of Reference"
                   >
                     <FileText className="h-4 w-4" />
                   </Button>
@@ -270,8 +274,31 @@ export default function WorkbodyManagement() {
                     size="icon"
                     onClick={() => {
                       setSelectedWorkbody(workbody);
+                      setIsUploadNotificationOpen(true);
+                    }}
+                    title="Upload Notification"
+                  >
+                    <Upload className="h-4 w-4 text-blue-500" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setSelectedWorkbody(workbody);
+                      setIsHistoryVisible(true);
+                    }}
+                    title="View Composition History"
+                  >
+                    <Clock className="h-4 w-4 text-green-500" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setSelectedWorkbody(workbody);
                       setIsDeleteDialogOpen(true);
                     }}
+                    title="Delete workbody"
                   >
                     <Trash2 className="h-4 w-4 text-red-500" />
                   </Button>
@@ -290,8 +317,13 @@ export default function WorkbodyManagement() {
             isOpen={isUploadNotificationOpen}
             onClose={() => setIsUploadNotificationOpen(false)}
             onUploadComplete={() => {
-              const updatedWorkbodies = [...workbodies];
-              setWorkbodies(updatedWorkbodies);
+              toast({
+                title: "Processing Notification",
+                description: "The document is being processed for member information.",
+              });
+              setTimeout(() => {
+                setIsHistoryVisible(true);
+              }, 1000);
             }}
           />
 
@@ -306,7 +338,9 @@ export default function WorkbodyManagement() {
             }}
           />
 
-          <CompositionHistory workbodyId={selectedWorkbody.id} />
+          {isHistoryVisible && (
+            <CompositionHistory workbodyId={selectedWorkbody.id} />
+          )}
         </>
       )}
 
