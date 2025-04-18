@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { WorkbodyMember } from '@/types';
@@ -208,43 +207,66 @@ export const usePdfMemberExtraction = () => {
     }
   };
   
-  // Extract members from text content
+  // Extract members from text content with specific roles
   const extractMembersFromText = (textContent: any): WorkbodyMember[] => {
     const members: WorkbodyMember[] = [];
     const lines: string[] = [];
     
-    // First collect all text into lines
+    // Collect all text into lines
     textContent.items.forEach((textItem: any) => {
       lines.push(textItem.str.trim());
     });
     
     // Process lines to extract members
     for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
+      const line = lines[i].trim();
+      const nextLine = i < lines.length - 1 ? lines[i + 1].trim() : '';
       
       // Pattern 1: "Name - Role" or "Name: Role"
       const pattern1 = line.match(/([A-Za-z\s.]+)[\s-:]+([A-Za-z\s]+)/);
       
-      // Pattern 2: Name on one line, role on next line
-      const isNameOnly = /^[A-Z][a-z]+(\s[A-Z][a-z]+)+$/.test(line);
-      const nextLine = i < lines.length - 1 ? lines[i + 1] : '';
-      const isRoleNext = nextLine && /^(Chair|Member|Secretary|Director|Head|Officer|Coordinator|Lead|Manager)/i.test(nextLine);
+      // Pattern 2: Role followed by name
+      const roleKeywords = ['Convener', 'Dy Convener', 'Member'];
+      const hasRole = roleKeywords.some(role => line.includes(role));
       
       if (pattern1 && pattern1[1] && pattern1[2]) {
-        members.push({
-          id: crypto.randomUUID(),
-          name: pattern1[1].trim(),
-          role: pattern1[2].trim(),
-          hasCV: false
-        });
-      } else if (isNameOnly && isRoleNext) {
-        members.push({
-          id: crypto.randomUUID(),
-          name: line.trim(),
-          role: nextLine.trim(),
-          hasCV: false
-        });
-        i++; // Skip the next line as we've used it for the role
+        const name = pattern1[1].trim();
+        const role = pattern1[2].trim();
+        
+        // Only add if role matches our keywords
+        if (roleKeywords.some(keyword => role.includes(keyword))) {
+          members.push({
+            id: crypto.randomUUID(),
+            name,
+            role,
+            hasCV: false
+          });
+        }
+      } else if (hasRole) {
+        // If line contains role, look for name in next line
+        const roleFound = roleKeywords.find(role => line.includes(role)) || 'Member';
+        if (nextLine && /^[A-Z][a-z]+(\s[A-Z][a-z]+)+$/.test(nextLine)) {
+          members.push({
+            id: crypto.randomUUID(),
+            name: nextLine,
+            role: roleFound,
+            hasCV: false
+          });
+          i++; // Skip next line as we've used it
+        }
+      } else if (/^[A-Z][a-z]+(\s[A-Z][a-z]+)+$/.test(line)) {
+        // If line looks like a name, check if previous line had role
+        const prevLine = i > 0 ? lines[i - 1].trim() : '';
+        const roleInPrev = roleKeywords.find(role => prevLine.includes(role));
+        
+        if (roleInPrev) {
+          members.push({
+            id: crypto.randomUUID(),
+            name: line,
+            role: roleInPrev,
+            hasCV: false
+          });
+        }
       }
     }
     
