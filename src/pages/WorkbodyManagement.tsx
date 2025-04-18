@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -15,6 +14,8 @@ import { ExpiringTaskForceAlert } from "@/components/workbody/ExpiringTaskForceA
 import { usePdfMemberExtraction } from "@/hooks/usePdfMemberExtraction";
 import { useWorkbodies } from "@/hooks/useWorkbodies";
 import { WorkbodyHeader } from "@/components/workbody/WorkbodyHeader";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 export default function WorkbodyManagement() {
   const { toast } = useToast();
@@ -27,9 +28,10 @@ export default function WorkbodyManagement() {
   const [isUploadNotificationOpen, setIsUploadNotificationOpen] = useState(false);
   const [isUploadTorOpen, setIsUploadTorOpen] = useState(false);
   const [isHistoryVisible, setIsHistoryVisible] = useState(false);
+  const [extractionError, setExtractionError] = useState<string | null>(null);
 
   const { workbodies, isLoading, createWorkbody, updateWorkbody, deleteWorkbody } = useWorkbodies();
-  const { extractMembersFromDocument } = usePdfMemberExtraction();
+  const { extractMembersFromDocument, isExtracting, extractionError: hookExtractionError } = usePdfMemberExtraction();
 
   const handleAddSubmit = async (data: WorkbodyFormData) => {
     try {
@@ -130,6 +132,7 @@ export default function WorkbodyManagement() {
   const handleNotificationUpload = async (documentId: string) => {
     if (selectedWorkbody) {
       try {
+        setExtractionError(null);
         console.log("Handling notification upload for document:", documentId);
         await extractMembersFromDocument(documentId, selectedWorkbody.id);
         
@@ -140,11 +143,12 @@ export default function WorkbodyManagement() {
         
         setIsHistoryVisible(true);
         setIsUploadNotificationOpen(false);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error extracting members:', error);
+        setExtractionError(error.message || "Failed to extract members from document");
         toast({
           title: "Extraction Error",
-          description: "Failed to extract members from document. Please try again.",
+          description: error.message || "Failed to extract members from document. Please try again.",
           variant: "destructive",
         });
       }
@@ -186,6 +190,19 @@ export default function WorkbodyManagement() {
         <ExpiringTaskForceAlert expiringTaskForces={expiringTaskForces} />
       )}
 
+      {(extractionError || hookExtractionError) && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>PDF Extraction Error</AlertTitle>
+          <AlertDescription>
+            {extractionError || hookExtractionError}
+            <p className="text-sm mt-1">
+              Try uploading a different document or check that the PDF contains member information in a readable format.
+            </p>
+          </AlertDescription>
+        </Alert>
+      )}
+
       <WorkbodyHeader
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
@@ -209,6 +226,7 @@ export default function WorkbodyManagement() {
           }}
           onUploadNotification={(workbody) => {
             setSelectedWorkbody(workbody);
+            setExtractionError(null);
             setIsUploadNotificationOpen(true);
           }}
           onViewHistory={(workbody) => {

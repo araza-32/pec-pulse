@@ -9,17 +9,19 @@ import {
   Users,
   CheckSquare,
   FileSpreadsheet,
+  AlertCircle,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { meetingMinutes } from "@/data/mockData";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { useWorkbodies } from "@/hooks/useWorkbodies";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 export default function WorkbodyDetail() {
   const { id } = useParams<{ id: string }>();
@@ -80,6 +82,11 @@ export default function WorkbodyDetail() {
     workbody.actionsAgreed > 0
       ? Math.round((workbody.actionsCompleted / workbody.actionsAgreed) * 100)
       : 0;
+
+  // Check if there are members with extraction errors
+  const hasExtractionErrors = workbody.members?.some(
+    member => member.name.includes("Error") || member.role.includes("Error") || member.role.includes("error")
+  );
 
   return (
     <div className="space-y-6">
@@ -283,6 +290,25 @@ export default function WorkbodyDetail() {
               <CardTitle>Workbody Composition</CardTitle>
             </CardHeader>
             <CardContent>
+              {hasExtractionErrors && (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Member Extraction Issue</AlertTitle>
+                  <AlertDescription>
+                    There was a problem extracting members from the uploaded document.
+                    <div className="mt-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => window.location.href = `/workbody-management`}
+                      >
+                        Upload New Document
+                      </Button>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              )}
+
               {workbody.members && workbody.members.length > 0 ? (
                 <div className="space-y-4">
                   {workbody.members.map((member) => (
@@ -292,13 +318,20 @@ export default function WorkbodyDetail() {
                     >
                       <div className="flex items-center gap-3">
                         <Avatar>
-                          <AvatarFallback className="bg-pec-green text-white">
-                            {member.name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")
-                              .toUpperCase()}
-                          </AvatarFallback>
+                          {member.name.includes("Error") ? (
+                            <AvatarFallback className="bg-destructive text-white">
+                              ERR
+                            </AvatarFallback>
+                          ) : (
+                            <AvatarFallback className="bg-pec-green text-white">
+                              {member.name
+                                .split(" ")
+                                .map((n) => n[0])
+                                .join("")
+                                .toUpperCase()
+                                .slice(0, 2)}
+                            </AvatarFallback>
+                          )}
                         </Avatar>
                         <div>
                           <p className="font-medium">{member.name}</p>
@@ -315,7 +348,17 @@ export default function WorkbodyDetail() {
                   ))}
                 </div>
               ) : (
-                <p>No members available for this workbody</p>
+                <div className="text-center py-8">
+                  <Users className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
+                  <p className="text-muted-foreground">No members available for this workbody</p>
+                  <Button 
+                    className="mt-4" 
+                    variant="outline"
+                    onClick={() => window.location.href = `/workbody-management`}
+                  >
+                    Add Members
+                  </Button>
+                </div>
               )}
             </CardContent>
           </Card>

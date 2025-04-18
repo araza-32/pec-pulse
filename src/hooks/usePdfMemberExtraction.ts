@@ -5,17 +5,21 @@ import { WorkbodyMember } from '@/types';
 import * as pdfjsLib from 'pdfjs-dist';
 
 // Set up the worker source with a more reliable CDN
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`;
+const pdfWorkerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerSrc;
 
 export const usePdfMemberExtraction = () => {
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractedMembers, setExtractedMembers] = useState<WorkbodyMember[]>([]);
+  const [extractionError, setExtractionError] = useState<string | null>(null);
 
   const extractMembersFromDocument = async (
     documentId: string, 
     workbodyId: string
   ) => {
     setIsExtracting(true);
+    setExtractionError(null);
+    
     try {
       console.log('Starting document extraction for document:', documentId);
       
@@ -28,11 +32,13 @@ export const usePdfMemberExtraction = () => {
 
       if (documentError) {
         console.error('Error fetching document:', documentError);
+        setExtractionError('Failed to fetch document details');
         throw documentError;
       }
 
       if (!documentData || !documentData.file_url) {
         console.error('No document URL found');
+        setExtractionError('No document URL found');
         throw new Error('No document URL found');
       }
 
@@ -54,31 +60,34 @@ export const usePdfMemberExtraction = () => {
         members = await extractFromImage(fileUrl);
       } else {
         console.warn('Unsupported file format:', fileExtension);
-        // Instead of throwing, use a placeholder member
-        members = [{
-          id: crypto.randomUUID(),
-          name: "Unsupported Format",
-          role: "Please upload PDF, DOC, DOCX, JPG or PNG",
-          hasCV: false
-        }];
+        setExtractionError(`Unsupported file format: ${fileExtension}`);
+        members = createPlaceholderMembers('Unsupported Format', 'Please upload PDF, DOC, DOCX, JPG or PNG');
       }
 
       console.log(`Total members extracted: ${members.length}`);
 
       if (members.length === 0) {
         console.warn('No members were extracted from the document');
-        // Add a placeholder member for testing purposes
-        members = [{
-          id: crypto.randomUUID(),
-          name: "Placeholder Member",
-          role: "Member",
-          hasCV: false
-        }];
+        setExtractionError('No members found in document');
+        members = createPlaceholderMembers('No Members Found', 'Please try another document with member information');
       }
 
       // Store extracted members in Supabase
       if (members.length > 0) {
         console.log('Inserting members into database');
+        
+        // First, delete any existing members from this document to avoid duplicates
+        const { error: deleteError } = await supabase
+          .from('workbody_members')
+          .delete()
+          .eq('workbody_id', workbodyId)
+          .eq('source_document_id', documentId);
+          
+        if (deleteError) {
+          console.error('Error deleting existing members:', deleteError);
+        }
+        
+        // Insert new members
         const { error: insertError } = await supabase
           .from('workbody_members')
           .insert(
@@ -93,6 +102,7 @@ export const usePdfMemberExtraction = () => {
 
         if (insertError) {
           console.error('Error inserting members:', insertError);
+          setExtractionError('Failed to save extracted members');
           throw insertError;
         }
 
@@ -101,12 +111,23 @@ export const usePdfMemberExtraction = () => {
 
       setExtractedMembers(members);
       return members;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error extracting members from document:', error);
+      setExtractionError(error.message || 'Unknown error during extraction');
       throw error;
     } finally {
       setIsExtracting(false);
     }
+  };
+
+  // Helper function to create placeholder members
+  const createPlaceholderMembers = (name: string, role: string): WorkbodyMember[] => {
+    return [{
+      id: crypto.randomUUID(),
+      name,
+      role,
+      hasCV: false
+    }];
   };
 
   const extractFromPdf = async (fileUrl: string): Promise<WorkbodyMember[]> => {
@@ -114,23 +135,18 @@ export const usePdfMemberExtraction = () => {
     
     try {
       console.log('PDF.js version:', pdfjsLib.version);
-      console.log('Worker source:', pdfjsLib.GlobalWorkerOptions.workerSrc);
-      
-      // Ensure worker is properly initialized
-      if (!pdfjsLib.GlobalWorkerOptions.workerSrc.includes('pdf.worker')) {
-        console.warn('PDF worker source not properly set, using fallback');
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
-      }
+      console.log('Worker source:', pdfWorkerSrc);
       
       // Fetch PDF with timeout
       const loadingTask = pdfjsLib.getDocument({
         url: fileUrl,
-        cMapUrl: 'https://unpkg.com/pdfjs-dist@3.11.174/cmaps/',
+        cMapUrl: `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/cmaps/`,
         cMapPacked: true,
+        useWorkerFetch: true,
       });
       
       // Set a 30 second timeout
-      const timeoutPromise = new Promise<any>((_, reject) => {
+      const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(() => reject(new Error('PDF loading timeout')), 30000);
       });
       
@@ -143,53 +159,135 @@ export const usePdfMemberExtraction = () => {
       console.log(`PDF loaded with ${pdf.numPages} pages`);
 
       const members: WorkbodyMember[] = [];
+      let foundMembers = false;
       
-      for (let pageNum = 1; pageNum <= Math.min(5, pdf.numPages); pageNum++) {
+      // Process more pages to find member data
+      const pagesToProcess = Math.min(10, pdf.numPages);
+      
+      for (let pageNum = 1; pageNum <= pagesToProcess; pageNum++) {
         console.log(`Processing page ${pageNum}`);
         const page = await pdf.getPage(pageNum);
         const textContent = await page.getTextContent();
         
-        // Extract members from text content
-        textContent.items.forEach((textItem: any) => {
-          const text = textItem.str;
-          // Example pattern: "Name - Role" or "Name: Role"
-          const memberMatch = text.match(/([A-Za-z\s.]+)[\s-:]+([A-Za-z\s]+)/);
-          
-          if (memberMatch) {
-            const member: WorkbodyMember = {
-              id: crypto.randomUUID(),
-              name: memberMatch[1].trim(),
-              role: memberMatch[2].trim(),
-              hasCV: false
-            };
-            console.log('Extracted member:', member);
-            members.push(member);
-          }
-        });
+        // Extract members from text content - match various patterns
+        const extractedOnPage = extractMembersFromText(textContent);
+        if (extractedOnPage.length > 0) {
+          members.push(...extractedOnPage);
+          foundMembers = true;
+        }
       }
       
-      // If no members found, add a placeholder for testing
+      // If no members found with pattern matching, try creating members from lines that look like names
+      if (!foundMembers) {
+        console.log('No members matched patterns, trying fallback extraction');
+        const fallbackMembers = await extractMembersWithFallback(pdf);
+        members.push(...fallbackMembers);
+      }
+      
+      // If still no members found, add a placeholder
       if (members.length === 0) {
         members.push({
           id: crypto.randomUUID(),
-          name: "Extracted from PDF",
-          role: "Member",
+          name: "No Members Found",
+          role: "Try another PDF or format",
           hasCV: false
         });
       }
       
       return members;
-    } catch (pdfError) {
+    } catch (pdfError: any) {
       console.error('Error processing PDF:', pdfError);
       
-      // Return a placeholder member even if there's an error
+      // Return a placeholder member when there's an error
       return [{
         id: crypto.randomUUID(),
         name: "PDF Processing Error", 
-        role: "Error occurred during extraction",
+        role: pdfError.message || "Error occurred during extraction",
         hasCV: false
       }];
     }
+  };
+  
+  // Extract members from text content
+  const extractMembersFromText = (textContent: any): WorkbodyMember[] => {
+    const members: WorkbodyMember[] = [];
+    const lines: string[] = [];
+    
+    // First collect all text into lines
+    textContent.items.forEach((textItem: any) => {
+      lines.push(textItem.str.trim());
+    });
+    
+    // Process lines to extract members
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      
+      // Pattern 1: "Name - Role" or "Name: Role"
+      const pattern1 = line.match(/([A-Za-z\s.]+)[\s-:]+([A-Za-z\s]+)/);
+      
+      // Pattern 2: Name on one line, role on next line
+      const isNameOnly = /^[A-Z][a-z]+(\s[A-Z][a-z]+)+$/.test(line);
+      const nextLine = i < lines.length - 1 ? lines[i + 1] : '';
+      const isRoleNext = nextLine && /^(Chair|Member|Secretary|Director|Head|Officer|Coordinator|Lead|Manager)/i.test(nextLine);
+      
+      if (pattern1 && pattern1[1] && pattern1[2]) {
+        members.push({
+          id: crypto.randomUUID(),
+          name: pattern1[1].trim(),
+          role: pattern1[2].trim(),
+          hasCV: false
+        });
+      } else if (isNameOnly && isRoleNext) {
+        members.push({
+          id: crypto.randomUUID(),
+          name: line.trim(),
+          role: nextLine.trim(),
+          hasCV: false
+        });
+        i++; // Skip the next line as we've used it for the role
+      }
+    }
+    
+    return members;
+  };
+  
+  // Fallback extraction when pattern matching fails
+  const extractMembersWithFallback = async (pdf: any): Promise<WorkbodyMember[]> => {
+    const members: WorkbodyMember[] = [];
+    const allLines: string[] = [];
+    
+    // Extract all text from the first few pages
+    for (let pageNum = 1; pageNum <= Math.min(5, pdf.numPages); pageNum++) {
+      const page = await pdf.getPage(pageNum);
+      const textContent = await page.getTextContent();
+      
+      textContent.items.forEach((item: any) => {
+        const line = item.str.trim();
+        if (line.length > 0) {
+          allLines.push(line);
+        }
+      });
+    }
+    
+    // Look for potential name lines (names are typically capitalized words)
+    for (let i = 0; i < allLines.length; i++) {
+      const line = allLines[i].trim();
+      
+      // Check if line looks like a person's name (2+ words, each capitalized)
+      if (/^([A-Z][a-z]+\s+)+[A-Z][a-z]+$/.test(line) && line.split(' ').length >= 2) {
+        members.push({
+          id: crypto.randomUUID(),
+          name: line,
+          role: "Member", // Default role when we can't determine
+          hasCV: false
+        });
+        
+        // Limit to 10 members to avoid false positives
+        if (members.length >= 10) break;
+      }
+    }
+    
+    return members;
   };
 
   const extractFromWord = async (fileUrl: string): Promise<WorkbodyMember[]> => {
@@ -198,13 +296,12 @@ export const usePdfMemberExtraction = () => {
     try {
       // This is a placeholder implementation. In a real application,
       // you would use a service like mammoth.js or a cloud-based service
-      // to extract text from Word documents
       console.log('Word document processing placeholder implementation');
       
       return [{
         id: crypto.randomUUID(),
-        name: "Extracted from Word",
-        role: "Member",
+        name: "Word Document Support",
+        role: "Coming soon - document processed",
         hasCV: false
       }];
     } catch (error) {
@@ -223,8 +320,8 @@ export const usePdfMemberExtraction = () => {
       
       return [{
         id: crypto.randomUUID(),
-        name: "Extracted from Image",
-        role: "Member",
+        name: "Image OCR Support",
+        role: "Coming soon - image processed",
         hasCV: false
       }];
     } catch (error) {
@@ -236,6 +333,7 @@ export const usePdfMemberExtraction = () => {
   return {
     extractMembersFromDocument,
     isExtracting,
-    extractedMembers
+    extractedMembers,
+    extractionError
   };
 };
