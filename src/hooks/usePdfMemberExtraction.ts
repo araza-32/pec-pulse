@@ -1,11 +1,15 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { WorkbodyMember } from '@/types';
 import * as pdfjsLib from 'pdfjs-dist';
 
-// Set up the worker source with a more reliable CDN
-const pdfWorkerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerSrc;
+// Configure PDF.js to use the built-in worker from the dist folder
+// instead of trying to fetch it from a CDN
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url
+).href;
 
 export const usePdfMemberExtraction = () => {
   const [isExtracting, setIsExtracting] = useState(false);
@@ -134,14 +138,13 @@ export const usePdfMemberExtraction = () => {
     
     try {
       console.log('PDF.js version:', pdfjsLib.version);
-      console.log('Worker source:', pdfWorkerSrc);
       
-      // Fetch PDF with timeout
+      // Create a simpler loading task with better error handling
       const loadingTask = pdfjsLib.getDocument({
         url: fileUrl,
-        cMapUrl: `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/cmaps/`,
-        cMapPacked: true,
-        useWorkerFetch: true,
+        disableAutoFetch: false,
+        disableStream: false,
+        disableFontFace: false,
       });
       
       // Set a 30 second timeout

@@ -10,6 +10,7 @@ import {
   CheckSquare,
   FileSpreadsheet,
   AlertCircle,
+  UserPlus,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,13 +23,15 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { useWorkbodies } from "@/hooks/useWorkbodies";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { ManualMemberAddition } from "@/components/workbody/ManualMemberAddition";
 
 export default function WorkbodyDetail() {
   const { id } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState("overview");
+  const [showManualAddition, setShowManualAddition] = useState(false);
   
   // Use the useWorkbodies hook to fetch workbody data
-  const { workbodies, isLoading } = useWorkbodies();
+  const { workbodies, isLoading, refetch } = useWorkbodies();
   
   // Find the workbody with the matching ID
   const workbody = workbodies.find((w) => w.id === id);
@@ -87,6 +90,15 @@ export default function WorkbodyDetail() {
   const hasExtractionErrors = workbody.members?.some(
     member => member.name.includes("Error") || member.role.includes("Error") || member.role.includes("error")
   );
+
+  // Check if there are no members
+  const hasNoMembers = !workbody.members || workbody.members.length === 0;
+
+  // Handle manual member addition
+  const handleMembersAdded = () => {
+    setShowManualAddition(false);
+    refetch();
+  };
 
   return (
     <div className="space-y-6">
@@ -285,83 +297,113 @@ export default function WorkbodyDetail() {
         </TabsContent>
 
         <TabsContent value="members" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Workbody Composition</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {hasExtractionErrors && (
-                <Alert variant="destructive" className="mb-4">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Member Extraction Issue</AlertTitle>
-                  <AlertDescription>
-                    There was a problem extracting members from the uploaded document.
-                    <div className="mt-2">
+          {showManualAddition ? (
+            <ManualMemberAddition 
+              workbodyId={workbody.id} 
+              onMembersAdded={handleMembersAdded} 
+              onCancel={() => setShowManualAddition(false)}
+            />
+          ) : (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Workbody Composition</CardTitle>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setShowManualAddition(true)}
+                  className="gap-2"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  Add Members Manually
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {hasExtractionErrors && (
+                  <Alert variant="destructive" className="mb-4">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Member Extraction Issue</AlertTitle>
+                    <AlertDescription>
+                      <p>There was a problem extracting members from the uploaded document.</p>
+                      <div className="mt-2 flex gap-2">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          onClick={() => window.location.href = `/workbody-management`}
+                        >
+                          Upload New Document
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          onClick={() => setShowManualAddition(true)}
+                        >
+                          Add Members Manually
+                        </Button>
+                      </div>
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {workbody.members && workbody.members.length > 0 ? (
+                  <div className="space-y-4">
+                    {workbody.members.map((member) => (
+                      <div
+                        key={member.id}
+                        className="flex items-center justify-between rounded-lg border p-4"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Avatar>
+                            {member.name.includes("Error") ? (
+                              <AvatarFallback className="bg-destructive text-white">
+                                ERR
+                              </AvatarFallback>
+                            ) : (
+                              <AvatarFallback className="bg-pec-green text-white">
+                                {member.name
+                                  .split(" ")
+                                  .map((n) => n[0])
+                                  .join("")
+                                  .toUpperCase()
+                                  .slice(0, 2)}
+                              </AvatarFallback>
+                            )}
+                          </Avatar>
+                          <div>
+                            <p className="font-medium">{member.name}</p>
+                            <p className="text-sm text-muted-foreground">{member.role}</p>
+                          </div>
+                        </div>
+                        {member.hasCV && (
+                          <Button variant="outline" size="sm">
+                            <FileText className="mr-2 h-4 w-4" />
+                            View CV
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Users className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
+                    <p className="text-muted-foreground">No members available for this workbody</p>
+                    <div className="mt-4 flex justify-center gap-2">
                       <Button 
-                        size="sm" 
-                        variant="outline" 
+                        variant="outline"
                         onClick={() => window.location.href = `/workbody-management`}
                       >
-                        Upload New Document
+                        Upload Members Document
+                      </Button>
+                      <Button 
+                        onClick={() => setShowManualAddition(true)}
+                      >
+                        Add Members Manually
                       </Button>
                     </div>
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              {workbody.members && workbody.members.length > 0 ? (
-                <div className="space-y-4">
-                  {workbody.members.map((member) => (
-                    <div
-                      key={member.id}
-                      className="flex items-center justify-between rounded-lg border p-4"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Avatar>
-                          {member.name.includes("Error") ? (
-                            <AvatarFallback className="bg-destructive text-white">
-                              ERR
-                            </AvatarFallback>
-                          ) : (
-                            <AvatarFallback className="bg-pec-green text-white">
-                              {member.name
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")
-                                .toUpperCase()
-                                .slice(0, 2)}
-                            </AvatarFallback>
-                          )}
-                        </Avatar>
-                        <div>
-                          <p className="font-medium">{member.name}</p>
-                          <p className="text-sm text-muted-foreground">{member.role}</p>
-                        </div>
-                      </div>
-                      {member.hasCV && (
-                        <Button variant="outline" size="sm">
-                          <FileText className="mr-2 h-4 w-4" />
-                          View CV
-                        </Button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Users className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
-                  <p className="text-muted-foreground">No members available for this workbody</p>
-                  <Button 
-                    className="mt-4" 
-                    variant="outline"
-                    onClick={() => window.location.href = `/workbody-management`}
-                  >
-                    Add Members
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
     </div>
