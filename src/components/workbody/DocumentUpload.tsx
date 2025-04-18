@@ -10,6 +10,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface DocumentUploadProps {
   workbodyId: string;
@@ -35,8 +36,33 @@ export function DocumentUpload({
 
     setIsUploading(true);
     try {
-      // Simulate file upload
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Upload file to Supabase Storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${workbodyId}/${documentType}-${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError, data } = await supabase.storage
+        .from('workbody-documents')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      if (!data?.path) throw new Error('Upload failed - no path returned');
+
+      // Get the public URL for the uploaded file
+      const { data: { publicUrl } } = supabase.storage
+        .from('workbody-documents')
+        .getPublicUrl(data.path);
+
+      // Store document reference in the database
+      const { error: dbError } = await supabase
+        .from('workbody_documents')
+        .insert({
+          workbody_id: workbodyId,
+          document_type: documentType,
+          file_url: publicUrl
+        });
+
+      if (dbError) throw dbError;
 
       toast({
         title: 'Document Uploaded',
@@ -82,7 +108,7 @@ export function DocumentUpload({
           </div>
           
           <div className="flex justify-end space-x-2">
-            <Button variant="outline" onClick={onClose}>
+            <Button variant="outline" onClick={onClose} disabled={isUploading}>
               Cancel
             </Button>
           </div>
