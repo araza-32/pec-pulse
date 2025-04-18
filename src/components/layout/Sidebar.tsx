@@ -2,6 +2,7 @@
 import { NavLink } from "react-router-dom";
 import { 
   BarChart3, 
+  Calendar,
   FileText, 
   FileUp, 
   GitMerge,
@@ -20,7 +21,7 @@ interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
   workbodies: Workbody[];
-  userRole: 'admin' | 'secretary';
+  userRole: 'admin' | 'secretary' | 'chairman';
   userWorkbodyId?: string;
 }
 
@@ -34,7 +35,9 @@ export function Sidebar({
   // Filter workbodies based on user role and assigned workbody
   const filteredWorkbodies = userRole === 'admin' 
     ? workbodies 
-    : workbodies.filter(w => w.id === userWorkbodyId);
+    : userRole === 'chairman'
+      ? workbodies // Chairman can see all workbodies
+      : workbodies.filter(w => w.id === userWorkbodyId);
 
   // Group workbodies by type
   const committees = filteredWorkbodies.filter(w => w.type === 'committee');
@@ -110,7 +113,24 @@ export function Sidebar({
                 </NavLink>
               )}
               
-              {userRole === 'secretary' && (
+              {/* Calendar link for all users */}
+              <NavLink
+                to="/calendar"
+                className={({ isActive }) =>
+                  cn(
+                    "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+                    isActive
+                      ? "bg-pec-green text-white"
+                      : "hover:bg-pec-green-50"
+                  )
+                }
+              >
+                <Calendar className="h-4 w-4" />
+                Calendar
+              </NavLink>
+              
+              {/* Upload Minutes link for secretaries and admins */}
+              {(userRole === 'secretary' || userRole === 'admin') && (
                 <NavLink
                   to="/upload"
                   className={({ isActive }) =>
@@ -124,6 +144,24 @@ export function Sidebar({
                 >
                   <FileUp className="h-4 w-4" />
                   Upload Minutes
+                </NavLink>
+              )}
+              
+              {/* Chairman Dashboard link */}
+              {userRole === 'chairman' && (
+                <NavLink
+                  to="/chairman-dashboard"
+                  className={({ isActive }) =>
+                    cn(
+                      "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+                      isActive
+                        ? "bg-pec-green text-white"
+                        : "hover:bg-pec-green-50"
+                    )
+                  }
+                >
+                  <BarChart3 className="h-4 w-4" />
+                  Overview
                 </NavLink>
               )}
             </div>
