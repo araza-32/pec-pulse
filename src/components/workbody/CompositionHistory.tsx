@@ -8,10 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
-interface CompositionHistoryProps {
-  workbodyId: string;
-}
+import { CompositionHistoryProps } from "@/types/workbody";
 
 // Mock history data
 const mockHistoryData = [
@@ -37,7 +34,7 @@ const mockHistoryData = [
   }
 ];
 
-export function CompositionHistory({ workbodyId }: CompositionHistoryProps) {
+export function CompositionHistory({ workbodyId, onClose }: CompositionHistoryProps) {
   const [history, setHistory] = useState<any[]>([]);
 
   useEffect(() => {
@@ -48,24 +45,17 @@ export function CompositionHistory({ workbodyId }: CompositionHistoryProps) {
     // loadHistory();
   }, [workbodyId]);
 
-  /*
-  // Uncomment when Supabase is configured
-  const loadHistory = async () => {
-    const { data, error } = await supabase
-      .from('workbody_composition_history')
-      .select('*')
-      .eq('workbody_id', workbodyId)
-      .order('changed_at', { ascending: false });
-
-    if (!error && data) {
-      setHistory(data);
-    }
-  };
-  */
-
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-medium">Composition History</h3>
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-medium">Composition History</h3>
+        <button 
+          onClick={onClose} 
+          className="text-sm text-gray-500 hover:text-gray-700"
+        >
+          Close
+        </button>
+      </div>
       <Table>
         <TableHeader>
           <TableRow>
