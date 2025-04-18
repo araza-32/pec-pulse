@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 
 import { WorkbodyForm } from "@/components/workbody/WorkbodyForm";
 import { Workbody, WorkbodyType, WorkbodyMember } from "@/types";
+import { WorkbodyFormData } from "@/types/workbody";
 import { DocumentUpload } from "@/components/workbody/DocumentUpload";
 import { CompositionHistory } from "@/components/workbody/CompositionHistory";
 import { WorkbodyTable } from "@/components/workbody/WorkbodyTable";
@@ -80,16 +81,21 @@ export default function WorkbodyManagement() {
   });
 
   const createWorkbodyMutation = useMutation({
-    mutationFn: async (newWorkbody: Omit<Workbody, 'id' | 'members'>) => {
+    mutationFn: async (newWorkbody: WorkbodyFormData) => {
       console.log("Creating new workbody:", newWorkbody);
+      
+      if (newWorkbody.type === 'task-force' && !newWorkbody.endDate) {
+        throw new Error("End date is required for task forces");
+      }
+      
       const { data, error } = await supabase
         .from('workbodies')
         .insert({
           name: newWorkbody.name,
           type: newWorkbody.type,
           description: newWorkbody.description,
-          created_date: newWorkbody.createdDate,
-          end_date: newWorkbody.endDate,
+          created_date: newWorkbody.createdDate.toISOString(),
+          end_date: newWorkbody.endDate ? newWorkbody.endDate.toISOString() : null,
           terms_of_reference: newWorkbody.termsOfReference,
           total_meetings: 0,
           meetings_this_year: 0,
@@ -116,16 +122,21 @@ export default function WorkbodyManagement() {
   });
 
   const updateWorkbodyMutation = useMutation({
-    mutationFn: async (updatedWorkbody: Partial<Workbody> & { id: string }) => {
+    mutationFn: async (updatedWorkbody: WorkbodyFormData & { id: string }) => {
       console.log("Updating workbody:", updatedWorkbody);
+      
+      if (updatedWorkbody.type === 'task-force' && !updatedWorkbody.endDate) {
+        throw new Error("End date is required for task forces");
+      }
+      
       const { data, error } = await supabase
         .from('workbodies')
         .update({
           name: updatedWorkbody.name,
           type: updatedWorkbody.type,
           description: updatedWorkbody.description,
-          created_date: updatedWorkbody.createdDate,
-          end_date: updatedWorkbody.endDate,
+          created_date: updatedWorkbody.createdDate.toISOString(),
+          end_date: updatedWorkbody.endDate ? updatedWorkbody.endDate.toISOString() : null,
           terms_of_reference: updatedWorkbody.termsOfReference
         })
         .eq('id', updatedWorkbody.id)
@@ -169,49 +180,34 @@ export default function WorkbodyManagement() {
 
   const { extractMembersFromDocument, isExtracting } = usePdfMemberExtraction();
 
-  const handleAddSubmit = async (data: any) => {
+  const handleAddSubmit = async (data: WorkbodyFormData) => {
     try {
       console.log("Submitting new workbody data:", data);
-      await createWorkbodyMutation.mutateAsync({
-        name: data.name,
-        type: data.type,
-        description: data.description,
-        createdDate: data.createdDate.toISOString(),
-        endDate: data.endDate?.toISOString(),
-        termsOfReference: data.termsOfReference,
-        totalMeetings: 0,
-        meetingsThisYear: 0,
-        actionsAgreed: 0,
-        actionsCompleted: 0
-      });
+      
+      await createWorkbodyMutation.mutateAsync(data);
 
       toast({
         title: "Workbody Created",
         description: `${data.name} has been successfully created.`,
       });
       setIsAddDialogOpen(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating workbody:', error);
       toast({
         title: "Error",
-        description: "Failed to create workbody. Please try again.",
+        description: error.message || "Failed to create workbody. Please try again.",
         variant: "destructive",
       });
     }
   };
 
-  const handleEditSubmit = async (data: any) => {
+  const handleEditSubmit = async (data: WorkbodyFormData) => {
     if (!selectedWorkbody) return;
 
     try {
       await updateWorkbodyMutation.mutateAsync({
         id: selectedWorkbody.id,
-        name: data.name,
-        type: data.type,
-        description: data.description,
-        createdDate: data.createdDate.toISOString(),
-        endDate: data.endDate?.toISOString(),
-        termsOfReference: data.termsOfReference,
+        ...data
       });
 
       toast({
@@ -220,11 +216,11 @@ export default function WorkbodyManagement() {
       });
       setIsEditDialogOpen(false);
       setSelectedWorkbody(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating workbody:', error);
       toast({
         title: "Error",
-        description: "Failed to update workbody. Please try again.",
+        description: error.message || "Failed to update workbody. Please try again.",
         variant: "destructive",
       });
     }

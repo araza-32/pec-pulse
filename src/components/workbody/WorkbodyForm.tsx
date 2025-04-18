@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -32,8 +32,10 @@ import {
 } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Workbody, WorkbodyType } from "@/types";
+import { WorkbodyFormData } from "@/types/workbody";
 import { cn } from "@/lib/utils";
 
+// Updated schema to make end date required when type is task-force
 const formSchema = z.object({
   name: z.string().min(3, {
     message: "Name must be at least 3 characters.",
@@ -43,6 +45,12 @@ const formSchema = z.object({
   createdDate: z.date(),
   endDate: z.date().optional(),
   termsOfReference: z.string().optional(),
+}).refine((data) => {
+  // If type is task-force, endDate is required
+  return data.type !== "task-force" || data.endDate !== undefined;
+}, {
+  message: "End date is required for task forces",
+  path: ["endDate"]
 });
 
 type WorkbodyFormProps = {
@@ -72,7 +80,20 @@ export function WorkbodyForm({
       endDate: initialData?.endDate ? new Date(initialData.endDate) : undefined,
       termsOfReference: initialData?.termsOfReference || "",
     },
+    mode: "onChange" // Enable validation on change
   });
+
+  // Watch for changes in the type field to show/hide end date field
+  const workbodyType = form.watch("type");
+  
+  useEffect(() => {
+    setShowEndDate(workbodyType === "task-force");
+    
+    // Clear end date if not task-force
+    if (workbodyType !== "task-force") {
+      form.setValue("endDate", undefined);
+    }
+  }, [workbodyType, form]);
 
   const handleSubmit = (values: z.infer<typeof formSchema>) => {
     onSubmit(values);
@@ -107,7 +128,6 @@ export function WorkbodyForm({
               <Select
                 onValueChange={(value: WorkbodyType) => {
                   field.onChange(value);
-                  setShowEndDate(value === "task-force");
                 }}
                 defaultValue={field.value}
               >
@@ -194,7 +214,7 @@ export function WorkbodyForm({
             name="endDate"
             render={({ field }) => (
               <FormItem className="flex flex-col">
-                <FormLabel>End Date</FormLabel>
+                <FormLabel>End Date <span className="text-red-500">*</span></FormLabel>
                 <Popover>
                   <PopoverTrigger asChild>
                     <FormControl>
@@ -225,7 +245,7 @@ export function WorkbodyForm({
                   </PopoverContent>
                 </Popover>
                 <FormDescription>
-                  End date for task force (required for task forces)
+                  End date is required for task forces
                 </FormDescription>
                 <FormMessage />
               </FormItem>
