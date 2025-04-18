@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -55,7 +54,7 @@ const formSchema = z.object({
 
 type WorkbodyFormProps = {
   initialData?: Partial<Workbody>;
-  onSubmit: (data: z.infer<typeof formSchema>) => void;
+  onSubmit: (data: WorkbodyFormData) => void;
   onCancel: () => void;
 };
 
@@ -96,7 +95,7 @@ export function WorkbodyForm({
   }, [workbodyType, form]);
 
   const handleSubmit = (values: z.infer<typeof formSchema>) => {
-    onSubmit(values);
+    onSubmit(values as WorkbodyFormData);
   };
 
   return (
