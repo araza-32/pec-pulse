@@ -1,5 +1,5 @@
 
 export interface CompositionHistoryProps {
   workbodyId: string;
-  onClose?: () => void;
+  onClose: () => void;
 }
