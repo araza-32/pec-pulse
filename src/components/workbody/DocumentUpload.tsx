@@ -38,31 +38,8 @@ export function DocumentUpload({
     try {
       console.log(`Uploading ${documentType} for workbody ${workbodyId}`);
       
-      // Create bucket with public access as authenticated user
-      const bucketId = 'workbody-documents';
-      
-      try {
-        const { data: buckets } = await supabase.storage.listBuckets();
-        const bucketExists = buckets?.some(bucket => bucket.name === bucketId);
-        
-        if (!bucketExists) {
-          console.log('Creating workbody-documents bucket');
-          await supabase.storage.createBucket(bucketId, { 
-            public: true,
-            fileSizeLimit: 10485760 // 10MB
-          });
-          
-          // Note: We're removing the RPC call that was causing the type error
-          // Manual policy configuration will be required via Supabase dashboard
-          console.log('Bucket created. Manual policy setup may be required for public access.');
-        }
-      } catch (bucketError) {
-        console.error('Bucket operation error:', bucketError);
-        // Continue with upload attempt even if bucket creation fails
-        // as it might already exist but we don't have permission to check
-      }
-      
       // Upload file to Supabase Storage
+      const bucketId = 'workbody-documents';
       const fileExt = file.name.split('.').pop();
       const fileName = `${workbodyId}/${documentType}-${Date.now()}.${fileExt}`;
       
@@ -118,7 +95,7 @@ export function DocumentUpload({
       console.error('Upload error:', error);
       toast({
         title: 'Upload Failed',
-        description: error.message || 'There was an error uploading the document. This may be due to missing permissions.',
+        description: error.message || 'There was an error uploading the document.',
         variant: 'destructive'
       });
     } finally {
