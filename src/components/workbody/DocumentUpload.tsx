@@ -39,7 +39,6 @@ export function DocumentUpload({
       console.log(`Uploading ${documentType} for workbody ${workbodyId}`);
       
       // Create bucket with public access as authenticated user
-      // Note: This requires the user to be authenticated with appropriate permissions
       const bucketId = 'workbody-documents';
       
       try {
@@ -53,21 +52,9 @@ export function DocumentUpload({
             fileSizeLimit: 10485760 // 10MB
           });
           
-          // Add policy to make bucket publicly accessible
-          // Note: In production, you might want to restrict this further
-          const { error: policyError } = await supabase.rpc('create_storage_policy', {
-            bucket_id: bucketId,
-            policy_name: 'public_access',
-            definition: {
-              name: 'Public Access',
-              allow_upload: true,
-              allow_download: true
-            }
-          });
-          
-          if (policyError) {
-            console.log('Could not set policy automatically, manual setup may be required');
-          }
+          // Note: We're removing the RPC call that was causing the type error
+          // Manual policy configuration will be required via Supabase dashboard
+          console.log('Bucket created. Manual policy setup may be required for public access.');
         }
       } catch (bucketError) {
         console.error('Bucket operation error:', bucketError);
