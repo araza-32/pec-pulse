@@ -12,3 +12,10 @@ export interface WorkbodyFormData {
   endDate?: Date;
   termsOfReference?: string;
 }
+
+export interface DocumentUploadResult {
+  id: string;
+  file_url: string;
+  document_type: 'notification' | 'tor';
+  uploaded_at: string;
+}
