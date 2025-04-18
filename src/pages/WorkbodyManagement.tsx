@@ -1,15 +1,10 @@
-import { useState } from "react";
-import { PlusCircle, Search } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 
-import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 
 import { WorkbodyForm } from "@/components/workbody/WorkbodyForm";
-import { Workbody, WorkbodyType, WorkbodyMember } from "@/types";
+import { Workbody } from "@/types";
 import { WorkbodyFormData } from "@/types/workbody";
 import { DocumentUpload } from "@/components/workbody/DocumentUpload";
 import { CompositionHistory } from "@/components/workbody/CompositionHistory";
@@ -18,6 +13,8 @@ import { DeleteWorkbodyDialog } from "@/components/workbody/DeleteWorkbodyDialog
 import { TermsOfReferenceDialog } from "@/components/workbody/TermsOfReferenceDialog";
 import { ExpiringTaskForceAlert } from "@/components/workbody/ExpiringTaskForceAlert";
 import { usePdfMemberExtraction } from "@/hooks/usePdfMemberExtraction";
+import { useWorkbodies } from "@/hooks/useWorkbodies";
+import { WorkbodyHeader } from "@/components/workbody/WorkbodyHeader";
 
 export default function WorkbodyManagement() {
   const { toast } = useToast();
@@ -31,160 +28,13 @@ export default function WorkbodyManagement() {
   const [isUploadTorOpen, setIsUploadTorOpen] = useState(false);
   const [isHistoryVisible, setIsHistoryVisible] = useState(false);
 
-  const queryClient = useQueryClient();
-
-  const { data: workbodies = [], isLoading } = useQuery({
-    queryKey: ['workbodies'],
-    queryFn: async () => {
-      console.log("Fetching workbodies from Supabase");
-      const { data, error } = await supabase
-        .from('workbodies')
-        .select(`
-          *,
-          workbody_members (*)
-        `)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error("Error fetching workbodies:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load workbodies. Please try again.",
-          variant: "destructive",
-        });
-        throw error;
-      }
-      
-      console.log("Workbodies fetched:", data);
-      return (data || []).map(item => ({
-        id: item.id,
-        name: item.name,
-        type: item.type as WorkbodyType,
-        description: item.description || undefined,
-        createdDate: item.created_date,
-        endDate: item.end_date || undefined,
-        termsOfReference: item.terms_of_reference || undefined,
-        totalMeetings: item.total_meetings || 0,
-        meetingsThisYear: item.meetings_this_year || 0,
-        actionsAgreed: item.actions_agreed || 0,
-        actionsCompleted: item.actions_completed || 0,
-        members: (item.workbody_members || []).map(member => ({
-          id: member.id,
-          name: member.name,
-          role: member.role,
-          email: member.email || undefined,
-          phone: member.phone || undefined,
-          hasCV: member.has_cv || false
-        }))
-      })) as Workbody[];
-    }
-  });
-
-  const createWorkbodyMutation = useMutation({
-    mutationFn: async (newWorkbody: WorkbodyFormData) => {
-      console.log("Creating new workbody:", newWorkbody);
-      
-      if (newWorkbody.type === 'task-force' && !newWorkbody.endDate) {
-        throw new Error("End date is required for task forces");
-      }
-      
-      const { data, error } = await supabase
-        .from('workbodies')
-        .insert({
-          name: newWorkbody.name,
-          type: newWorkbody.type,
-          description: newWorkbody.description,
-          created_date: newWorkbody.createdDate.toISOString(),
-          end_date: newWorkbody.endDate ? newWorkbody.endDate.toISOString() : null,
-          terms_of_reference: newWorkbody.termsOfReference,
-          total_meetings: 0,
-          meetings_this_year: 0,
-          actions_agreed: 0,
-          actions_completed: 0
-        })
-        .select()
-        .single();
-
-      if (error) {
-        console.error("Error inserting workbody:", error);
-        throw error;
-      }
-      console.log("Workbody created successfully:", data);
-      return data;
-    },
-    onSuccess: () => {
-      console.log("Invalidating workbodies query cache");
-      queryClient.invalidateQueries({ queryKey: ['workbodies'] });
-    },
-    onError: (error) => {
-      console.error("Mutation error:", error);
-    }
-  });
-
-  const updateWorkbodyMutation = useMutation({
-    mutationFn: async (updatedWorkbody: WorkbodyFormData & { id: string }) => {
-      console.log("Updating workbody:", updatedWorkbody);
-      
-      if (updatedWorkbody.type === 'task-force' && !updatedWorkbody.endDate) {
-        throw new Error("End date is required for task forces");
-      }
-      
-      const { data, error } = await supabase
-        .from('workbodies')
-        .update({
-          name: updatedWorkbody.name,
-          type: updatedWorkbody.type,
-          description: updatedWorkbody.description,
-          created_date: updatedWorkbody.createdDate.toISOString(),
-          end_date: updatedWorkbody.endDate ? updatedWorkbody.endDate.toISOString() : null,
-          terms_of_reference: updatedWorkbody.termsOfReference
-        })
-        .eq('id', updatedWorkbody.id)
-        .select()
-        .single();
-
-      if (error) {
-        console.error("Error updating workbody:", error);
-        throw error;
-      }
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['workbodies'] });
-    },
-    onError: (error) => {
-      console.error("Update mutation error:", error);
-    }
-  });
-
-  const deleteWorkbodyMutation = useMutation({
-    mutationFn: async (id: string) => {
-      console.log("Deleting workbody:", id);
-      const { error } = await supabase
-        .from('workbodies')
-        .delete()
-        .eq('id', id);
-
-      if (error) {
-        console.error("Error deleting workbody:", error);
-        throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['workbodies'] });
-    },
-    onError: (error) => {
-      console.error("Delete mutation error:", error);
-    }
-  });
-
-  const { extractMembersFromDocument, isExtracting } = usePdfMemberExtraction();
+  const { workbodies, isLoading, createWorkbody, updateWorkbody, deleteWorkbody } = useWorkbodies();
+  const { extractMembersFromDocument } = usePdfMemberExtraction();
 
   const handleAddSubmit = async (data: WorkbodyFormData) => {
     try {
       console.log("Submitting new workbody data:", data);
-      
-      await createWorkbodyMutation.mutateAsync(data);
+      await createWorkbody.mutateAsync(data);
 
       toast({
         title: "Workbody Created",
@@ -205,7 +55,7 @@ export default function WorkbodyManagement() {
     if (!selectedWorkbody) return;
 
     try {
-      await updateWorkbodyMutation.mutateAsync({
+      await updateWorkbody.mutateAsync({
         ...data,
         id: selectedWorkbody.id,
       });
@@ -230,7 +80,7 @@ export default function WorkbodyManagement() {
     if (!selectedWorkbody) return;
 
     try {
-      await deleteWorkbodyMutation.mutateAsync(selectedWorkbody.id);
+      await deleteWorkbody.mutateAsync(selectedWorkbody.id);
       
       toast({
         title: "Workbody Deleted",
@@ -238,7 +88,7 @@ export default function WorkbodyManagement() {
       });
       setIsDeleteDialogOpen(false);
       setSelectedWorkbody(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting workbody:', error);
       toast({
         title: "Error",
@@ -252,7 +102,7 @@ export default function WorkbodyManagement() {
     if (!selectedWorkbody) return;
     
     try {
-      await updateWorkbodyMutation.mutateAsync({
+      await updateWorkbody.mutateAsync({
         id: selectedWorkbody.id,
         name: selectedWorkbody.name,
         type: selectedWorkbody.type,
@@ -287,8 +137,6 @@ export default function WorkbodyManagement() {
           title: "Members Extracted",
           description: "Members have been extracted from the notification document.",
         });
-        
-        queryClient.invalidateQueries({ queryKey: ['workbodies'] });
         
         setIsHistoryVisible(true);
         setIsUploadNotificationOpen(false);
@@ -325,8 +173,6 @@ export default function WorkbodyManagement() {
 
   const expiringTaskForces = checkExpiringTaskForces();
 
-  console.log("Rendering workbodies:", filteredWorkbodies);
-
   return (
     <div className="space-y-6">
       <div>
@@ -340,23 +186,11 @@ export default function WorkbodyManagement() {
         <ExpiringTaskForceAlert expiringTaskForces={expiringTaskForces} />
       )}
 
-      <div className="flex justify-between items-center">
-        <div className="relative w-64">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search workbodies..."
-            className="pl-8"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        <div className="space-x-2">
-          <Button onClick={() => setIsAddDialogOpen(true)}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Add Workbody
-          </Button>
-        </div>
-      </div>
+      <WorkbodyHeader
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        onAddClick={() => setIsAddDialogOpen(true)}
+      />
 
       {isLoading ? (
         <div className="text-center py-8">Loading workbodies...</div>
@@ -403,9 +237,7 @@ export default function WorkbodyManagement() {
             documentType="tor"
             isOpen={isUploadTorOpen}
             onClose={() => setIsUploadTorOpen(false)}
-            onUploadComplete={() => {
-              queryClient.invalidateQueries({ queryKey: ['workbodies'] });
-            }}
+            onUploadComplete={() => window.location.reload()}
           />
 
           {isHistoryVisible && (
