@@ -4,8 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { WorkbodyMember } from '@/types';
 import * as pdfjsLib from 'pdfjs-dist';
 
-// Set up the worker source locally
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`;
+// Set up the worker source with a more reliable CDN
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`;
 
 export const usePdfMemberExtraction = () => {
   const [isExtracting, setIsExtracting] = useState(false);
@@ -54,7 +54,13 @@ export const usePdfMemberExtraction = () => {
         members = await extractFromImage(fileUrl);
       } else {
         console.warn('Unsupported file format:', fileExtension);
-        throw new Error(`Unsupported file format: ${fileExtension}`);
+        // Instead of throwing, use a placeholder member
+        members = [{
+          id: crypto.randomUUID(),
+          name: "Unsupported Format",
+          role: "Please upload PDF, DOC, DOCX, JPG or PNG",
+          hasCV: false
+        }];
       }
 
       console.log(`Total members extracted: ${members.length}`);
@@ -110,14 +116,35 @@ export const usePdfMemberExtraction = () => {
       console.log('PDF.js version:', pdfjsLib.version);
       console.log('Worker source:', pdfjsLib.GlobalWorkerOptions.workerSrc);
       
-      // Fetch PDF
-      const loadingTask = pdfjsLib.getDocument(fileUrl);
-      const pdf = await loadingTask.promise;
+      // Ensure worker is properly initialized
+      if (!pdfjsLib.GlobalWorkerOptions.workerSrc.includes('pdf.worker')) {
+        console.warn('PDF worker source not properly set, using fallback');
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+      }
+      
+      // Fetch PDF with timeout
+      const loadingTask = pdfjsLib.getDocument({
+        url: fileUrl,
+        cMapUrl: 'https://unpkg.com/pdfjs-dist@3.11.174/cmaps/',
+        cMapPacked: true,
+      });
+      
+      // Set a 30 second timeout
+      const timeoutPromise = new Promise<any>((_, reject) => {
+        setTimeout(() => reject(new Error('PDF loading timeout')), 30000);
+      });
+      
+      // Race between PDF loading and timeout
+      const pdf = await Promise.race([
+        loadingTask.promise,
+        timeoutPromise
+      ]);
+      
       console.log(`PDF loaded with ${pdf.numPages} pages`);
 
       const members: WorkbodyMember[] = [];
       
-      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+      for (let pageNum = 1; pageNum <= Math.min(5, pdf.numPages); pageNum++) {
         console.log(`Processing page ${pageNum}`);
         const page = await pdf.getPage(pageNum);
         const textContent = await page.getTextContent();
@@ -126,7 +153,7 @@ export const usePdfMemberExtraction = () => {
         textContent.items.forEach((textItem: any) => {
           const text = textItem.str;
           // Example pattern: "Name - Role" or "Name: Role"
-          const memberMatch = text.match(/([A-Za-z\s]+)[\s-:]+([A-Za-z\s]+)/);
+          const memberMatch = text.match(/([A-Za-z\s.]+)[\s-:]+([A-Za-z\s]+)/);
           
           if (memberMatch) {
             const member: WorkbodyMember = {
@@ -158,7 +185,7 @@ export const usePdfMemberExtraction = () => {
       // Return a placeholder member even if there's an error
       return [{
         id: crypto.randomUUID(),
-        name: "PDF Processing Error",
+        name: "PDF Processing Error", 
         role: "Error occurred during extraction",
         hasCV: false
       }];
