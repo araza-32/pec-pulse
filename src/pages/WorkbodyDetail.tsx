@@ -11,6 +11,7 @@ import {
   FileSpreadsheet,
   AlertCircle,
   UserPlus,
+  Image,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -87,8 +88,18 @@ export default function WorkbodyDetail() {
       : 0;
 
   // Check if there are members with extraction errors
-  const hasExtractionErrors = workbody.members?.some(
-    member => member.name.includes("Error") || member.role.includes("Error") || member.role.includes("error")
+  const hasExtractionErrors = workbody?.members?.some(
+    member => member.name.includes("Error") || 
+             member.name.includes("Processing") ||
+             member.role.includes("Error") || 
+             member.role.includes("error") ||
+             member.role.includes("Manual") ||
+             member.role.includes("extraction")
+  );
+
+  // Check if there are image extraction issues specifically
+  const hasImageExtractionIssues = workbody?.members?.some(
+    member => member.name.includes("Manual Entry") || member.role.includes("image") || member.role.includes("Image")
   );
 
   // Check if there are no members
@@ -319,11 +330,19 @@ export default function WorkbodyDetail() {
               </CardHeader>
               <CardContent>
                 {hasExtractionErrors && (
-                  <Alert variant="destructive" className="mb-4">
+                  <Alert variant={hasImageExtractionIssues ? "warning" : "destructive"} className="mb-4">
                     <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Member Extraction Issue</AlertTitle>
+                    <AlertTitle>
+                      {hasImageExtractionIssues 
+                        ? "Image Content Requires Manual Entry" 
+                        : "Member Extraction Issue"}
+                    </AlertTitle>
                     <AlertDescription>
-                      <p>There was a problem extracting members from the uploaded document.</p>
+                      {hasImageExtractionIssues ? (
+                        <p>The uploaded image requires manual extraction of member information as automated extraction is limited for image files.</p>
+                      ) : (
+                        <p>There was a problem extracting members from the uploaded document.</p>
+                      )}
                       <div className="mt-2 flex gap-2">
                         <Button 
                           size="sm" 
@@ -334,10 +353,17 @@ export default function WorkbodyDetail() {
                         </Button>
                         <Button 
                           size="sm" 
-                          variant="outline" 
+                          variant={hasImageExtractionIssues ? "default" : "outline"}
                           onClick={() => setShowManualAddition(true)}
                         >
-                          Add Members Manually
+                          {hasImageExtractionIssues ? (
+                            <>
+                              <Image className="mr-2 h-4 w-4" />
+                              Manual Entry Recommended
+                            </>
+                          ) : (
+                            "Add Members Manually"
+                          )}
                         </Button>
                       </div>
                     </AlertDescription>
