@@ -16,23 +16,61 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { workbodies, meetingMinutes } from "@/data/mockData";
+import { meetingMinutes } from "@/data/mockData";
 import { StatCard } from "@/components/dashboard/StatCard";
+import { useWorkbodies } from "@/hooks/useWorkbodies";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function WorkbodyDetail() {
   const { id } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState("overview");
-
+  
+  // Use the useWorkbodies hook to fetch workbody data
+  const { workbodies, isLoading } = useWorkbodies();
+  
   // Find the workbody with the matching ID
   const workbody = workbodies.find((w) => w.id === id);
   
-  // Get meeting minutes for this workbody
+  // Get meeting minutes for this workbody (still using mock data for now)
   const minutes = meetingMinutes.filter((m) => m.workbodyId === id);
 
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+            <div>
+              <Skeleton className="h-10 w-96" />
+              <Skeleton className="h-5 w-full max-w-md mt-2" />
+            </div>
+            <div className="flex gap-2">
+              <Skeleton className="h-10 w-32" />
+              <Skeleton className="h-10 w-36" />
+            </div>
+          </div>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-32" />
+          ))}
+        </div>
+        <Skeleton className="h-80" />
+      </div>
+    );
+  }
+
+  // If workbody not found show error state
   if (!workbody) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <p className="text-lg">Workbody not found</p>
+      <div className="flex h-full flex-col items-center justify-center gap-4 py-12">
+        <h2 className="text-2xl font-bold">Workbody not found</h2>
+        <p className="text-muted-foreground">
+          The workbody you are looking for doesn't exist or you don't have access to it.
+        </p>
+        <Button asChild className="mt-4" variant="outline">
+          <a href="/">Return to Dashboard</a>
+        </Button>
       </div>
     );
   }
@@ -54,7 +92,7 @@ export default function WorkbodyDetail() {
                 {workbody.type.replace("-", " ")}
               </Badge>
             </div>
-            <p className="text-muted-foreground">{workbody.description}</p>
+            <p className="text-muted-foreground">{workbody.description || "No description available"}</p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" className="gap-2">
@@ -245,35 +283,40 @@ export default function WorkbodyDetail() {
               <CardTitle>Workbody Composition</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {workbody.members.map((member) => (
-                  <div
-                    key={member.id}
-                    className="flex items-center justify-between rounded-lg border p-4"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Avatar>
-                        <AvatarFallback className="bg-pec-green text-white">
-                          {member.name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium">{member.name}</p>
-                        <p className="text-sm text-muted-foreground">{member.role}</p>
+              {workbody.members && workbody.members.length > 0 ? (
+                <div className="space-y-4">
+                  {workbody.members.map((member) => (
+                    <div
+                      key={member.id}
+                      className="flex items-center justify-between rounded-lg border p-4"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Avatar>
+                          <AvatarFallback className="bg-pec-green text-white">
+                            {member.name
+                              .split(" ")
+                              .map((n) => n[0])
+                              .join("")
+                              .toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium">{member.name}</p>
+                          <p className="text-sm text-muted-foreground">{member.role}</p>
+                        </div>
                       </div>
+                      {member.hasCV && (
+                        <Button variant="outline" size="sm">
+                          <FileText className="mr-2 h-4 w-4" />
+                          View CV
+                        </Button>
+                      )}
                     </div>
-                    {member.hasCV && (
-                      <Button variant="outline" size="sm">
-                        <FileText className="mr-2 h-4 w-4" />
-                        View CV
-                      </Button>
-                    )}
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <p>No members available for this workbody</p>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
