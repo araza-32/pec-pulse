@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
@@ -29,9 +30,15 @@ export default function WorkbodyManagement() {
   const [isUploadTorOpen, setIsUploadTorOpen] = useState(false);
   const [isHistoryVisible, setIsHistoryVisible] = useState(false);
   const [extractionError, setExtractionError] = useState<string | null>(null);
+  const [hideErrors, setHideErrors] = useState(false);
 
-  const { workbodies, isLoading, createWorkbody, updateWorkbody, deleteWorkbody } = useWorkbodies();
-  const { extractMembersFromDocument, isExtracting, extractionError: hookExtractionError } = usePdfMemberExtraction();
+  const { workbodies, isLoading, createWorkbody, updateWorkbody, deleteWorkbody, refetch } = useWorkbodies();
+  const { extractMembersFromDocument, isExtracting, extractionError: hookExtractionError, clearExtractionError } = usePdfMemberExtraction();
+
+  // Reset hideErrors when component mounts or workbodies change
+  useEffect(() => {
+    setHideErrors(false);
+  }, [workbodies]);
 
   const handleAddSubmit = async (data: WorkbodyFormData) => {
     try {
@@ -133,14 +140,28 @@ export default function WorkbodyManagement() {
     if (selectedWorkbody) {
       try {
         setExtractionError(null);
+        setHideErrors(false);
+        clearExtractionError();
+        
         console.log("Handling notification upload for document:", documentId);
-        await extractMembersFromDocument(documentId, selectedWorkbody.id);
+        const members = await extractMembersFromDocument(documentId, selectedWorkbody.id);
         
-        toast({
-          title: "Members Extracted",
-          description: "Members have been extracted from the notification document.",
-        });
+        // Only show success toast if we extracted valid members
+        const validMembers = members.filter(m => 
+          !m.name.includes("Error") && 
+          !m.name.includes("Processing") && 
+          !m.role.includes("error")
+        );
         
+        if (validMembers.length > 0) {
+          toast({
+            title: "Members Extracted",
+            description: `${validMembers.length} members have been extracted from the document.`,
+          });
+        }
+        
+        // Always refetch to get the latest data
+        await refetch();
         setIsHistoryVisible(true);
         setIsUploadNotificationOpen(false);
       } catch (error: any) {
@@ -190,16 +211,29 @@ export default function WorkbodyManagement() {
         <ExpiringTaskForceAlert expiringTaskForces={expiringTaskForces} />
       )}
 
-      {(extractionError || hookExtractionError) && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>PDF Extraction Error</AlertTitle>
-          <AlertDescription>
-            {extractionError || hookExtractionError}
-            <p className="text-sm mt-1">
-              Try uploading a different document or check that the PDF contains member information in a readable format.
-            </p>
-          </AlertDescription>
+      {!hideErrors && (extractionError || hookExtractionError) && (
+        <Alert variant="destructive" className="flex items-center justify-between">
+          <div>
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>PDF Extraction Error</AlertTitle>
+            <AlertDescription>
+              {extractionError || hookExtractionError}
+              <p className="text-sm mt-1">
+                Try uploading a different document or check that the PDF contains member information in a readable format.
+              </p>
+            </AlertDescription>
+          </div>
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={() => {
+              setHideErrors(true);
+              setExtractionError(null);
+              clearExtractionError();
+            }}
+          >
+            Dismiss
+          </Button>
         </Alert>
       )}
 

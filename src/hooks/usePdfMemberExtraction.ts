@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { WorkbodyMember } from '@/types';
 import * as pdfjsLib from 'pdfjs-dist';
+import { useToast } from '@/hooks/use-toast';
 
 // Configure PDF.js to use the built-in worker from the dist folder
 // instead of trying to fetch it from a CDN
@@ -15,6 +16,7 @@ export const usePdfMemberExtraction = () => {
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractedMembers, setExtractedMembers] = useState<WorkbodyMember[]>([]);
   const [extractionError, setExtractionError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const extractMembersFromDocument = async (
     documentId: string, 
@@ -75,11 +77,34 @@ export const usePdfMemberExtraction = () => {
         members = createPlaceholderMembers('No Members Found', 'Please try another document with member information');
       }
 
+      // First, delete any members from this document that indicate errors
+      const { data: existingMembers } = await supabase
+        .from('workbody_members')
+        .select('id, name, role')
+        .eq('workbody_id', workbodyId)
+        .eq('source_document_id', documentId);
+        
+      // If we have successfully extracted members, remove any error members
+      if (members.length > 0 && !members[0].name.includes('Error') && !members[0].name.includes('Processing')) {
+        console.log('Cleaning up any past extraction errors');
+        
+        // Delete any error members from this workbody, regardless of document source
+        const { error: cleanupError } = await supabase
+          .from('workbody_members')
+          .delete()
+          .eq('workbody_id', workbodyId)
+          .filter('name', 'ilike', '%Error%');
+          
+        if (cleanupError) {
+          console.error('Error cleaning up error members:', cleanupError);
+        }
+      }
+
       // Store extracted members in Supabase
       if (members.length > 0) {
         console.log('Inserting members into database');
         
-        // First, delete any existing members from this document to avoid duplicates
+        // Delete any existing members from this document to avoid duplicates
         const { error: deleteError } = await supabase
           .from('workbody_members')
           .delete()
@@ -107,6 +132,13 @@ export const usePdfMemberExtraction = () => {
           console.error('Error inserting members:', insertError);
           setExtractionError('Failed to save extracted members');
           throw insertError;
+        }
+
+        if (!members[0].name.includes('Error')) {
+          toast({
+            title: "Success",
+            description: `${members.length} members were extracted and saved.`,
+          });
         }
 
         console.log('Members successfully inserted');
@@ -328,15 +360,11 @@ export const usePdfMemberExtraction = () => {
     console.log('Starting image extraction from:', fileUrl);
     
     try {
-      // For now we'll implement a simple name extraction from filename
-      // In a production app, this would connect to a proper OCR service
-      
       // Get filename from URL
       const filename = fileUrl.split('/').pop() || '';
       console.log('Image filename:', filename);
       
-      // Try to extract potential names from the filename
-      // Remove extension and replace underscores/dashes with spaces
+      // Clean the filename for better name extraction
       const cleanName = filename
         .replace(/\.[^/.]+$/, '') // Remove file extension
         .replace(/[_-]/g, ' ') // Replace underscores and dashes with spaces
@@ -359,12 +387,10 @@ export const usePdfMemberExtraction = () => {
       // Try to extract members from common patterns in image names
       const possibleMembers = [];
       
-      // If filename contains "committee" or "members" plus what could be names
+      // If filename contains keywords like "committee", "member", etc.
       if (/committee|member|board|council|team/i.test(filename) && filename.length > 15) {
         console.log('Image appears to be a committee/member document');
         
-        // If the filename is very long, it might contain multiple names
-        // We'll split it into potential name segments
         const nameParts = cleanName.split(/(?:and|,|\s{2,})/);
         
         for (const part of nameParts) {
@@ -386,20 +412,20 @@ export const usePdfMemberExtraction = () => {
         return possibleMembers;
       }
       
-      // Return a placeholder member for now, indicating manual entry needed
+      // Return a placeholder for manual entry
       console.log('No members could be extracted from image, returning placeholder');
       return [{
         id: crypto.randomUUID(),
-        name: "Manual Entry Required",
-        role: "Image content needs manual extraction",
+        name: "Image Content",
+        role: "Manual entry recommended for image uploads",
         hasCV: false
       }];
     } catch (error) {
       console.error('Error processing image:', error);
       return [{
         id: crypto.randomUUID(),
-        name: "Image Processing Error", 
-        role: "Error occurred during image extraction",
+        name: "Image Processing", 
+        role: "Manual entry required - could not process image",
         hasCV: false
       }];
     }
@@ -409,6 +435,7 @@ export const usePdfMemberExtraction = () => {
     extractMembersFromDocument,
     isExtracting,
     extractedMembers,
-    extractionError
+    extractionError,
+    clearExtractionError: () => setExtractionError(null)
   };
 };

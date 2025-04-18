@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import {
   Calendar,
@@ -25,9 +25,11 @@ import { useWorkbodies } from "@/hooks/useWorkbodies";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { ManualMemberAddition } from "@/components/workbody/ManualMemberAddition";
+import { useToast } from "@/hooks/use-toast";
 
 export default function WorkbodyDetail() {
   const { id } = useParams<{ id: string }>();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("overview");
   const [showManualAddition, setShowManualAddition] = useState(false);
   
@@ -39,6 +41,14 @@ export default function WorkbodyDetail() {
   
   // Get meeting minutes for this workbody (still using mock data for now)
   const minutes = meetingMinutes.filter((m) => m.workbodyId === id);
+
+  // State to track if we should hide error alerts
+  const [hideErrors, setHideErrors] = useState(false);
+
+  // Reset hideErrors when workbody changes or is refetched
+  useEffect(() => {
+    setHideErrors(false);
+  }, [id, workbody?.members]);
 
   // Show loading state
   if (isLoading) {
@@ -87,20 +97,25 @@ export default function WorkbodyDetail() {
       ? Math.round((workbody.actionsCompleted / workbody.actionsAgreed) * 100)
       : 0;
 
-  // Check if there are members with extraction errors
-  const hasExtractionErrors = workbody?.members?.some(
-    member => member.name.includes("Error") || 
-             member.name.includes("Processing") ||
-             member.role.includes("Error") || 
-             member.role.includes("error") ||
-             member.role.includes("Manual") ||
-             member.role.includes("extraction")
-  );
+  // Get the latest successfully extracted members (non-error members)
+  const successfulMembers = workbody.members?.filter(
+    member => !member.name.includes("Error") && 
+              !member.name.includes("Processing") &&
+              !member.role.includes("Error") && 
+              !member.role.includes("error")
+  ) || [];
 
   // Check if there are image extraction issues specifically
-  const hasImageExtractionIssues = workbody?.members?.some(
-    member => member.name.includes("Manual Entry") || member.role.includes("image") || member.role.includes("Image")
+  const hasImageExtractionIssues = workbody.members?.some(
+    member => member.name.includes("Image Content") || 
+             (member.role && member.role.includes("image") || 
+              member.role.includes("Image"))
   );
+
+  // Check if all members have errors
+  const allMembersHaveErrors = workbody.members && 
+                              workbody.members.length > 0 && 
+                              successfulMembers.length === 0;
 
   // Check if there are no members
   const hasNoMembers = !workbody.members || workbody.members.length === 0;
@@ -108,7 +123,21 @@ export default function WorkbodyDetail() {
   // Handle manual member addition
   const handleMembersAdded = () => {
     setShowManualAddition(false);
+    setHideErrors(true);
+    toast({
+      title: "Members Added",
+      description: "Members have been successfully added manually."
+    });
     refetch();
+  };
+
+  // Handle clearing error alerts
+  const handleDismissErrors = () => {
+    setHideErrors(true);
+    toast({
+      title: "Errors Dismissed",
+      description: "Error messages have been hidden."
+    });
   };
 
   return (
@@ -329,70 +358,69 @@ export default function WorkbodyDetail() {
                 </Button>
               </CardHeader>
               <CardContent>
-                {hasExtractionErrors && (
-                  <Alert variant={hasImageExtractionIssues ? "warning" : "destructive"} className="mb-4">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>
-                      {hasImageExtractionIssues 
-                        ? "Image Content Requires Manual Entry" 
-                        : "Member Extraction Issue"}
-                    </AlertTitle>
-                    <AlertDescription>
-                      {hasImageExtractionIssues ? (
-                        <p>The uploaded image requires manual extraction of member information as automated extraction is limited for image files.</p>
-                      ) : (
-                        <p>There was a problem extracting members from the uploaded document.</p>
-                      )}
-                      <div className="mt-2 flex gap-2">
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          onClick={() => window.location.href = `/workbody-management`}
-                        >
-                          Upload New Document
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant={hasImageExtractionIssues ? "default" : "outline"}
-                          onClick={() => setShowManualAddition(true)}
-                        >
-                          {hasImageExtractionIssues ? (
-                            <>
-                              <Image className="mr-2 h-4 w-4" />
-                              Manual Entry Recommended
-                            </>
-                          ) : (
-                            "Add Members Manually"
-                          )}
-                        </Button>
-                      </div>
-                    </AlertDescription>
+                {!hideErrors && allMembersHaveErrors && (
+                  <Alert 
+                    variant={hasImageExtractionIssues ? "warning" : "destructive"} 
+                    className="mb-4 flex items-center justify-between"
+                  >
+                    <div className="flex flex-col">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle>
+                        {hasImageExtractionIssues 
+                          ? "Image Content Requires Manual Entry" 
+                          : "Member Extraction Issue"}
+                      </AlertTitle>
+                      <AlertDescription>
+                        {hasImageExtractionIssues ? (
+                          <p>The uploaded image requires manual extraction of member information as automated extraction is limited for image files.</p>
+                        ) : (
+                          <p>There was a problem extracting members from the uploaded document.</p>
+                        )}
+                      </AlertDescription>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={handleDismissErrors}
+                      >
+                        Dismiss
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant={hasImageExtractionIssues ? "default" : "outline"}
+                        onClick={() => setShowManualAddition(true)}
+                      >
+                        {hasImageExtractionIssues ? (
+                          <>
+                            <Image className="mr-2 h-4 w-4" />
+                            Manual Entry
+                          </>
+                        ) : (
+                          "Add Members Manually"
+                        )}
+                      </Button>
+                    </div>
                   </Alert>
                 )}
 
-                {workbody.members && workbody.members.length > 0 ? (
+                {successfulMembers.length > 0 ? (
                   <div className="space-y-4">
-                    {workbody.members.map((member) => (
+                    {successfulMembers.map((member) => (
                       <div
                         key={member.id}
                         className="flex items-center justify-between rounded-lg border p-4"
                       >
                         <div className="flex items-center gap-3">
                           <Avatar>
-                            {member.name.includes("Error") ? (
-                              <AvatarFallback className="bg-destructive text-white">
-                                ERR
-                              </AvatarFallback>
-                            ) : (
-                              <AvatarFallback className="bg-pec-green text-white">
-                                {member.name
-                                  .split(" ")
-                                  .map((n) => n[0])
-                                  .join("")
-                                  .toUpperCase()
-                                  .slice(0, 2)}
-                              </AvatarFallback>
-                            )}
+                            <AvatarFallback className="bg-pec-green text-white">
+                              {member.name
+                                .split(" ")
+                                .map((n) => n[0])
+                                .join("")
+                                .toUpperCase()
+                                .slice(0, 2)}
+                            </AvatarFallback>
                           </Avatar>
                           <div>
                             <p className="font-medium">{member.name}</p>
@@ -411,7 +439,11 @@ export default function WorkbodyDetail() {
                 ) : (
                   <div className="text-center py-8">
                     <Users className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
-                    <p className="text-muted-foreground">No members available for this workbody</p>
+                    <p className="text-muted-foreground">
+                      {allMembersHaveErrors && !hideErrors 
+                        ? "No valid members found - please add members manually or upload a new document" 
+                        : "No members available for this workbody"}
+                    </p>
                     <div className="mt-4 flex justify-center gap-2">
                       <Button 
                         variant="outline"
