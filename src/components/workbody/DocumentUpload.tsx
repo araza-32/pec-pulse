@@ -36,6 +36,25 @@ export function DocumentUpload({
 
     setIsUploading(true);
     try {
+      console.log(`Uploading ${documentType} for workbody ${workbodyId}`);
+      
+      // First, check if storage bucket exists, create if it doesn't
+      const { data: buckets } = await supabase.storage.listBuckets();
+      const bucketExists = buckets?.some(bucket => bucket.name === 'workbody-documents');
+      
+      if (!bucketExists) {
+        console.log('Creating workbody-documents bucket');
+        const { error: bucketError } = await supabase.storage.createBucket(
+          'workbody-documents', 
+          { public: true }
+        );
+        
+        if (bucketError) {
+          console.error('Error creating bucket:', bucketError);
+          throw bucketError;
+        }
+      }
+      
       // Upload file to Supabase Storage
       const fileExt = file.name.split('.').pop();
       const fileName = `${workbodyId}/${documentType}-${Date.now()}.${fileExt}`;
@@ -44,14 +63,23 @@ export function DocumentUpload({
         .from('workbody-documents')
         .upload(fileName, file);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw uploadError;
+      }
 
-      if (!data?.path) throw new Error('Upload failed - no path returned');
+      if (!data?.path) {
+        throw new Error('Upload failed - no path returned');
+      }
+
+      console.log('File uploaded successfully:', data.path);
 
       // Get the public URL for the uploaded file
       const { data: { publicUrl } } = supabase.storage
         .from('workbody-documents')
         .getPublicUrl(data.path);
+
+      console.log('Public URL generated:', publicUrl);
 
       // Store document reference in the database
       const { data: insertData, error: dbError } = await supabase
@@ -64,7 +92,12 @@ export function DocumentUpload({
         .select('id')
         .single();
 
-      if (dbError) throw dbError;
+      if (dbError) {
+        console.error('Database insertion error:', dbError);
+        throw dbError;
+      }
+
+      console.log('Document reference saved with ID:', insertData.id);
 
       toast({
         title: 'Document Uploaded',

@@ -14,6 +14,8 @@ export const usePdfMemberExtraction = () => {
   ) => {
     setIsExtracting(true);
     try {
+      console.log('Starting PDF extraction for document:', documentId);
+      
       // Fetch the PDF document URL
       const { data: documentData, error: documentError } = await supabase
         .from('workbody_documents')
@@ -21,7 +23,12 @@ export const usePdfMemberExtraction = () => {
         .eq('id', documentId)
         .single();
 
-      if (documentError) throw documentError;
+      if (documentError) {
+        console.error('Error fetching document:', documentError);
+        throw documentError;
+      }
+
+      console.log('Document URL fetched:', documentData.file_url);
 
       // Load PDF.js
       pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
@@ -29,11 +36,13 @@ export const usePdfMemberExtraction = () => {
       // Fetch PDF
       const loadingTask = pdfjsLib.getDocument(documentData.file_url);
       const pdf = await loadingTask.promise;
+      console.log(`PDF loaded with ${pdf.numPages} pages`);
 
       // Basic extraction (you'll want to customize this)
       const members: WorkbodyMember[] = [];
       
       for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+        console.log(`Processing page ${pageNum}`);
         const page = await pdf.getPage(pageNum);
         const textContent = await page.getTextContent();
         
@@ -45,36 +54,52 @@ export const usePdfMemberExtraction = () => {
           const memberMatch = text.match(/([A-Za-z\s]+)\s*-\s*([A-Za-z\s]+)/);
           
           if (memberMatch) {
-            members.push({
+            const member = {
               id: crypto.randomUUID(),
               name: memberMatch[1].trim(),
               role: memberMatch[2].trim(),
               hasCV: false
-            });
+            };
+            console.log('Extracted member:', member);
+            members.push(member);
           }
         });
       }
 
-      // Store extracted members in Supabase
-      const { error: insertError } = await supabase
-        .from('workbody_members')
-        .insert(
-          members.map(member => ({
-            workbody_id: workbodyId,
-            name: member.name,
-            role: member.role,
-            has_cv: member.hasCV,
-            source_document_id: documentId
-          }))
-        );
+      console.log(`Total members extracted: ${members.length}`);
 
-      if (insertError) throw insertError;
+      if (members.length === 0) {
+        console.warn('No members were extracted from the PDF');
+      }
+
+      // Store extracted members in Supabase
+      if (members.length > 0) {
+        console.log('Inserting members into database');
+        const { error: insertError } = await supabase
+          .from('workbody_members')
+          .insert(
+            members.map(member => ({
+              workbody_id: workbodyId,
+              name: member.name,
+              role: member.role,
+              has_cv: member.hasCV,
+              source_document_id: documentId
+            }))
+          );
+
+        if (insertError) {
+          console.error('Error inserting members:', insertError);
+          throw insertError;
+        }
+
+        console.log('Members successfully inserted');
+      }
 
       setExtractedMembers(members);
       return members;
     } catch (error) {
       console.error('Error extracting members from PDF:', error);
-      return [];
+      throw error;
     } finally {
       setIsExtracting(false);
     }

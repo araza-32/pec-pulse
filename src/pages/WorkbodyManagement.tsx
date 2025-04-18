@@ -39,18 +39,14 @@ export default function WorkbodyManagement() {
         .from('workbodies')
         .select(`
           *,
-          workbody_members (
-            id,
-            name,
-            role,
-            email,
-            phone,
-            has_cv
-          )
+          workbody_members (*)
         `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching workbodies:", error);
+        throw error;
+      }
       
       return (data || []).map(item => ({
         id: item.id,
@@ -70,7 +66,7 @@ export default function WorkbodyManagement() {
           role: member.role,
           email: member.email || undefined,
           phone: member.phone || undefined,
-          hasCV: member.has_cv
+          hasCV: member.has_cv || false
         }))
       })) as Workbody[];
     }
@@ -95,7 +91,10 @@ export default function WorkbodyManagement() {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error inserting workbody:", error);
+        throw error;
+      }
       return data;
     },
     onSuccess: () => {
@@ -119,7 +118,10 @@ export default function WorkbodyManagement() {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error updating workbody:", error);
+        throw error;
+      }
       return data;
     },
     onSuccess: () => {
@@ -249,6 +251,30 @@ export default function WorkbodyManagement() {
     }
   };
 
+  const handleNotificationUpload = async (documentId: string) => {
+    if (selectedWorkbody) {
+      try {
+        await extractMembersFromPdf(documentId, selectedWorkbody.id);
+        
+        toast({
+          title: "Members Extracted",
+          description: "Members have been extracted from the notification document.",
+        });
+        
+        queryClient.invalidateQueries({ queryKey: ['workbodies'] });
+        
+        setIsHistoryVisible(true);
+      } catch (error) {
+        console.error('Error extracting members:', error);
+        toast({
+          title: "Extraction Error",
+          description: "Failed to extract members from document. Please try again.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
   const filteredWorkbodies = workbodies.filter(
     (workbody) =>
       workbody.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -270,21 +296,6 @@ export default function WorkbodyManagement() {
   };
 
   const expiringTaskForces = checkExpiringTaskForces();
-
-  const handleNotificationUpload = async (documentId: string) => {
-    if (selectedWorkbody) {
-      await extractMembersFromPdf(documentId, selectedWorkbody.id);
-      
-      toast({
-        title: "Members Extracted",
-        description: "Members have been extracted from the notification document.",
-      });
-      
-      queryClient.invalidateQueries({ queryKey: ['workbodies'] });
-      
-      setIsHistoryVisible(true);
-    }
-  };
 
   return (
     <div className="space-y-6">
