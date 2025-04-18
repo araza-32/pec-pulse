@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { PlusCircle, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -117,6 +118,7 @@ export default function WorkbodyManagement() {
 
   const updateWorkbodyMutation = useMutation({
     mutationFn: async (updatedWorkbody: Partial<Workbody> & { id: string }) => {
+      console.log("Updating workbody:", updatedWorkbody);
       const { data, error } = await supabase
         .from('workbodies')
         .update({
@@ -139,24 +141,34 @@ export default function WorkbodyManagement() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workbodies'] });
+    },
+    onError: (error) => {
+      console.error("Update mutation error:", error);
     }
   });
 
   const deleteWorkbodyMutation = useMutation({
     mutationFn: async (id: string) => {
+      console.log("Deleting workbody:", id);
       const { error } = await supabase
         .from('workbodies')
         .delete()
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error deleting workbody:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workbodies'] });
+    },
+    onError: (error) => {
+      console.error("Delete mutation error:", error);
     }
   });
 
-  const { extractMembersFromPdf, isExtracting } = usePdfMemberExtraction();
+  const { extractMembersFromDocument, isExtracting } = usePdfMemberExtraction();
 
   const handleAddSubmit = async (data: any) => {
     try {
@@ -269,7 +281,7 @@ export default function WorkbodyManagement() {
     if (selectedWorkbody) {
       try {
         console.log("Handling notification upload for document:", documentId);
-        await extractMembersFromPdf(documentId, selectedWorkbody.id);
+        await extractMembersFromDocument(documentId, selectedWorkbody.id);
         
         toast({
           title: "Members Extracted",
@@ -448,134 +460,4 @@ export default function WorkbodyManagement() {
       />
     </div>
   );
-
-  // Copy missing functions
-  function handleEditSubmit(data: any) {
-    if (!selectedWorkbody) return;
-
-    try {
-      updateWorkbodyMutation.mutate({
-        id: selectedWorkbody.id,
-        name: data.name,
-        type: data.type,
-        description: data.description,
-        createdDate: data.createdDate.toISOString(),
-        endDate: data.endDate?.toISOString(),
-        termsOfReference: data.termsOfReference,
-      });
-
-      toast({
-        title: "Workbody Updated",
-        description: `${data.name} has been successfully updated.`,
-      });
-      setIsEditDialogOpen(false);
-      setSelectedWorkbody(null);
-    } catch (error) {
-      console.error('Error updating workbody:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update workbody. Please try again.",
-        variant: "destructive",
-      });
-    }
-  }
-
-  function handleDeleteWorkbody() {
-    if (!selectedWorkbody) return;
-
-    try {
-      deleteWorkbodyMutation.mutate(selectedWorkbody.id);
-      
-      toast({
-        title: "Workbody Deleted",
-        description: `${selectedWorkbody.name} has been successfully deleted.`,
-      });
-      setIsDeleteDialogOpen(false);
-      setSelectedWorkbody(null);
-    } catch (error) {
-      console.error('Error deleting workbody:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete workbody. Please try again.",
-        variant: "destructive",
-      });
-    }
-  }
-
-  function handleTorSubmit(data: { termsOfReference: FormDataEntryValue | null }) {
-    if (!selectedWorkbody) return;
-    
-    try {
-      updateWorkbodyMutation.mutate({
-        id: selectedWorkbody.id,
-        termsOfReference: data.termsOfReference?.toString(),
-      });
-      
-      toast({
-        title: "Terms of Reference Updated",
-        description: `Terms of Reference for ${selectedWorkbody.name} has been updated.`,
-      });
-      setIsTorDialogOpen(false);
-    } catch (error) {
-      console.error('Error updating terms of reference:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update terms of reference. Please try again.",
-        variant: "destructive",
-      });
-    }
-  }
-
-  // Add the missing mutations
-  const updateWorkbodyMutation = useMutation({
-    mutationFn: async (updatedWorkbody: Partial<Workbody> & { id: string }) => {
-      console.log("Updating workbody:", updatedWorkbody);
-      const { data, error } = await supabase
-        .from('workbodies')
-        .update({
-          name: updatedWorkbody.name,
-          type: updatedWorkbody.type,
-          description: updatedWorkbody.description,
-          created_date: updatedWorkbody.createdDate,
-          end_date: updatedWorkbody.endDate,
-          terms_of_reference: updatedWorkbody.termsOfReference
-        })
-        .eq('id', updatedWorkbody.id)
-        .select()
-        .single();
-
-      if (error) {
-        console.error("Error updating workbody:", error);
-        throw error;
-      }
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['workbodies'] });
-    },
-    onError: (error) => {
-      console.error("Update mutation error:", error);
-    }
-  });
-
-  const deleteWorkbodyMutation = useMutation({
-    mutationFn: async (id: string) => {
-      console.log("Deleting workbody:", id);
-      const { error } = await supabase
-        .from('workbodies')
-        .delete()
-        .eq('id', id);
-
-      if (error) {
-        console.error("Error deleting workbody:", error);
-        throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['workbodies'] });
-    },
-    onError: (error) => {
-      console.error("Delete mutation error:", error);
-    }
-  });
 }
