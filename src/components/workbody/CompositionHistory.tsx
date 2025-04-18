@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from "react";
-import { createClient } from "@supabase/supabase-js";
 import {
   Table,
   TableBody,
@@ -14,17 +13,43 @@ interface CompositionHistoryProps {
   workbodyId: string;
 }
 
+// Mock history data
+const mockHistoryData = [
+  {
+    id: '1',
+    workbody_id: 'wb-1',
+    changed_at: new Date().toISOString(),
+    changes: {
+      added: ['John Doe as Chair', 'Jane Smith as Secretary'],
+      removed: []
+    },
+    source_document_id: 'doc-1'
+  },
+  {
+    id: '2',
+    workbody_id: 'wb-1',
+    changed_at: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
+    changes: {
+      added: [],
+      removed: ['Alice Johnson as Observer']
+    },
+    source_document_id: null
+  }
+];
+
 export function CompositionHistory({ workbodyId }: CompositionHistoryProps) {
-  const supabase = createClient(
-    import.meta.env.VITE_SUPABASE_URL,
-    import.meta.env.VITE_SUPABASE_ANON_KEY
-  );
   const [history, setHistory] = useState<any[]>([]);
 
   useEffect(() => {
-    loadHistory();
+    // Load mock history for now
+    setHistory(mockHistoryData.filter(item => item.workbody_id === workbodyId));
+    
+    // Later, when Supabase is properly configured, use this:
+    // loadHistory();
   }, [workbodyId]);
 
+  /*
+  // Uncomment when Supabase is configured
   const loadHistory = async () => {
     const { data, error } = await supabase
       .from('workbody_composition_history')
@@ -36,6 +61,7 @@ export function CompositionHistory({ workbodyId }: CompositionHistoryProps) {
       setHistory(data);
     }
   };
+  */
 
   return (
     <div className="space-y-4">

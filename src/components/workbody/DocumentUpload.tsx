@@ -10,7 +10,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
-import { createClient } from '@supabase/supabase-js';
 
 interface DocumentUploadProps {
   workbodyId: string;
@@ -29,10 +28,6 @@ export function DocumentUpload({
 }: DocumentUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
-  const supabase = createClient(
-    import.meta.env.VITE_SUPABASE_URL,
-    import.meta.env.VITE_SUPABASE_ANON_KEY
-  );
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -40,29 +35,8 @@ export function DocumentUpload({
 
     setIsUploading(true);
     try {
-      // 1. Upload file to Supabase Storage
-      const fileName = `${workbodyId}/${documentType}/${Date.now()}-${file.name}`;
-      const { data: fileData, error: uploadError } = await supabase.storage
-        .from('workbody-documents')
-        .upload(fileName, file);
-
-      if (uploadError) throw uploadError;
-
-      // 2. Get public URL
-      const { data: publicUrl } = supabase.storage
-        .from('workbody-documents')
-        .getPublicUrl(fileName);
-
-      // 3. Save document record
-      const { error: dbError } = await supabase
-        .from('workbody_documents')
-        .insert({
-          workbody_id: workbodyId,
-          document_type: documentType,
-          file_url: publicUrl.publicUrl
-        });
-
-      if (dbError) throw dbError;
+      // Simulate file upload
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
       toast({
         title: 'Document Uploaded',
