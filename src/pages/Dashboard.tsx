@@ -8,17 +8,53 @@ import {
   FileSpreadsheet,
   GitMerge 
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { WorkbodyProgressChart } from "@/components/dashboard/WorkbodyProgressChart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { workbodies, getWorkbodyStats } from "@/data/mockData";
+import { useWorkbodies } from "@/hooks/useWorkbodies";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Dashboard() {
   const [tab, setTab] = useState("overview");
+  const { workbodies, isLoading } = useWorkbodies();
   
-  const stats = getWorkbodyStats();
+  const stats = {
+    totalWorkbodies: workbodies.length,
+    committees: workbodies.filter(w => w.type === 'committee').length,
+    workingGroups: workbodies.filter(w => w.type === 'working-group').length,
+    taskForces: workbodies.filter(w => w.type === 'task-force').length,
+    totalMeetings: workbodies.reduce((sum, w) => sum + w.totalMeetings, 0),
+    meetingsThisYear: workbodies.reduce((sum, w) => sum + w.meetingsThisYear, 0),
+    completionRate: workbodies.length ? Math.round(
+      (workbodies.reduce((sum, w) => sum + w.actionsCompleted, 0) / 
+       workbodies.reduce((sum, w) => sum + w.actionsAgreed, 0)) * 100
+    ) : 0
+  };
+  
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <p className="text-muted-foreground">Loading workbody statistics...</p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i}>
+              <CardContent className="p-6">
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-8 w-16" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-6">
@@ -152,12 +188,15 @@ export default function Dashboard() {
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
                       <p>Actions Completed</p>
-                      <p className="font-bold">{stats.completedActions} / {stats.totalActions}</p>
+                      <p className="font-bold">
+                        {workbodies.reduce((sum, w) => sum + w.actionsCompleted, 0)} / 
+                        {workbodies.reduce((sum, w) => sum + w.actionsAgreed, 0)}
+                      </p>
                     </div>
                     <div className="mt-1 h-2 w-full rounded-full bg-muted">
                       <div
                         className="h-full rounded-full bg-pec-green"
-                        style={{ width: `${(stats.completedActions / stats.totalActions) * 100}%` }}
+                        style={{ width: `${stats.completionRate}%` }}
                       />
                     </div>
                   </div>
