@@ -9,7 +9,8 @@ import {
   Globe,
   Home, 
   Users, 
-  X 
+  X,
+  Settings
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -97,20 +98,37 @@ export function Sidebar({
               </NavLink>
               
               {userRole === 'admin' && (
-                <NavLink
-                  to="/reports"
-                  className={({ isActive }) =>
-                    cn(
-                      "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-                      isActive
-                        ? "bg-pec-green text-white"
-                        : "hover:bg-pec-green-50"
-                    )
-                  }
-                >
-                  <BarChart3 className="h-4 w-4" />
-                  Reports
-                </NavLink>
+                <>
+                  <NavLink
+                    to="/reports"
+                    className={({ isActive }) =>
+                      cn(
+                        "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+                        isActive
+                          ? "bg-pec-green text-white"
+                          : "hover:bg-pec-green-50"
+                      )
+                    }
+                  >
+                    <BarChart3 className="h-4 w-4" />
+                    Reports
+                  </NavLink>
+                  
+                  <NavLink
+                    to="/manage-workbodies"
+                    className={({ isActive }) =>
+                      cn(
+                        "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+                        isActive
+                          ? "bg-pec-green text-white"
+                          : "hover:bg-pec-green-50"
+                      )
+                    }
+                  >
+                    <Settings className="h-4 w-4" />
+                    Manage Workbodies
+                  </NavLink>
+                </>
               )}
               
               {/* Calendar link for all users */}
