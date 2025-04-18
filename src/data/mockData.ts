@@ -1,5 +1,5 @@
 
-import { Workbody, MeetingMinutes, User, WorkbodyType } from '../types';
+import { Workbody, MeetingMinutes, User, WorkbodyType, ScheduledMeeting } from '../types';
 
 // Mock Users
 export const users: User[] = [
@@ -23,6 +23,12 @@ export const users: User[] = [
     role: 'secretary',
     workbodyId: 'taskforce-1',
   },
+  {
+    id: 'chairman-1',
+    name: 'Chairman PEC',
+    email: 'chairman@pec.org.pk',
+    role: 'chairman',
+  },
 ];
 
 // Mock Workbodies
@@ -41,6 +47,8 @@ export const workbodies: Workbody[] = [
       { id: 'mem-3', name: 'Prof. Jawad Ali', role: 'Member', hasCV: false },
     ],
     description: 'Responsible for educational standards and accreditation policies.',
+    createdDate: '2022-01-15',
+    termsOfReference: 'To review and recommend policies regarding engineering education standards and accreditation processes in Pakistan.'
   },
   {
     id: 'committee-2',
@@ -56,6 +64,8 @@ export const workbodies: Workbody[] = [
       { id: 'mem-6', name: 'Prof. Asma Iqbal', role: 'Member', hasCV: true },
     ],
     description: 'Oversees engineer registration and licensing procedures.',
+    createdDate: '2021-09-22',
+    termsOfReference: 'To establish and maintain standards for registration of professional engineers in Pakistan and ensure compliance with international best practices.'
   },
   {
     id: 'workgroup-1',
@@ -70,6 +80,8 @@ export const workbodies: Workbody[] = [
       { id: 'mem-8', name: 'Dr. Nadia Chaudhry', role: 'Member', hasCV: false },
     ],
     description: 'Focuses on implementing digital systems across PEC operations.',
+    createdDate: '2023-02-18',
+    termsOfReference: 'To develop and implement a comprehensive digital transformation strategy for all PEC operations and services.'
   },
   {
     id: 'taskforce-1',
@@ -84,7 +96,27 @@ export const workbodies: Workbody[] = [
       { id: 'mem-10', name: 'Dr. Saira Khan', role: 'Member', hasCV: true },
     ],
     description: 'Developing the continuous professional development framework for engineers.',
+    createdDate: '2023-06-10',
+    endDate: '2025-06-10',
+    termsOfReference: 'To develop a comprehensive Continuous Professional Development framework for registered engineers in Pakistan in line with international standards.'
   },
+  {
+    id: 'taskforce-2',
+    name: 'Building Codes Review Task Force',
+    type: 'task-force',
+    totalMeetings: 5,
+    meetingsThisYear: 3,
+    actionsAgreed: 8,
+    actionsCompleted: 3,
+    members: [
+      { id: 'mem-11', name: 'Eng. Khalid Mahmood', role: 'Lead', hasCV: true },
+      { id: 'mem-12', name: 'Dr. Arif Khan', role: 'Member', hasCV: true },
+    ],
+    description: 'Reviewing and updating building codes for earthquake-prone areas.',
+    createdDate: '2024-01-15',
+    endDate: '2025-05-01',
+    termsOfReference: 'To review and update building codes for earthquake-prone areas in Pakistan in light of recent seismic research and international standards.'
+  }
 ];
 
 // Mock Meeting Minutes
@@ -145,6 +177,68 @@ export const meetingMinutes: MeetingMinutes[] = [
     documentUrl: '/mock-pdf/minutes3.pdf',
     uploadedAt: '2024-01-25',
     uploadedBy: 'admin-1'
+  },
+  {
+    id: 'minutes-4',
+    workbodyId: 'taskforce-1',
+    date: '2024-03-18',
+    location: 'PEC Headquarters, Islamabad',
+    agendaItems: [
+      'Review of CPD point allocation system',
+      'Discussion on online CPD tracking platform',
+      'International benchmarking results'
+    ],
+    actionsAgreed: [
+      'Finalize CPD point allocation categories',
+      'Prepare specifications for online tracking system',
+      'Draft CPD handbook for engineers'
+    ],
+    documentUrl: '/mock-pdf/minutes4.pdf',
+    uploadedAt: '2024-03-20',
+    uploadedBy: 'sec-2'
+  }
+];
+
+// Mock Scheduled Meetings
+export const initialMeetings: ScheduledMeeting[] = [
+  {
+    id: "meeting-1",
+    workbodyId: "committee-1",
+    workbodyName: "Education Committee",
+    date: "2025-05-10",
+    time: "10:00",
+    location: "PEC Headquarters, Islamabad",
+    agendaItems: [
+      "Review of Accreditation Process",
+      "Curriculum Standardization",
+      "New Engineering Programs Approval",
+    ],
+  },
+  {
+    id: "meeting-2",
+    workbodyId: "workgroup-1",
+    workbodyName: "Digital Transformation Working Group",
+    date: "2025-04-22",
+    time: "14:30",
+    location: "Virtual Meeting",
+    agendaItems: [
+      "Online Portal Progress Update",
+      "Mobile App Development Status",
+      "Digital Verification System Implementation",
+    ],
+  },
+  {
+    id: "meeting-3",
+    workbodyId: "taskforce-1",
+    workbodyName: "CPD Framework Task Force",
+    date: "2025-04-28",
+    time: "11:00",
+    location: "PEC Regional Office, Karachi",
+    agendaItems: [
+      "CPD Points Framework Review",
+      "Online CPD Tracking System Demo",
+      "CPD Requirements for Specialized Fields",
+    ],
   }
 ];
 

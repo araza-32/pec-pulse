@@ -5,7 +5,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'secretary';
+  role: 'admin' | 'secretary' | 'chairman';
   workbodyId?: string; // Only for secretaries
 }
 
@@ -19,6 +19,10 @@ export interface Workbody {
   actionsCompleted: number;
   members: WorkbodyMember[];
   description?: string;
+  createdDate: string;
+  endDate?: string; // For task forces
+  termsOfReference?: string;
+  torDocumentUrl?: string;
 }
 
 export interface WorkbodyMember {
@@ -40,6 +44,17 @@ export interface MeetingMinutes {
   documentUrl: string;
   uploadedAt: string;
   uploadedBy: string;
+}
+
+export interface ScheduledMeeting {
+  id: string;
+  workbodyId: string;
+  workbodyName: string;
+  date: string;
+  time: string;
+  location: string;
+  agendaItems: string[];
+  notificationUrl?: string;
 }
 
 export interface DashboardStat {

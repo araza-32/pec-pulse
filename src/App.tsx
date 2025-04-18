@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,6 +12,9 @@ import { LoginForm } from "./components/auth/LoginForm";
 import WorkbodyDetail from "./pages/WorkbodyDetail";
 import UploadMinutes from "./pages/UploadMinutes";
 import Reports from "./pages/Reports";
+import WorkbodyManagement from "./pages/WorkbodyManagement";
+import MeetingCalendar from "./pages/MeetingCalendar";
+import ChairmanDashboard from "./pages/ChairmanDashboard";
 import { User } from "./types";
 
 const queryClient = new QueryClient();
@@ -39,14 +43,34 @@ const App = () => {
           ) : (
             <Routes>
               <Route element={<Layout user={user} onLogout={handleLogout} />}>
-                <Route path="/" element={<Dashboard />} />
+                <Route path="/" element={
+                  user.role === 'chairman' ? 
+                    <ChairmanDashboard /> : 
+                    <Dashboard />
+                } />
                 <Route path="/workbody/:id" element={<WorkbodyDetail />} />
-                {user.role === 'secretary' && (
+                
+                {/* Secretary routes */}
+                {(user.role === 'secretary' || user.role === 'admin') && (
                   <Route path="/upload" element={<UploadMinutes />} />
                 )}
+                
+                {/* Calendar route for all users */}
+                <Route path="/calendar" element={<MeetingCalendar />} />
+                
+                {/* Admin only routes */}
                 {user.role === 'admin' && (
-                  <Route path="/reports" element={<Reports />} />
+                  <>
+                    <Route path="/reports" element={<Reports />} />
+                    <Route path="/manage-workbodies" element={<WorkbodyManagement />} />
+                  </>
                 )}
+                
+                {/* Chairman only routes */}
+                {user.role === 'chairman' && (
+                  <Route path="/chairman-dashboard" element={<ChairmanDashboard />} />
+                )}
+                
                 <Route path="*" element={<NotFound />} />
               </Route>
             </Routes>
