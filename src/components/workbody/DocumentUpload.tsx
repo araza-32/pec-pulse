@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { useState } from 'react';
@@ -28,12 +29,14 @@ export function DocumentUpload({
   onUploadComplete
 }: DocumentUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
+  const [fileName, setFileName] = useState('');
   const { toast } = useToast();
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    setFileName(file.name);
     setIsUploading(true);
     try {
       console.log(`Uploading ${documentType} for workbody ${workbodyId}`);
@@ -110,6 +113,11 @@ export function DocumentUpload({
           <DialogTitle>
             Upload {documentType === 'notification' ? 'Notification' : 'Terms of Reference'}
           </DialogTitle>
+          <DialogDescription>
+            {documentType === 'notification' 
+              ? 'Upload a notification document containing committee members.' 
+              : 'Upload the terms of reference document.'}
+          </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4">
@@ -118,10 +126,16 @@ export function DocumentUpload({
             <p className="mt-2 text-sm text-muted-foreground">
               Click to upload or drag and drop
             </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Supported formats: PDF, DOC, DOCX, JPG, PNG
+            </p>
+            {fileName && (
+              <p className="text-sm font-medium mt-2">Selected file: {fileName}</p>
+            )}
             <Input
               type="file"
               className="mt-4"
-              accept=".pdf,.doc,.docx"
+              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
               onChange={handleFileUpload}
               disabled={isUploading}
             />
