@@ -1,36 +1,12 @@
-
 import { useEffect, useState } from "react";
-import {
-  PlusCircle,
-  Edit,
-  Trash2,
-  FileText,
-  Clock,
-  Search,
-  Upload,
-} from "lucide-react";
+import { PlusCircle, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
 
 import { WorkbodyForm } from "@/components/workbody/WorkbodyForm";
 import { Workbody, WorkbodyType } from "@/types";
@@ -64,7 +40,21 @@ export default function WorkbodyManagement() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as Workbody[];
+      
+      return (data || []).map(item => ({
+        id: item.id,
+        name: item.name,
+        type: item.type as WorkbodyType,
+        description: item.description || undefined,
+        createdDate: item.created_date,
+        endDate: item.end_date || undefined,
+        termsOfReference: item.terms_of_reference || undefined,
+        totalMeetings: item.total_meetings || 0,
+        meetingsThisYear: item.meetings_this_year || 0,
+        actionsAgreed: item.actions_agreed || 0,
+        actionsCompleted: item.actions_completed || 0,
+        members: []
+      })) as Workbody[];
     }
   });
 
@@ -133,7 +123,6 @@ export default function WorkbodyManagement() {
     }
   });
 
-  // Handler functions
   const handleAddSubmit = async (data: any) => {
     try {
       await createWorkbodyMutation.mutateAsync({
