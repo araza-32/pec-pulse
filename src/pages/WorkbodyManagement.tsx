@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import {
   PlusCircle,
@@ -10,6 +11,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -32,9 +34,12 @@ import { Textarea } from "@/components/ui/textarea";
 
 import { WorkbodyForm } from "@/components/workbody/WorkbodyForm";
 import { Workbody, WorkbodyType } from "@/types";
-import { workbodies as mockWorkbodies } from "@/data/mockData";
 import { DocumentUpload } from "@/components/workbody/DocumentUpload";
 import { CompositionHistory } from "@/components/workbody/CompositionHistory";
+import { WorkbodyTable } from "@/components/workbody/WorkbodyTable";
+import { DeleteWorkbodyDialog } from "@/components/workbody/DeleteWorkbodyDialog";
+import { TermsOfReferenceDialog } from "@/components/workbody/TermsOfReferenceDialog";
+import { ExpiringTaskForceAlert } from "@/components/workbody/ExpiringTaskForceAlert";
 
 export default function WorkbodyManagement() {
   const { toast } = useToast();
@@ -128,6 +133,7 @@ export default function WorkbodyManagement() {
     }
   });
 
+  // Handler functions
   const handleAddSubmit = async (data: any) => {
     try {
       await createWorkbodyMutation.mutateAsync({
@@ -137,6 +143,10 @@ export default function WorkbodyManagement() {
         createdDate: data.createdDate.toISOString(),
         endDate: data.endDate?.toISOString(),
         termsOfReference: data.termsOfReference,
+        totalMeetings: 0,
+        meetingsThisYear: 0,
+        actionsAgreed: 0,
+        actionsCompleted: 0
       });
 
       toast({
@@ -206,6 +216,30 @@ export default function WorkbodyManagement() {
     }
   };
 
+  const handleTorSubmit = async (data: { termsOfReference: FormDataEntryValue | null }) => {
+    if (!selectedWorkbody) return;
+    
+    try {
+      await updateWorkbodyMutation.mutateAsync({
+        id: selectedWorkbody.id,
+        termsOfReference: data.termsOfReference?.toString(),
+      });
+      
+      toast({
+        title: "Terms of Reference Updated",
+        description: `Terms of Reference for ${selectedWorkbody.name} has been updated.`,
+      });
+      setIsTorDialogOpen(false);
+    } catch (error) {
+      console.error('Error updating terms of reference:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update terms of reference. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const filteredWorkbodies = workbodies.filter(
     (workbody) =>
       workbody.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -217,15 +251,13 @@ export default function WorkbodyManagement() {
     const twoWeeksFromNow = new Date();
     twoWeeksFromNow.setDate(today.getDate() + 14);
 
-    const expiringTaskForces = workbodies.filter(
+    return workbodies.filter(
       (wb) =>
         wb.type === "task-force" &&
         wb.endDate &&
         new Date(wb.endDate) <= twoWeeksFromNow &&
         new Date(wb.endDate) >= today
     );
-
-    return expiringTaskForces;
   };
 
   const expiringTaskForces = checkExpiringTaskForces();
@@ -240,26 +272,7 @@ export default function WorkbodyManagement() {
       </div>
 
       {expiringTaskForces.length > 0 && (
-        <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded">
-          <div className="flex items-center">
-            <Clock className="h-6 w-6 text-amber-500 mr-2" />
-            <h3 className="font-medium text-amber-800">
-              Task Forces Approaching End Date
-            </h3>
-          </div>
-          <div className="mt-2 space-y-1">
-            {expiringTaskForces.map((tf) => (
-              <p key={tf.id} className="text-sm text-amber-700">
-                {tf.name} - Ends on{" "}
-                {new Date(tf.endDate!).toLocaleDateString("en-US", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
-              </p>
-            ))}
-          </div>
-        </div>
+        <ExpiringTaskForceAlert expiringTaskForces={expiringTaskForces} />
       )}
 
       <div className="flex justify-between items-center">
@@ -280,106 +293,29 @@ export default function WorkbodyManagement() {
         </div>
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Created</TableHead>
-            <TableHead>End Date</TableHead>
-            <TableHead className="w-[200px]">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {filteredWorkbodies.map((workbody) => (
-            <TableRow key={workbody.id}>
-              <TableCell className="font-medium">{workbody.name}</TableCell>
-              <TableCell>
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    "capitalize",
-                    workbody.type === "committee" && "bg-blue-50 text-blue-700",
-                    workbody.type === "working-group" &&
-                      "bg-green-50 text-green-700",
-                    workbody.type === "task-force" &&
-                      "bg-amber-50 text-amber-700"
-                  )}
-                >
-                  {workbody.type.replace("-", " ")}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                {new Date(workbody.createdDate).toLocaleDateString()}
-              </TableCell>
-              <TableCell>
-                {workbody.endDate
-                  ? new Date(workbody.endDate).toLocaleDateString()
-                  : "-"}
-              </TableCell>
-              <TableCell>
-                <div className="flex space-x-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      setSelectedWorkbody(workbody);
-                      setIsEditDialogOpen(true);
-                    }}
-                    title="Edit workbody"
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      setSelectedWorkbody(workbody);
-                      setIsTorDialogOpen(true);
-                    }}
-                    title="Terms of Reference"
-                  >
-                    <FileText className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      setSelectedWorkbody(workbody);
-                      setIsUploadNotificationOpen(true);
-                    }}
-                    title="Upload Notification"
-                  >
-                    <Upload className="h-4 w-4 text-blue-500" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      setSelectedWorkbody(workbody);
-                      setIsHistoryVisible(true);
-                    }}
-                    title="View Composition History"
-                  >
-                    <Clock className="h-4 w-4 text-green-500" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      setSelectedWorkbody(workbody);
-                      setIsDeleteDialogOpen(true);
-                    }}
-                    title="Delete workbody"
-                  >
-                    <Trash2 className="h-4 w-4 text-red-500" />
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <WorkbodyTable 
+        workbodies={filteredWorkbodies}
+        onEdit={(workbody) => {
+          setSelectedWorkbody(workbody);
+          setIsEditDialogOpen(true);
+        }}
+        onViewTor={(workbody) => {
+          setSelectedWorkbody(workbody);
+          setIsTorDialogOpen(true);
+        }}
+        onUploadNotification={(workbody) => {
+          setSelectedWorkbody(workbody);
+          setIsUploadNotificationOpen(true);
+        }}
+        onViewHistory={(workbody) => {
+          setSelectedWorkbody(workbody);
+          setIsHistoryVisible(true);
+        }}
+        onDelete={(workbody) => {
+          setSelectedWorkbody(workbody);
+          setIsDeleteDialogOpen(true);
+        }}
+      />
 
       {selectedWorkbody && (
         <>
@@ -405,8 +341,7 @@ export default function WorkbodyManagement() {
             isOpen={isUploadTorOpen}
             onClose={() => setIsUploadTorOpen(false)}
             onUploadComplete={() => {
-              const updatedWorkbodies = [...workbodies];
-              setWorkbodies(updatedWorkbodies);
+              queryClient.invalidateQueries({ queryKey: ['workbodies'] });
             }}
           />
 
@@ -443,96 +378,20 @@ export default function WorkbodyManagement() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Workbody</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <p>
-              Are you sure you want to delete{" "}
-              <strong>{selectedWorkbody?.name}</strong>?
-            </p>
-            <p className="text-sm text-muted-foreground mt-2">
-              This action cannot be undone. This will permanently delete the
-              workbody and all related data.
-            </p>
-          </div>
-          <div className="flex justify-end space-x-4">
-            <Button
-              variant="outline"
-              onClick={() => setIsDeleteDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDeleteWorkbody}
-            >
-              Delete
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <DeleteWorkbodyDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        workbodyName={selectedWorkbody?.name || ""}
+        onDelete={handleDeleteWorkbody}
+      />
 
-      <Dialog open={isTorDialogOpen} onOpenChange={setIsTorDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              Terms of Reference - {selectedWorkbody?.name}
-            </DialogTitle>
-          </DialogHeader>
-          {selectedWorkbody && (
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const formData = new FormData(e.currentTarget);
-                handleTorSubmit({
-                  termsOfReference: formData.get("termsOfReference"),
-                });
-              }}
-              className="space-y-6"
-            >
-              <div className="space-y-2">
-                <label
-                  htmlFor="termsOfReference"
-                  className="text-sm font-medium"
-                >
-                  Terms of Reference
-                </label>
-                <Textarea
-                  id="termsOfReference"
-                  name="termsOfReference"
-                  placeholder="Enter terms of reference or mandate"
-                  className="min-h-[300px]"
-                  defaultValue={selectedWorkbody.termsOfReference || ""}
-                />
-                <p className="text-sm text-muted-foreground">
-                  Enter the full Terms of Reference or upload a document
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <label htmlFor="torDocument" className="text-sm font-medium">
-                  Or Upload ToR Document
-                </label>
-                <Input id="torDocument" type="file" />
-              </div>
-
-              <div className="flex justify-end space-x-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsTorDialogOpen(false)}
-                  type="button"
-                >
-                  Cancel
-                </Button>
-                <Button type="submit">Save</Button>
-              </div>
-            </form>
-          )}
-        </DialogContent>
-      </Dialog>
+      <TermsOfReferenceDialog
+        isOpen={isTorDialogOpen}
+        onClose={() => setIsTorDialogOpen(false)}
+        workbodyName={selectedWorkbody?.name || ""}
+        initialTermsOfReference={selectedWorkbody?.termsOfReference || ""}
+        onSubmit={handleTorSubmit}
+      />
     </div>
   );
 }
