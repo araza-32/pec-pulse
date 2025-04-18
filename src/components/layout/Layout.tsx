@@ -3,7 +3,6 @@ import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import { Header } from "./Header";
 import { Sidebar } from "./Sidebar";
-import { workbodies } from "@/data/mockData";
 import { User } from "@/types";
 
 interface LayoutProps {
@@ -30,7 +29,6 @@ export function Layout({ user, onLogout }: LayoutProps) {
           <Sidebar 
             isOpen={sidebarOpen} 
             onClose={closeSidebar} 
-            workbodies={workbodies}
             userRole={user.role}
             userWorkbodyId={user.workbodyId}
           />
