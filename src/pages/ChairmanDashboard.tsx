@@ -12,6 +12,7 @@ import {
   Clock,
   Mail,
   BookOpen,
+  MapPin
 } from "lucide-react";
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
 import {

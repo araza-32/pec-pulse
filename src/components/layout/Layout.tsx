@@ -4,9 +4,10 @@ import { Outlet } from "react-router-dom";
 import { Header } from "./Header";
 import { Sidebar } from "./Sidebar";
 import { workbodies } from "@/data/mockData";
+import { User } from "@/types";
 
 interface LayoutProps {
-  user: { name: string; role: 'admin' | 'secretary'; workbodyId?: string } | null;
+  user: User | null;
   onLogout: () => void;
 }
 

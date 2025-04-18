@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import {
   PlusCircle,
@@ -27,6 +26,7 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 
 import { WorkbodyForm } from "@/components/workbody/WorkbodyForm";
 import { Workbody, WorkbodyType } from "@/types";
@@ -42,7 +42,6 @@ export default function WorkbodyManagement() {
   const [selectedWorkbody, setSelectedWorkbody] = useState<Workbody | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Filter workbodies based on search query
   const filteredWorkbodies = workbodies.filter(
     (workbody) =>
       workbody.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -277,7 +276,6 @@ export default function WorkbodyManagement() {
         </TableBody>
       </Table>
 
-      {/* Add Workbody Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -290,7 +288,6 @@ export default function WorkbodyManagement() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Workbody Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -306,7 +303,6 @@ export default function WorkbodyManagement() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Workbody Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -339,7 +335,6 @@ export default function WorkbodyManagement() {
         </DialogContent>
       </Dialog>
 
-      {/* Terms of Reference Dialog */}
       <Dialog open={isTorDialogOpen} onOpenChange={setIsTorDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
