@@ -1,4 +1,3 @@
-
 import { NavLink } from "react-router-dom";
 import { 
   BarChart3, 
@@ -14,7 +13,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Workbody } from "@/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { useWorkbodies } from "@/hooks/useWorkbodies";
@@ -33,15 +31,12 @@ export function Sidebar({
   userRole,
   userWorkbodyId 
 }: SidebarProps) {
-  // Fetch workbodies from the database
   const { workbodies, isLoading } = useWorkbodies();
 
   // Filter workbodies based on user role and assigned workbody
-  const filteredWorkbodies = userRole === 'admin' 
-    ? workbodies 
-    : userRole === 'chairman'
-      ? workbodies // Chairman can see all workbodies
-      : workbodies.filter(w => w.id === userWorkbodyId);
+  const filteredWorkbodies = userRole === 'secretary'
+    ? workbodies.filter(w => w.id === userWorkbodyId)
+    : workbodies;
 
   // Group workbodies by type
   const committees = filteredWorkbodies.filter(w => w.type === 'committee');
@@ -59,12 +54,10 @@ export function Sidebar({
       )}
       
       {/* Sidebar */}
-      <aside
-        className={cn(
-          "fixed inset-y-0 left-0 z-50 w-64 transform border-r bg-white transition-transform duration-300 md:relative md:translate-x-0",
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        )}
-      >
+      <aside className={cn(
+        "fixed inset-y-0 left-0 z-50 w-64 transform border-r bg-white transition-transform duration-300 md:relative md:translate-x-0",
+        isOpen ? "translate-x-0" : "-translate-x-full"
+      )}>
         <div className="flex h-16 items-center justify-between border-b px-4">
           <div className="flex items-center gap-2">
             <Globe className="h-6 w-6 text-pec-green" />
@@ -100,6 +93,7 @@ export function Sidebar({
                 Dashboard
               </NavLink>
               
+              {/* Show admin-only links */}
               {userRole === 'admin' && (
                 <>
                   <NavLink
@@ -189,7 +183,7 @@ export function Sidebar({
             
             <Separator />
             
-            {/* Display loading state */}
+            {/* Display workbodies section */}
             {isLoading ? (
               <div className="space-y-3">
                 <h4 className="px-3 text-xs font-semibold uppercase text-muted-foreground">
@@ -206,43 +200,102 @@ export function Sidebar({
               </div>
             ) : (
               <>
-                {committees.length > 0 && (
-                  <div>
-                    <h4 className="mb-2 px-3 text-xs font-semibold uppercase text-muted-foreground">
-                      Committees
-                    </h4>
-                    <div className="space-y-1">
-                      {committees.map(committee => (
-                        <NavLink
-                          key={committee.id}
-                          to={`/workbody/${committee.id}`}
-                          className={({ isActive }) =>
-                            cn(
-                              "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-                              isActive
-                                ? "bg-pec-green text-white"
-                                : "hover:bg-pec-green-50"
-                            )
-                          }
-                        >
-                          <Users className="h-4 w-4" />
-                          {committee.name}
-                        </NavLink>
-                      ))}
-                    </div>
-                  </div>
+                {(userRole === 'admin' || userRole === 'chairman') && (
+                  <>
+                    {committees.length > 0 && (
+                      <div>
+                        <h4 className="mb-2 px-3 text-xs font-semibold uppercase text-muted-foreground">
+                          Committees
+                        </h4>
+                        <div className="space-y-1">
+                          {committees.map(committee => (
+                            <NavLink
+                              key={committee.id}
+                              to={`/workbody/${committee.id}`}
+                              className={({ isActive }) =>
+                                cn(
+                                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+                                  isActive
+                                    ? "bg-pec-green text-white"
+                                    : "hover:bg-pec-green-50"
+                                )
+                              }
+                            >
+                              <Users className="h-4 w-4" />
+                              {committee.name}
+                            </NavLink>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {workingGroups.length > 0 && (
+                      <div>
+                        <h4 className="mb-2 px-3 text-xs font-semibold uppercase text-muted-foreground">
+                          Working Groups
+                        </h4>
+                        <div className="space-y-1">
+                          {workingGroups.map(group => (
+                            <NavLink
+                              key={group.id}
+                              to={`/workbody/${group.id}`}
+                              className={({ isActive }) =>
+                                cn(
+                                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+                                  isActive
+                                    ? "bg-pec-green text-white"
+                                    : "hover:bg-pec-green-50"
+                                )
+                              }
+                            >
+                              <GitMerge className="h-4 w-4" />
+                              {group.name}
+                            </NavLink>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {taskForces.length > 0 && (
+                      <div>
+                        <h4 className="mb-2 px-3 text-xs font-semibold uppercase text-muted-foreground">
+                          Task Forces
+                        </h4>
+                        <div className="space-y-1">
+                          {taskForces.map(taskForce => (
+                            <NavLink
+                              key={taskForce.id}
+                              to={`/workbody/${taskForce.id}`}
+                              className={({ isActive }) =>
+                                cn(
+                                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+                                  isActive
+                                    ? "bg-pec-green text-white"
+                                    : "hover:bg-pec-green-50"
+                                )
+                              }
+                            >
+                              <FileText className="h-4 w-4" />
+                              {taskForce.name}
+                            </NavLink>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
                 
-                {workingGroups.length > 0 && (
+                {/* For secretaries, show only their assigned workbody */}
+                {userRole === 'secretary' && filteredWorkbodies.length > 0 && (
                   <div>
                     <h4 className="mb-2 px-3 text-xs font-semibold uppercase text-muted-foreground">
-                      Working Groups
+                      My Workbody
                     </h4>
                     <div className="space-y-1">
-                      {workingGroups.map(group => (
+                      {filteredWorkbodies.map(workbody => (
                         <NavLink
-                          key={group.id}
-                          to={`/workbody/${group.id}`}
+                          key={workbody.id}
+                          to={`/workbody/${workbody.id}`}
                           className={({ isActive }) =>
                             cn(
                               "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
@@ -252,35 +305,10 @@ export function Sidebar({
                             )
                           }
                         >
-                          <GitMerge className="h-4 w-4" />
-                          {group.name}
-                        </NavLink>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                
-                {taskForces.length > 0 && (
-                  <div>
-                    <h4 className="mb-2 px-3 text-xs font-semibold uppercase text-muted-foreground">
-                      Task Forces
-                    </h4>
-                    <div className="space-y-1">
-                      {taskForces.map(taskForce => (
-                        <NavLink
-                          key={taskForce.id}
-                          to={`/workbody/${taskForce.id}`}
-                          className={({ isActive }) =>
-                            cn(
-                              "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-                              isActive
-                                ? "bg-pec-green text-white"
-                                : "hover:bg-pec-green-50"
-                            )
-                          }
-                        >
-                          <FileText className="h-4 w-4" />
-                          {taskForce.name}
+                          {workbody.type === 'committee' && <Users className="h-4 w-4" />}
+                          {workbody.type === 'working-group' && <GitMerge className="h-4 w-4" />}
+                          {workbody.type === 'task-force' && <FileText className="h-4 w-4" />}
+                          {workbody.name}
                         </NavLink>
                       ))}
                     </div>

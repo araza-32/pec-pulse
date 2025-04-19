@@ -19,17 +19,23 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function Dashboard() {
   const [tab, setTab] = useState("overview");
   const { workbodies, isLoading } = useWorkbodies();
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  
+  // Filter workbodies based on user role
+  const filteredWorkbodies = user?.role === 'secretary' 
+    ? workbodies.filter(w => w.id === user.workbodyId)
+    : workbodies;
   
   const stats = {
-    totalWorkbodies: workbodies.length,
-    committees: workbodies.filter(w => w.type === 'committee').length,
-    workingGroups: workbodies.filter(w => w.type === 'working-group').length,
-    taskForces: workbodies.filter(w => w.type === 'task-force').length,
-    totalMeetings: workbodies.reduce((sum, w) => sum + w.totalMeetings, 0),
-    meetingsThisYear: workbodies.reduce((sum, w) => sum + w.meetingsThisYear, 0),
-    completionRate: workbodies.length ? Math.round(
-      (workbodies.reduce((sum, w) => sum + w.actionsCompleted, 0) / 
-       workbodies.reduce((sum, w) => sum + w.actionsAgreed, 0)) * 100
+    totalWorkbodies: filteredWorkbodies.length,
+    committees: filteredWorkbodies.filter(w => w.type === 'committee').length,
+    workingGroups: filteredWorkbodies.filter(w => w.type === 'working-group').length,
+    taskForces: filteredWorkbodies.filter(w => w.type === 'task-force').length,
+    totalMeetings: filteredWorkbodies.reduce((sum, w) => sum + w.totalMeetings, 0),
+    meetingsThisYear: filteredWorkbodies.reduce((sum, w) => sum + w.meetingsThisYear, 0),
+    completionRate: filteredWorkbodies.length ? Math.round(
+      (filteredWorkbodies.reduce((sum, w) => sum + w.actionsCompleted, 0) / 
+       filteredWorkbodies.reduce((sum, w) => sum + w.actionsAgreed, 0)) * 100
     ) : 0
   };
   
@@ -55,7 +61,91 @@ export default function Dashboard() {
       </div>
     );
   }
-  
+
+  // Secretary view - single workbody dashboard
+  if (user?.role === 'secretary') {
+    const workbody = filteredWorkbodies[0];
+    if (!workbody) {
+      return (
+        <div className="space-y-6">
+          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <p className="text-muted-foreground">No workbody assigned.</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">{workbody.name}</h1>
+          <p className="text-muted-foreground">
+            Workbody Overview and Statistics
+          </p>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            title="Total Meetings"
+            value={workbody.totalMeetings}
+            icon={CalendarClock}
+            colorClass="bg-pec-gold"
+          />
+          <StatCard
+            title="Meetings This Year"
+            value={workbody.meetingsThisYear}
+            icon={BookOpen}
+            colorClass="bg-blue-500"
+          />
+          <StatCard
+            title="Actions Agreed"
+            value={workbody.actionsAgreed}
+            icon={FileCheck}
+            colorClass="bg-pec-green"
+          />
+          <StatCard
+            title="Actions Completed"
+            value={workbody.actionsCompleted}
+            icon={CheckSquare}
+            colorClass="bg-purple-500"
+          />
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Actions Overview</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="rounded bg-pec-green p-2 text-white">
+                  <CheckSquare className="h-5 w-5" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <p>Actions Completed</p>
+                    <p className="font-bold">
+                      {workbody.actionsCompleted} / {workbody.actionsAgreed}
+                    </p>
+                  </div>
+                  <div className="mt-1 h-2 w-full rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-pec-green"
+                      style={{ 
+                        width: `${workbody.actionsAgreed ? 
+                          (workbody.actionsCompleted / workbody.actionsAgreed) * 100 : 0}%` 
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Admin and Chairman view - full dashboard with all workbodies
   return (
     <div className="space-y-6">
       <div>
