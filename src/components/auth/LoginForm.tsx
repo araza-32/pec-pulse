@@ -6,6 +6,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { users } from "@/data/mockData";
 import { User } from "@/types";
+import { 
+  HelpCircle, 
+  Eye, 
+  EyeOff 
+} from "lucide-react";
+import { 
+  Tooltip, 
+  TooltipContent, 
+  TooltipProvider, 
+  TooltipTrigger 
+} from "@/components/ui/tooltip";
 
 interface LoginFormProps {
   onLogin: (user: User) => void;
@@ -16,6 +27,7 @@ export function LoginForm({ onLogin }: LoginFormProps) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showDemoCredentials, setShowDemoCredentials] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,6 +47,11 @@ export function LoginForm({ onLogin }: LoginFormProps) {
       setIsLoading(false);
     }, 1000);
   };
+
+  const demoCredentials = [
+    { email: "admin@pec.org.pk", role: "Admin" },
+    { email: "committee1@pec.org.pk", role: "Secretary" }
+  ];
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
@@ -95,11 +112,36 @@ export function LoginForm({ onLogin }: LoginFormProps) {
               {isLoading ? "Signing in..." : "Sign in"}
             </Button>
             
-            <div className="text-center text-sm text-muted-foreground">
-              <p>Demo credentials:</p>
-              <p>Admin: admin@pec.org.pk</p>
-              <p>Secretary: committee1@pec.org.pk</p>
-              <p>Password: password</p>
+            <div className="text-center text-sm">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => setShowDemoCredentials(!showDemoCredentials)}
+                      className="mx-auto"
+                    >
+                      {showDemoCredentials ? <EyeOff className="mr-2 h-4 w-4" /> : <Eye className="mr-2 h-4 w-4" />}
+                      {showDemoCredentials ? "Hide" : "Show"} Demo Credentials
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Click to reveal demo login information</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
+              {showDemoCredentials && (
+                <div className="mt-2 p-3 bg-blue-50 rounded border border-blue-200 text-blue-700">
+                  {demoCredentials.map((cred, index) => (
+                    <p key={index}>
+                      {cred.role}: {cred.email} (Password: password)
+                    </p>
+                  ))}
+                </div>
+              )}
             </div>
           </form>
         </CardContent>
