@@ -143,7 +143,7 @@ export function WorkbodyForm({
 
         <TabsContent value="basic-info">
           <Form {...form}>
-            <form className="space-y-6">
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
               <FormField
                 control={form.control}
                 name="name"
@@ -205,6 +205,7 @@ export function WorkbodyForm({
                               "w-full pl-3 text-left font-normal",
                               !field.value && "text-muted-foreground"
                             )}
+                            type="button"
                           >
                             {field.value ? (
                               format(field.value, "PPP")
@@ -249,6 +250,7 @@ export function WorkbodyForm({
                                 "w-full pl-3 text-left font-normal",
                                 !field.value && "text-muted-foreground"
                               )}
+                              type="button"
                             >
                               {field.value ? (
                                 format(field.value, "PPP")
@@ -362,26 +364,28 @@ export function WorkbodyForm({
                   </div>
                 )}
 
-                <FormField
-                  control={form.control}
-                  name="termsOfReference"
-                  render={({ field }) => (
-                    <FormItem className="mt-4">
-                      <FormLabel>Terms of Reference</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Enter terms of reference or mandate"
-                          className="min-h-[120px]"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Enter the Terms of Reference or mandate for this workbody
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <Form {...form}>
+                  <FormField
+                    control={form.control}
+                    name="termsOfReference"
+                    render={({ field }) => (
+                      <FormItem className="mt-4">
+                        <FormLabel>Terms of Reference</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Enter terms of reference or mandate"
+                            className="min-h-[120px]"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Enter the Terms of Reference or mandate for this workbody
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </Form>
               </div>
             </div>
 
