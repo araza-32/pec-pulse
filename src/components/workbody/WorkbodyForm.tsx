@@ -117,7 +117,7 @@ export function WorkbodyForm({
     try {
       const values = form.getValues();
       
-      // Create a temporary workbody entry in the database
+      // Create a temporary workbody entry in the database with a metadata field to track temporary status
       const { data, error } = await supabase
         .from('workbodies')
         .insert({
@@ -131,7 +131,6 @@ export function WorkbodyForm({
           meetings_this_year: 0,
           actions_agreed: 0,
           actions_completed: 0,
-          is_temporary: true // Flag to identify this as temporary
         })
         .select("id")
         .single();
@@ -140,6 +139,17 @@ export function WorkbodyForm({
       
       if (data) {
         setWorkbodyId(data.id);
+        
+        // Set metadata to mark as temporary using a separate call
+        const { error: metadataError } = await supabase
+          .from('workbody_metadata')
+          .insert({
+            workbody_id: data.id,
+            is_temporary: true
+          });
+          
+        if (metadataError) console.error("Error setting temporary metadata:", metadataError);
+        
         toast({
           title: "Temporary record created",
           description: "You can now upload documents and add members.",
@@ -166,21 +176,23 @@ export function WorkbodyForm({
     }
     
     try {
-      // Update the temporary workbody to be permanent
-      const { error } = await supabase
-        .from('workbodies')
-        .update({
-          is_temporary: false
-        })
-        .eq('id', workbodyId);
+      // Update the temporary workbody to be permanent by updating the metadata
+      if (workbodyId) {
+        const { error } = await supabase
+          .from('workbody_metadata')
+          .update({
+            is_temporary: false
+          })
+          .eq('workbody_id', workbodyId);
+          
+        if (error) throw error;
         
-      if (error) throw error;
-      
-      // Pass the completed data to the parent component
-      onSubmit({
-        id: workbodyId,
-        ...values
-      } as any);
+        // Pass the completed data to the parent component
+        onSubmit({
+          id: workbodyId,
+          ...values
+        } as any);
+      }
       
     } catch (error: any) {
       console.error("Error finalizing workbody:", error);

@@ -352,10 +352,8 @@ export default function Dashboard() {
                 ]}
               >
                 <RadialBar
-                  minAngle={15}
                   label={{ position: 'insideStart', fill: '#fff' }}
                   background
-                  clockWise
                   dataKey="value"
                 />
                 <Legend />
