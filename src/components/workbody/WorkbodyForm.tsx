@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -40,7 +39,6 @@ import { DocumentUpload } from "./DocumentUpload";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
-// Updated schema without description, as we'll be using members instead
 const formSchema = z.object({
   name: z.string().min(3, {
     message: "Name must be at least 3 characters.",
@@ -50,7 +48,6 @@ const formSchema = z.object({
   endDate: z.date().optional(),
   termsOfReference: z.string().optional(),
 }).refine((data) => {
-  // If type is task-force, endDate is required
   return data.type !== "task-force" || data.endDate !== undefined;
 }, {
   message: "End date is required for task forces",
@@ -91,22 +88,19 @@ export function WorkbodyForm({
       endDate: initialData?.endDate ? new Date(initialData.endDate) : undefined,
       termsOfReference: initialData?.termsOfReference || "",
     },
-    mode: "onChange" // Enable validation on change
+    mode: "onChange"
   });
 
-  // Watch for changes in the type field to show/hide end date field
   const workbodyType = form.watch("type");
   
   useEffect(() => {
     setShowEndDate(workbodyType === "task-force");
     
-    // Clear end date if not task-force
     if (workbodyType !== "task-force") {
       form.setValue("endDate", undefined);
     }
   }, [workbodyType, form]);
 
-  // Create temporary workbody ID when form is valid to enable document uploads
   useEffect(() => {
     if (!workbodyId && form.formState.isValid && activeTab === "documents") {
       createTemporaryWorkbody();
@@ -117,7 +111,6 @@ export function WorkbodyForm({
     try {
       const values = form.getValues();
       
-      // Create a temporary workbody entry in the database with a metadata field to track temporary status
       const { data, error } = await supabase
         .from('workbodies')
         .insert({
@@ -139,16 +132,6 @@ export function WorkbodyForm({
       
       if (data) {
         setWorkbodyId(data.id);
-        
-        // Set metadata to mark as temporary using a separate call
-        const { error: metadataError } = await supabase
-          .from('workbody_metadata')
-          .insert({
-            workbody_id: data.id,
-            is_temporary: true
-          });
-          
-        if (metadataError) console.error("Error setting temporary metadata:", metadataError);
         
         toast({
           title: "Temporary record created",
@@ -176,23 +159,10 @@ export function WorkbodyForm({
     }
     
     try {
-      // Update the temporary workbody to be permanent by updating the metadata
-      if (workbodyId) {
-        const { error } = await supabase
-          .from('workbody_metadata')
-          .update({
-            is_temporary: false
-          })
-          .eq('workbody_id', workbodyId);
-          
-        if (error) throw error;
-        
-        // Pass the completed data to the parent component
-        onSubmit({
-          id: workbodyId,
-          ...values
-        } as any);
-      }
+      onSubmit({
+        id: workbodyId,
+        ...values
+      } as any);
       
     } catch (error: any) {
       console.error("Error finalizing workbody:", error);
@@ -401,7 +371,7 @@ export function WorkbodyForm({
                 if (form.formState.isValid) {
                   setActiveTab("documents");
                 } else {
-                  form.trigger(); // Trigger validation to show errors
+                  form.trigger();
                 }
               }}
             >
@@ -415,7 +385,6 @@ export function WorkbodyForm({
             <div className="rounded-lg border p-4">
               <h3 className="text-lg font-medium mb-4">Upload Documents</h3>
               
-              {/* Notification Upload Section */}
               <div className="border rounded-lg p-4 mb-4">
                 <h4 className="text-md font-medium mb-2">Upload Notification</h4>
                 <p className="text-sm text-muted-foreground mb-4">
@@ -438,7 +407,6 @@ export function WorkbodyForm({
                 )}
               </div>
 
-              {/* Terms of Reference Upload Section */}
               <div className="border rounded-lg p-4">
                 <h4 className="text-md font-medium mb-2">Upload Terms of Reference</h4>
                 <p className="text-sm text-muted-foreground mb-4">
