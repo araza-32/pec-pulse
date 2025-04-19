@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -43,13 +42,22 @@ export default function WorkbodyManagement() {
   const handleAddSubmit = async (data: WorkbodyFormData) => {
     try {
       console.log("Submitting new workbody data:", data);
-      await createWorkbody.mutateAsync(data);
-
-      toast({
-        title: "Workbody Created",
-        description: `${data.name} has been successfully created.`,
-      });
-      setIsAddDialogOpen(false);
+      
+      if ('id' in data) {
+        toast({
+          title: "Workbody Created",
+          description: `${data.name} has been successfully created.`,
+        });
+        setIsAddDialogOpen(false);
+        await refetch();
+      } else {
+        await createWorkbody.mutateAsync(data);
+        toast({
+          title: "Workbody Created",
+          description: `${data.name} has been successfully created.`,
+        });
+        setIsAddDialogOpen(false);
+      }
     } catch (error: any) {
       console.error('Error creating workbody:', error);
       toast({

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -36,6 +37,8 @@ import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ManualMemberAddition } from "./ManualMemberAddition";
 import { DocumentUpload } from "./DocumentUpload";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 // Updated schema without description, as we'll be using members instead
 const formSchema = z.object({
@@ -72,7 +75,10 @@ export function WorkbodyForm({
   const [workbodyId, setWorkbodyId] = useState<string | null>(null);
   const [notificationUploaded, setNotificationUploaded] = useState(false);
   const [torUploaded, setTorUploaded] = useState(false);
-  const [addMembersManually, setAddMembersManually] = useState(true);
+  const [membersAdded, setMembersAdded] = useState(false);
+  const [isUploadNotificationOpen, setIsUploadNotificationOpen] = useState(false);
+  const [isUploadTorOpen, setIsUploadTorOpen] = useState(false);
+  const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -100,147 +106,192 @@ export function WorkbodyForm({
     }
   }, [workbodyType, form]);
 
-  const handleSubmit = (values: z.infer<typeof formSchema>) => {
-    // Pass the data without description, as we'll handle members separately
-    onSubmit(values as WorkbodyFormData);
+  // Create temporary workbody ID when form is valid to enable document uploads
+  useEffect(() => {
+    if (!workbodyId && form.formState.isValid && activeTab === "documents") {
+      createTemporaryWorkbody();
+    }
+  }, [form.formState.isValid, activeTab]);
+
+  const createTemporaryWorkbody = async () => {
+    try {
+      const values = form.getValues();
+      
+      // Create a temporary workbody entry in the database
+      const { data, error } = await supabase
+        .from('workbodies')
+        .insert({
+          name: values.name,
+          type: values.type,
+          description: "",
+          created_date: values.createdDate.toISOString(),
+          end_date: values.endDate ? values.endDate.toISOString() : null,
+          terms_of_reference: values.termsOfReference || "",
+          total_meetings: 0,
+          meetings_this_year: 0,
+          actions_agreed: 0,
+          actions_completed: 0,
+          is_temporary: true // Flag to identify this as temporary
+        })
+        .select("id")
+        .single();
+
+      if (error) throw error;
+      
+      if (data) {
+        setWorkbodyId(data.id);
+        toast({
+          title: "Temporary record created",
+          description: "You can now upload documents and add members.",
+        });
+      }
+    } catch (error: any) {
+      console.error("Error creating temporary workbody:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create temporary workbody. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSubmit = async (values: z.infer<typeof formSchema>) => {
+    if (!workbodyId || !notificationUploaded || !membersAdded) {
+      toast({
+        title: "Required steps not completed",
+        description: "Please upload documents and add members before creating the workbody.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      // Update the temporary workbody to be permanent
+      const { error } = await supabase
+        .from('workbodies')
+        .update({
+          is_temporary: false
+        })
+        .eq('id', workbodyId);
+        
+      if (error) throw error;
+      
+      // Pass the completed data to the parent component
+      onSubmit({
+        id: workbodyId,
+        ...values
+      } as any);
+      
+    } catch (error: any) {
+      console.error("Error finalizing workbody:", error);
+      toast({
+        title: "Error",
+        description: "Failed to finalize workbody creation. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleNotificationUpload = (documentId: string) => {
     setNotificationUploaded(true);
-    // We won't extract members automatically if user chose manual addition
+    setIsUploadNotificationOpen(false);
+    toast({
+      title: "Notification uploaded",
+      description: "The notification document has been uploaded successfully."
+    });
   };
 
   const handleTorUpload = (documentId: string) => {
     setTorUploaded(true);
-    // Update terms of reference if needed
+    setIsUploadTorOpen(false);
+    toast({
+      title: "Terms of Reference uploaded",
+      description: "The Terms of Reference document has been uploaded successfully."
+    });
   };
 
   const handleMembersAdded = () => {
-    // Move to next tab or close form as needed
+    setMembersAdded(true);
+    toast({
+      title: "Members added",
+      description: "Members have been successfully added to the workbody."
+    });
     setActiveTab("review");
   };
 
-  // For demo purposes only - in real implementation, this would be the ID from the created workbody
-  useEffect(() => {
-    if (initialData?.id) {
-      setWorkbodyId(initialData.id);
-    }
-  }, [initialData]);
+  const isDocumentsTabEnabled = form.formState.isValid;
 
   return (
     <div className="space-y-6">
       <Tabs 
-        defaultValue="basic-info" 
         value={activeTab}
         onValueChange={setActiveTab}
         className="w-full"
       >
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="basic-info">Basic Info</TabsTrigger>
-          <TabsTrigger value="documents" disabled={!form.formState.isValid}>Documents</TabsTrigger>
-          <TabsTrigger value="members" disabled={!form.formState.isValid}>Members</TabsTrigger>
+          <TabsTrigger value="documents" disabled={!isDocumentsTabEnabled}>Documents</TabsTrigger>
+          <TabsTrigger value="members" disabled={!workbodyId || (!notificationUploaded && !torUploaded)}>Members</TabsTrigger>
+          <TabsTrigger value="review" disabled={!membersAdded}>Review</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="basic-info">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter workbody name" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Full name of the committee, working group or task force
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Type</FormLabel>
-                    <Select
-                      onValueChange={(value: WorkbodyType) => {
-                        field.onChange(value);
-                      }}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select workbody type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="committee">Committee</SelectItem>
-                        <SelectItem value="working-group">Working Group</SelectItem>
-                        <SelectItem value="task-force">Task Force</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>Type of workbody</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="createdDate"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Creation Date</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                            type="button"
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP")
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                            <Calendar className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <CalendarComponent
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          initialFocus
-                          className={cn("p-3 pointer-events-auto")}
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormDescription>
-                      Date when this workbody was created
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {showEndDate && (
+        <TabsContent value="basic-info" className="space-y-6">
+          <div className="rounded-lg border p-4">
+            <h3 className="text-lg font-medium mb-4">Workbody Information</h3>
+            <Form {...form}>
+              <form className="space-y-6">
                 <FormField
                   control={form.control}
-                  name="endDate"
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter workbody name" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Full name of the committee, working group or task force
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Type</FormLabel>
+                      <Select
+                        onValueChange={(value: WorkbodyType) => {
+                          field.onChange(value);
+                        }}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select workbody type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="committee">Committee</SelectItem>
+                          <SelectItem value="working-group">Working Group</SelectItem>
+                          <SelectItem value="task-force">Task Force</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>Type of workbody</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="createdDate"
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
-                      <FormLabel>End Date <span className="text-red-500">*</span></FormLabel>
+                      <FormLabel>Creation Date</FormLabel>
                       <Popover>
                         <PopoverTrigger asChild>
                           <FormControl>
@@ -264,7 +315,7 @@ export function WorkbodyForm({
                         <PopoverContent className="w-auto p-0" align="start">
                           <CalendarComponent
                             mode="single"
-                            selected={field.value || undefined}
+                            selected={field.value}
                             onSelect={field.onChange}
                             initialFocus
                             className={cn("p-3 pointer-events-auto")}
@@ -272,66 +323,106 @@ export function WorkbodyForm({
                         </PopoverContent>
                       </Popover>
                       <FormDescription>
-                        End date is required for task forces
+                        Date when this workbody was created
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              )}
 
-              <div className="flex justify-between pt-4">
-                <Button variant="outline" onClick={onCancel} type="button">
-                  Cancel
-                </Button>
-                <Button 
-                  type="button" 
-                  onClick={() => {
-                    if (form.formState.isValid) {
-                      setActiveTab("documents");
-                    }
-                  }}
-                  disabled={!form.formState.isValid}
-                >
-                  Next
-                </Button>
-              </div>
-            </form>
-          </Form>
+                {showEndDate && (
+                  <FormField
+                    control={form.control}
+                    name="endDate"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>End Date <span className="text-red-500">*</span></FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant={"outline"}
+                                className={cn(
+                                  "w-full pl-3 text-left font-normal",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                                type="button"
+                              >
+                                {field.value ? (
+                                  format(field.value, "PPP")
+                                ) : (
+                                  <span>Pick a date</span>
+                                )}
+                                <Calendar className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <CalendarComponent
+                              mode="single"
+                              selected={field.value || undefined}
+                              onSelect={field.onChange}
+                              initialFocus
+                              className={cn("p-3 pointer-events-auto")}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormDescription>
+                          End date is required for task forces
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+              </form>
+            </Form>
+          </div>
+
+          <div className="flex justify-between pt-4">
+            <Button variant="outline" onClick={onCancel} type="button">
+              Cancel
+            </Button>
+            <Button 
+              type="button" 
+              onClick={() => {
+                if (form.formState.isValid) {
+                  setActiveTab("documents");
+                } else {
+                  form.trigger(); // Trigger validation to show errors
+                }
+              }}
+            >
+              Next
+            </Button>
+          </div>
         </TabsContent>
 
         <TabsContent value="documents">
           <div className="space-y-6">
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">Upload Documents</h3>
+            <div className="rounded-lg border p-4">
+              <h3 className="text-lg font-medium mb-4">Upload Documents</h3>
               
               {/* Notification Upload Section */}
-              <div className="border rounded-lg p-4">
+              <div className="border rounded-lg p-4 mb-4">
                 <h4 className="text-md font-medium mb-2">Upload Notification</h4>
                 <p className="text-sm text-muted-foreground mb-4">
                   Upload a notification document containing workbody details and members.
                 </p>
-                {!workbodyId ? (
-                  <div className="flex items-center justify-center h-24 bg-muted rounded-lg">
-                    <p className="text-sm text-muted-foreground">
-                      You'll be able to upload after saving the basic information.
-                    </p>
-                  </div>
-                ) : notificationUploaded ? (
-                  <div className="p-2 bg-green-50 border border-green-200 rounded-lg">
+                {notificationUploaded ? (
+                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
                     <p className="text-sm text-green-700 flex items-center">
                       <span className="mr-2">✓</span> Notification uploaded successfully
                     </p>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center h-24 border-2 border-dashed rounded-lg">
-                    <div className="text-center">
-                      <Upload className="mx-auto h-8 w-8 text-muted-foreground" />
-                      <p className="mt-2 text-sm text-muted-foreground">
-                        Document upload will be available here
-                      </p>
-                    </div>
-                  </div>
+                  <Button 
+                    onClick={() => setIsUploadNotificationOpen(true)}
+                    className="flex items-center gap-2"
+                  >
+                    <Upload className="h-4 w-4" />
+                    Upload Notification
+                  </Button>
                 )}
               </div>
 
@@ -341,27 +432,20 @@ export function WorkbodyForm({
                 <p className="text-sm text-muted-foreground mb-4">
                   Upload the terms of reference document for this workbody.
                 </p>
-                {!workbodyId ? (
-                  <div className="flex items-center justify-center h-24 bg-muted rounded-lg">
-                    <p className="text-sm text-muted-foreground">
-                      You'll be able to upload after saving the basic information.
-                    </p>
-                  </div>
-                ) : torUploaded ? (
-                  <div className="p-2 bg-green-50 border border-green-200 rounded-lg">
+                {torUploaded ? (
+                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
                     <p className="text-sm text-green-700 flex items-center">
                       <span className="mr-2">✓</span> Terms of Reference uploaded successfully
                     </p>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center h-24 border-2 border-dashed rounded-lg">
-                    <div className="text-center">
-                      <Upload className="mx-auto h-8 w-8 text-muted-foreground" />
-                      <p className="mt-2 text-sm text-muted-foreground">
-                        Document upload will be available here
-                      </p>
-                    </div>
-                  </div>
+                  <Button 
+                    onClick={() => setIsUploadTorOpen(true)}
+                    className="flex items-center gap-2"
+                  >
+                    <Upload className="h-4 w-4" />
+                    Upload Terms of Reference
+                  </Button>
                 )}
 
                 <Form {...form}>
@@ -393,7 +477,21 @@ export function WorkbodyForm({
               <Button variant="outline" type="button" onClick={() => setActiveTab("basic-info")}>
                 Back
               </Button>
-              <Button type="button" onClick={() => setActiveTab("members")}>
+              <Button 
+                type="button" 
+                onClick={() => {
+                  if (notificationUploaded || torUploaded) {
+                    setActiveTab("members");
+                  } else {
+                    toast({
+                      title: "Required documents missing",
+                      description: "Please upload at least one document before proceeding.",
+                      variant: "destructive"
+                    });
+                  }
+                }}
+                disabled={!notificationUploaded && !torUploaded}
+              >
                 Next
               </Button>
             </div>
@@ -402,36 +500,110 @@ export function WorkbodyForm({
 
         <TabsContent value="members">
           <div className="space-y-6">
-            <h3 className="text-lg font-medium">Add Members</h3>
-            
-            {!workbodyId ? (
-              <div className="flex items-center justify-center h-60 bg-muted rounded-lg">
-                <p className="text-sm text-muted-foreground">
-                  You'll be able to add members after saving the basic information.
-                </p>
-              </div>
-            ) : (
-              <ManualMemberAddition
-                workbodyId={workbodyId}
-                onMembersAdded={handleMembersAdded}
-                onCancel={() => {}} // We'll handle this differently
-              />
-            )}
+            <div className="rounded-lg border p-4">
+              <h3 className="text-lg font-medium mb-4">Add Members</h3>
+              
+              {workbodyId ? (
+                <ManualMemberAddition
+                  workbodyId={workbodyId}
+                  onMembersAdded={handleMembersAdded}
+                  onCancel={() => setActiveTab("documents")}
+                />
+              ) : (
+                <div className="flex items-center justify-center h-60 bg-muted rounded-lg">
+                  <p className="text-sm text-muted-foreground">
+                    Loading... Please wait while we prepare the member addition form.
+                  </p>
+                </div>
+              )}
+            </div>
 
             <div className="flex justify-between pt-4">
               <Button variant="outline" type="button" onClick={() => setActiveTab("documents")}>
                 Back
               </Button>
-              <Button 
-                type="button" 
-                onClick={() => form.handleSubmit(handleSubmit)()}
-              >
-                Save Workbody
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="review">
+          <div className="space-y-6">
+            <div className="rounded-lg border p-4">
+              <h3 className="text-lg font-medium mb-4">Review and Create Workbody</h3>
+              
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="font-medium text-sm">Name</h4>
+                    <p className="text-muted-foreground">{form.getValues("name")}</p>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-sm">Type</h4>
+                    <p className="text-muted-foreground capitalize">{form.getValues("type").replace("-", " ")}</p>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-sm">Creation Date</h4>
+                    <p className="text-muted-foreground">{format(form.getValues("createdDate"), "PPP")}</p>
+                  </div>
+                  {form.getValues("endDate") && (
+                    <div>
+                      <h4 className="font-medium text-sm">End Date</h4>
+                      <p className="text-muted-foreground">{format(form.getValues("endDate")!, "PPP")}</p>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="rounded-lg bg-muted p-3">
+                  <h4 className="font-medium text-sm mb-1">Document Status</h4>
+                  <ul className="space-y-1 text-sm">
+                    <li className="flex items-center gap-2">
+                      <span className="text-green-600">✓</span> 
+                      <span>Notification: {notificationUploaded ? 'Uploaded' : 'Not uploaded'}</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-green-600">✓</span> 
+                      <span>Terms of Reference: {torUploaded ? 'Uploaded' : 'Not uploaded'}</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-green-600">✓</span> 
+                      <span>Members: Added successfully</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-between pt-4">
+              <Button variant="outline" type="button" onClick={() => setActiveTab("members")}>
+                Back
+              </Button>
+              <Button type="button" onClick={() => form.handleSubmit(handleSubmit)()}>
+                Create Workbody
               </Button>
             </div>
           </div>
         </TabsContent>
       </Tabs>
+
+      {workbodyId && (
+        <>
+          <DocumentUpload
+            workbodyId={workbodyId}
+            documentType="notification"
+            isOpen={isUploadNotificationOpen}
+            onClose={() => setIsUploadNotificationOpen(false)}
+            onUploadComplete={handleNotificationUpload}
+          />
+
+          <DocumentUpload
+            workbodyId={workbodyId}
+            documentType="tor"
+            isOpen={isUploadTorOpen}
+            onClose={() => setIsUploadTorOpen(false)}
+            onUploadComplete={handleTorUpload}
+          />
+        </>
+      )}
     </div>
   );
 }
