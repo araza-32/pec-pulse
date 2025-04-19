@@ -1,3 +1,4 @@
+
 import { NavLink } from "react-router-dom";
 import { 
   BarChart3, 
@@ -9,7 +10,8 @@ import {
   Home, 
   Users, 
   X,
-  Settings
+  Settings,
+  ChevronDown
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -17,6 +19,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { useWorkbodies } from "@/hooks/useWorkbodies";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -42,6 +49,36 @@ export function Sidebar({
   const committees = filteredWorkbodies.filter(w => w.type === 'committee');
   const workingGroups = filteredWorkbodies.filter(w => w.type === 'working-group');
   const taskForces = filteredWorkbodies.filter(w => w.type === 'task-force');
+
+  const WorkbodyGroup = ({ title, items, icon: Icon }: { title: string; items: any[]; icon: any }) => (
+    <Collapsible className="w-full">
+      <CollapsibleTrigger className="flex w-full items-center justify-between rounded-md px-3 py-2 text-sm hover:bg-pec-green-50">
+        <div className="flex items-center gap-3">
+          <Icon className="h-4 w-4" />
+          <span>{title}</span>
+        </div>
+        <ChevronDown className="h-4 w-4" />
+      </CollapsibleTrigger>
+      <CollapsibleContent className="pl-9 mt-1">
+        {items.map(item => (
+          <NavLink
+            key={item.id}
+            to={`/workbody/${item.id}`}
+            className={({ isActive }) =>
+              cn(
+                "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+                isActive
+                  ? "bg-pec-green text-white"
+                  : "hover:bg-pec-green-50"
+              )
+            }
+          >
+            {item.name}
+          </NavLink>
+        ))}
+      </CollapsibleContent>
+    </Collapsible>
+  );
   
   return (
     <>
@@ -201,88 +238,19 @@ export function Sidebar({
             ) : (
               <>
                 {(userRole === 'admin' || userRole === 'chairman') && (
-                  <>
+                  <div className="space-y-2">
                     {committees.length > 0 && (
-                      <div>
-                        <h4 className="mb-2 px-3 text-xs font-semibold uppercase text-muted-foreground">
-                          Committees
-                        </h4>
-                        <div className="space-y-1">
-                          {committees.map(committee => (
-                            <NavLink
-                              key={committee.id}
-                              to={`/workbody/${committee.id}`}
-                              className={({ isActive }) =>
-                                cn(
-                                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-                                  isActive
-                                    ? "bg-pec-green text-white"
-                                    : "hover:bg-pec-green-50"
-                                )
-                              }
-                            >
-                              <Users className="h-4 w-4" />
-                              {committee.name}
-                            </NavLink>
-                          ))}
-                        </div>
-                      </div>
+                      <WorkbodyGroup title="Committees" items={committees} icon={Users} />
                     )}
                     
                     {workingGroups.length > 0 && (
-                      <div>
-                        <h4 className="mb-2 px-3 text-xs font-semibold uppercase text-muted-foreground">
-                          Working Groups
-                        </h4>
-                        <div className="space-y-1">
-                          {workingGroups.map(group => (
-                            <NavLink
-                              key={group.id}
-                              to={`/workbody/${group.id}`}
-                              className={({ isActive }) =>
-                                cn(
-                                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-                                  isActive
-                                    ? "bg-pec-green text-white"
-                                    : "hover:bg-pec-green-50"
-                                )
-                              }
-                            >
-                              <GitMerge className="h-4 w-4" />
-                              {group.name}
-                            </NavLink>
-                          ))}
-                        </div>
-                      </div>
+                      <WorkbodyGroup title="Working Groups" items={workingGroups} icon={GitMerge} />
                     )}
                     
                     {taskForces.length > 0 && (
-                      <div>
-                        <h4 className="mb-2 px-3 text-xs font-semibold uppercase text-muted-foreground">
-                          Task Forces
-                        </h4>
-                        <div className="space-y-1">
-                          {taskForces.map(taskForce => (
-                            <NavLink
-                              key={taskForce.id}
-                              to={`/workbody/${taskForce.id}`}
-                              className={({ isActive }) =>
-                                cn(
-                                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-                                  isActive
-                                    ? "bg-pec-green text-white"
-                                    : "hover:bg-pec-green-50"
-                                )
-                              }
-                            >
-                              <FileText className="h-4 w-4" />
-                              {taskForce.name}
-                            </NavLink>
-                          ))}
-                        </div>
-                      </div>
+                      <WorkbodyGroup title="Task Forces" items={taskForces} icon={FileText} />
                     )}
-                  </>
+                  </div>
                 )}
                 
                 {/* For secretaries, show only their assigned workbody */}
