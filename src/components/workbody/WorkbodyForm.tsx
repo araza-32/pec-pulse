@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -36,6 +35,7 @@ import { WorkbodyFormData } from "@/types/workbody";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ManualMemberAddition } from "./ManualMemberAddition";
+import { DocumentUpload } from "./DocumentUpload";
 
 // Updated schema without description, as we'll be using members instead
 const formSchema = z.object({

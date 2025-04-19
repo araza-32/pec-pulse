@@ -1,4 +1,3 @@
-
 import { NavLink } from "react-router-dom";
 import { 
   BarChart3, 
@@ -40,12 +39,10 @@ export function Sidebar({
 }: SidebarProps) {
   const { workbodies, isLoading } = useWorkbodies();
 
-  // Filter workbodies based on user role and assigned workbody
   const filteredWorkbodies = userRole === 'secretary'
     ? workbodies.filter(w => w.id === userWorkbodyId)
     : workbodies;
 
-  // Group workbodies by type
   const committees = filteredWorkbodies.filter(w => w.type === 'committee');
   const workingGroups = filteredWorkbodies.filter(w => w.type === 'working-group');
   const taskForces = filteredWorkbodies.filter(w => w.type === 'task-force');
@@ -82,7 +79,6 @@ export function Sidebar({
   
   return (
     <>
-      {/* Overlay for mobile */}
       {isOpen && (
         <div 
           className="fixed inset-0 z-40 bg-black/20 md:hidden" 
@@ -90,12 +86,11 @@ export function Sidebar({
         />
       )}
       
-      {/* Sidebar */}
       <aside className={cn(
-        "fixed inset-y-0 left-0 z-50 w-64 transform border-r bg-white transition-transform duration-300 md:relative md:translate-x-0",
+        "fixed inset-y-0 left-0 z-50 w-64 transform border-r bg-white transition-transform duration-300 md:relative md:translate-x-0 h-screen overflow-hidden flex flex-col",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
-        <div className="flex h-16 items-center justify-between border-b px-4">
+        <div className="flex h-16 items-center justify-between border-b px-4 flex-shrink-0">
           <div className="flex items-center gap-2">
             <Globe className="h-6 w-6 text-pec-green" />
             <span className="font-semibold">PEC Dashboard</span>
@@ -111,7 +106,7 @@ export function Sidebar({
           </Button>
         </div>
         
-        <ScrollArea className="h-[calc(100vh-64px)] px-3 py-4">
+        <ScrollArea className="flex-1 px-3 py-4">
           <div className="space-y-4">
             <div className="space-y-2">
               <NavLink
@@ -130,7 +125,6 @@ export function Sidebar({
                 Dashboard
               </NavLink>
               
-              {/* Show admin-only links */}
               {userRole === 'admin' && (
                 <>
                   <NavLink
@@ -165,7 +159,6 @@ export function Sidebar({
                 </>
               )}
               
-              {/* Calendar link for all users */}
               <NavLink
                 to="/calendar"
                 className={({ isActive }) =>
@@ -181,7 +174,6 @@ export function Sidebar({
                 Calendar
               </NavLink>
               
-              {/* Upload Minutes link for secretaries and admins */}
               {(userRole === 'secretary' || userRole === 'admin') && (
                 <NavLink
                   to="/upload"
@@ -199,7 +191,6 @@ export function Sidebar({
                 </NavLink>
               )}
               
-              {/* Chairman Dashboard link */}
               {userRole === 'chairman' && (
                 <NavLink
                   to="/chairman-dashboard"
@@ -220,7 +211,6 @@ export function Sidebar({
             
             <Separator />
             
-            {/* Display workbodies section */}
             {isLoading ? (
               <div className="space-y-3">
                 <h4 className="px-3 text-xs font-semibold uppercase text-muted-foreground">
@@ -253,7 +243,6 @@ export function Sidebar({
                   </div>
                 )}
                 
-                {/* For secretaries, show only their assigned workbody */}
                 {userRole === 'secretary' && filteredWorkbodies.length > 0 && (
                   <div>
                     <h4 className="mb-2 px-3 text-xs font-semibold uppercase text-muted-foreground">
