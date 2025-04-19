@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -36,7 +35,6 @@ export default function WorkbodyManagement() {
   const { workbodies, isLoading, createWorkbody, updateWorkbody, deleteWorkbody, refetch } = useWorkbodies();
   const { extractMembersFromDocument, isExtracting, extractionError: hookExtractionError, clearExtractionError } = usePdfMemberExtraction();
 
-  // Reset hideErrors when component mounts or workbodies change
   useEffect(() => {
     setHideErrors(false);
   }, [workbodies]);
@@ -147,7 +145,6 @@ export default function WorkbodyManagement() {
         console.log("Handling notification upload for document:", documentId);
         const members = await extractMembersFromDocument(documentId, selectedWorkbody.id);
         
-        // Only show success toast if we extracted valid members
         const validMembers = members.filter(m => 
           !m.name.includes("Error") && 
           !m.name.includes("Processing") && 
@@ -161,7 +158,6 @@ export default function WorkbodyManagement() {
           });
         }
         
-        // Always refetch to get the latest data
         await refetch();
         setIsHistoryVisible(true);
         setIsUploadNotificationOpen(false);
@@ -303,11 +299,11 @@ export default function WorkbodyManagement() {
       )}
 
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add New Workbody</DialogTitle>
           </DialogHeader>
-          <WorkbodyForm
+          <CreateWorkbodyForm
             onSubmit={handleAddSubmit}
             onCancel={() => setIsAddDialogOpen(false)}
           />
@@ -315,12 +311,12 @@ export default function WorkbodyManagement() {
       </Dialog>
 
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Workbody</DialogTitle>
           </DialogHeader>
           {selectedWorkbody && (
-            <WorkbodyForm
+            <CreateWorkbodyForm
               initialData={selectedWorkbody}
               onSubmit={handleEditSubmit}
               onCancel={() => setIsEditDialogOpen(false)}
