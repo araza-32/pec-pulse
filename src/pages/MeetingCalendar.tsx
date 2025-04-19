@@ -195,7 +195,7 @@ export default function MeetingCalendar() {
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
           <div
             key={day}
-            className="h-10 flex items-center justify-center font-semibold text-sm"
+            className="h-8 flex items-center justify-center font-semibold text-xs"
           >
             {day}
           </div>
@@ -231,7 +231,7 @@ export default function MeetingCalendar() {
           return (
             <div
               key={i}
-              className={`border rounded-md min-h-[120px] p-2 ${
+              className={`border rounded-md min-h-[100px] p-1 ${
                 !day.isCurrentMonth
                   ? "bg-gray-50"
                   : isToday
@@ -243,18 +243,18 @@ export default function MeetingCalendar() {
                 <>
                   <div className="flex justify-between items-center">
                     <span
-                      className={`text-sm font-semibold ${
+                      className={`text-xs font-semibold ${
                         isToday ? "text-blue-600" : ""
                       }`}
                     >
                       {day.day}
                     </span>
                   </div>
-                  <div className="mt-1 space-y-1">
+                  <div className="mt-1 space-y-0.5">
                     {dayMeetings.map((meeting) => (
                       <div
                         key={meeting.id}
-                        className="bg-green-100 p-1 rounded text-xs cursor-pointer"
+                        className="bg-green-100 px-1.5 py-0.5 rounded text-[11px] cursor-pointer hover:bg-green-200 transition-colors"
                         onClick={() => viewMeeting(meeting)}
                       >
                         <div className="font-medium truncate">

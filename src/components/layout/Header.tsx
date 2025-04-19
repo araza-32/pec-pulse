@@ -35,10 +35,10 @@ export function Header({ toggleSidebar, user, onLogout }: HeaderProps) {
             className="h-10 w-auto" 
           />
           <h1 className="hidden text-xl font-semibold md:block">
-            PEC Workbodies Administrator Dashboard
+            PEC Pulse
           </h1>
           <h1 className="text-xl font-semibold md:hidden">
-            PEC Dashboard
+            PEC Pulse
           </h1>
         </div>
       </div>

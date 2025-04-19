@@ -1,4 +1,3 @@
-
 import { 
   Users, 
   FileCheck, 
@@ -6,15 +5,26 @@ import {
   CheckSquare,
   BookOpen,
   FileSpreadsheet,
-  GitMerge 
+  GitMerge,
+  ChevronRight,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { StatCard } from "@/components/dashboard/StatCard";
-import { WorkbodyProgressChart } from "@/components/dashboard/WorkbodyProgressChart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useWorkbodies } from "@/hooks/useWorkbodies";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import {
+  ResponsiveContainer,
+  RadialBarChart,
+  RadialBar,
+  Legend,
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip
+} from "recharts";
 
 export default function Dashboard() {
   const [tab, setTab] = useState("overview");
@@ -38,6 +48,44 @@ export default function Dashboard() {
        filteredWorkbodies.reduce((sum, w) => sum + w.actionsAgreed, 0)) * 100
     ) : 0
   };
+
+  const initialMeetings = [
+    {
+      id: "meeting-1",
+      workbodyId: "committee-1",
+      workbodyName: "Education Committee",
+      date: "2025-05-10",
+      time: "10:00",
+      location: "PEC Headquarters, Islamabad",
+      agendaItems: [
+        "Review of Accreditation Process",
+        "Curriculum Standardization",
+        "New Engineering Programs Approval",
+      ],
+    },
+    {
+      id: "meeting-2",
+      workbodyId: "workgroup-1",
+      workbodyName: "Digital Transformation Working Group",
+      date: "2025-04-22",
+      time: "14:30",
+      location: "Virtual Meeting",
+      agendaItems: [
+        "Online Portal Progress Update",
+        "Mobile App Development Status",
+        "Digital Verification System Implementation",
+      ],
+    },
+  ];
+  
+  const today = new Date();
+  const thirtyDaysFromNow = new Date();
+  thirtyDaysFromNow.setDate(today.getDate() + 30);
+  
+  const upcomingMeetings = initialMeetings?.filter(meeting => {
+    const meetingDate = new Date(meeting.date);
+    return meetingDate >= today && meetingDate <= thirtyDaysFromNow;
+  }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   
   if (isLoading) {
     return (
@@ -149,192 +197,174 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Dashboard</h1>
+        <h1 className="text-3xl font-bold">PEC Pulse</h1>
         <p className="text-muted-foreground">
-          Overview of all PEC workbodies and their activities
+          Organizational Overview & Analytics
         </p>
       </div>
-      
-      <Tabs value={tab} onValueChange={setTab} className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="committees">Committees</TabsTrigger>
-          <TabsTrigger value="working-groups">Working Groups</TabsTrigger>
-          <TabsTrigger value="task-forces">Task Forces</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="overview" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <StatCard
-              title="Total Workbodies"
-              value={stats.totalWorkbodies}
-              icon={Users}
-              colorClass="bg-pec-green"
-            />
-            <StatCard
-              title="Total Meetings"
-              value={stats.totalMeetings}
-              icon={CalendarClock}
-              colorClass="bg-pec-gold"
-            />
-            <StatCard
-              title="Meetings This Year"
-              value={stats.meetingsThisYear}
-              icon={BookOpen}
-              colorClass="bg-blue-500"
-            />
-            <StatCard
-              title="Action Completion Rate"
-              value={`${stats.completionRate}%`}
-              icon={FileCheck}
-              colorClass="bg-purple-500"
-            />
-          </div>
-          
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            <Card className="xl:col-span-2">
-              <CardHeader>
-                <CardTitle>Workbody Performance</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <WorkbodyProgressChart workbodies={workbodies} limit={10} />
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Workbody Distribution</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center gap-4">
-                    <div className="rounded bg-pec-green p-2 text-white">
-                      <Users className="h-5 w-5" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <p>Committees</p>
-                        <p className="font-bold">{stats.committees}</p>
-                      </div>
-                      <div className="mt-1 h-2 w-full rounded-full bg-muted">
-                        <div
-                          className="h-full rounded-full bg-pec-green"
-                          style={{ width: `${(stats.committees / stats.totalWorkbodies) * 100}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-4">
-                    <div className="rounded bg-pec-gold p-2 text-white">
-                      <GitMerge className="h-5 w-5" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <p>Working Groups</p>
-                        <p className="font-bold">{stats.workingGroups}</p>
-                      </div>
-                      <div className="mt-1 h-2 w-full rounded-full bg-muted">
-                        <div
-                          className="h-full rounded-full bg-pec-gold"
-                          style={{ width: `${(stats.workingGroups / stats.totalWorkbodies) * 100}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-4">
-                    <div className="rounded bg-blue-500 p-2 text-white">
-                      <FileSpreadsheet className="h-5 w-5" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <p>Task Forces</p>
-                        <p className="font-bold">{stats.taskForces}</p>
-                      </div>
-                      <div className="mt-1 h-2 w-full rounded-full bg-muted">
-                        <div
-                          className="h-full rounded-full bg-blue-500"
-                          style={{ width: `${(stats.taskForces / stats.totalWorkbodies) * 100}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Actions Overview</CardTitle>
-            </CardHeader>
-            <CardContent>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title="Total Workbodies"
+          value={stats.totalWorkbodies}
+          icon={Users}
+          colorClass="bg-pec-green"
+        />
+        <StatCard
+          title="Meetings This Year"
+          value={stats.meetingsThisYear}
+          icon={CalendarClock}
+          colorClass="bg-pec-gold"
+        />
+        <StatCard
+          title="Action Completion"
+          value={`${stats.completionRate}%`}
+          icon={CheckSquare}
+          colorClass="bg-blue-500"
+        />
+        <StatCard
+          title="Upcoming Meetings"
+          value={upcomingMeetings?.length || 0}
+          icon={BookOpen}
+          colorClass="bg-purple-500"
+        />
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Upcoming Meetings</CardTitle>
+          </CardHeader>
+          <CardContent className="max-h-[400px] overflow-y-auto">
+            {upcomingMeetings && upcomingMeetings.length > 0 ? (
               <div className="space-y-4">
-                <div className="flex items-center gap-4">
-                  <div className="rounded bg-pec-green p-2 text-white">
-                    <CheckSquare className="h-5 w-5" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <p>Actions Completed</p>
-                      <p className="font-bold">
-                        {workbodies.reduce((sum, w) => sum + w.actionsCompleted, 0)} / 
-                        {workbodies.reduce((sum, w) => sum + w.actionsAgreed, 0)}
-                      </p>
+                {upcomingMeetings.map(meeting => (
+                  <div 
+                    key={meeting.id} 
+                    className="flex items-start space-x-4 border-b pb-4 last:border-0 hover:bg-gray-50 p-2 rounded-lg transition-colors"
+                  >
+                    <div className="bg-blue-100 rounded p-2 text-blue-700 flex-shrink-0">
+                      <CalendarClock className="h-5 w-5" />
                     </div>
-                    <div className="mt-1 h-2 w-full rounded-full bg-muted">
-                      <div
-                        className="h-full rounded-full bg-pec-green"
-                        style={{ width: `${stats.completionRate}%` }}
-                      />
+                    <div className="flex-grow">
+                      <div className="font-medium">{meeting.workbodyName}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {new Date(meeting.date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })} at {meeting.time}
+                      </div>
+                      <div className="mt-2">
+                        <Button 
+                          variant="link" 
+                          className="p-0 h-auto text-sm text-blue-600 hover:text-blue-800"
+                          onClick={() => {/* Add view agenda handler */}}
+                        >
+                          View Agenda <ChevronRight className="h-4 w-4 inline" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
+                ))}
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="committees">
-          <Card>
-            <CardHeader>
-              <CardTitle>Committees Overview</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <WorkbodyProgressChart 
-                workbodies={workbodies.filter(w => w.type === 'committee')} 
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="working-groups">
-          <Card>
-            <CardHeader>
-              <CardTitle>Working Groups Overview</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <WorkbodyProgressChart 
-                workbodies={workbodies.filter(w => w.type === 'working-group')} 
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="task-forces">
-          <Card>
-            <CardHeader>
-              <CardTitle>Task Forces Overview</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <WorkbodyProgressChart 
-                workbodies={workbodies.filter(w => w.type === 'task-force')} 
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            ) : (
+              <p className="text-muted-foreground">No upcoming meetings scheduled.</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Workbody Distribution</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={[
+                      { name: 'Committees', value: stats.committees },
+                      { name: 'Working Groups', value: stats.workingGroups },
+                      { name: 'Task Forces', value: stats.taskForces }
+                    ]}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    <Cell fill="#10B981" />
+                    <Cell fill="#F59E0B" />
+                    <Cell fill="#3B82F6" />
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Action Completion Progress</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <RadialBarChart
+                cx="50%"
+                cy="50%"
+                innerRadius="10%"
+                outerRadius="80%"
+                barSize={10}
+                data={[
+                  {
+                    name: 'Committees',
+                    value: (workbodies
+                      .filter(w => w.type === 'committee')
+                      .reduce((acc, curr) => acc + curr.actionsCompleted, 0) /
+                      workbodies
+                        .filter(w => w.type === 'committee')
+                        .reduce((acc, curr) => acc + curr.actionsAgreed, 0)) * 100,
+                    fill: '#10B981'
+                  },
+                  {
+                    name: 'Working Groups',
+                    value: (workbodies
+                      .filter(w => w.type === 'working-group')
+                      .reduce((acc, curr) => acc + curr.actionsCompleted, 0) /
+                      workbodies
+                        .filter(w => w.type === 'working-group')
+                        .reduce((acc, curr) => acc + curr.actionsAgreed, 0)) * 100,
+                    fill: '#F59E0B'
+                  },
+                  {
+                    name: 'Task Forces',
+                    value: (workbodies
+                      .filter(w => w.type === 'task-force')
+                      .reduce((acc, curr) => acc + curr.actionsCompleted, 0) /
+                      workbodies
+                        .filter(w => w.type === 'task-force')
+                        .reduce((acc, curr) => acc + curr.actionsAgreed, 0)) * 100,
+                    fill: '#3B82F6'
+                  }
+                ]}
+              >
+                <RadialBar
+                  minAngle={15}
+                  label={{ position: 'insideStart', fill: '#fff' }}
+                  background
+                  clockWise
+                  dataKey="value"
+                />
+                <Legend />
+                <Tooltip />
+              </RadialBarChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
