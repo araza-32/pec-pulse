@@ -62,10 +62,10 @@ export const useWorkbodies = () => {
         .insert({
           name: newWorkbody.name,
           type: newWorkbody.type,
-          description: newWorkbody.description,
+          description: newWorkbody.description || "",
           created_date: newWorkbody.createdDate.toISOString(),
           end_date: newWorkbody.endDate ? newWorkbody.endDate.toISOString() : null,
-          terms_of_reference: newWorkbody.termsOfReference,
+          terms_of_reference: newWorkbody.termsOfReference || "",
           total_meetings: 0,
           meetings_this_year: 0,
           actions_agreed: 0,
@@ -98,10 +98,10 @@ export const useWorkbodies = () => {
         .update({
           name: updatedWorkbody.name,
           type: updatedWorkbody.type,
-          description: updatedWorkbody.description,
+          description: updatedWorkbody.description || "",
           created_date: updatedWorkbody.createdDate.toISOString(),
           end_date: updatedWorkbody.endDate ? updatedWorkbody.endDate.toISOString() : null,
-          terms_of_reference: updatedWorkbody.termsOfReference
+          terms_of_reference: updatedWorkbody.termsOfReference || ""
         })
         .eq('id', updatedWorkbody.id)
         .select()
@@ -139,7 +139,7 @@ export const useWorkbodies = () => {
   return {
     workbodies,
     isLoading,
-    refetch, // Add the refetch function to the returned object
+    refetch,
     createWorkbody,
     updateWorkbody,
     deleteWorkbody
