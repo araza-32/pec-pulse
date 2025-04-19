@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -303,7 +304,7 @@ export default function WorkbodyManagement() {
           <DialogHeader>
             <DialogTitle>Add New Workbody</DialogTitle>
           </DialogHeader>
-          <CreateWorkbodyForm
+          <WorkbodyForm
             onSubmit={handleAddSubmit}
             onCancel={() => setIsAddDialogOpen(false)}
           />
@@ -316,7 +317,7 @@ export default function WorkbodyManagement() {
             <DialogTitle>Edit Workbody</DialogTitle>
           </DialogHeader>
           {selectedWorkbody && (
-            <CreateWorkbodyForm
+            <WorkbodyForm
               initialData={selectedWorkbody}
               onSubmit={handleEditSubmit}
               onCancel={() => setIsEditDialogOpen(false)}
