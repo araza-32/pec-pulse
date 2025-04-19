@@ -1,4 +1,3 @@
-
 import { NavLink } from "react-router-dom";
 import { 
   BarChart3, 
@@ -44,9 +43,23 @@ export function Sidebar({
     ? workbodies.filter(w => w.id === userWorkbodyId)
     : workbodies;
 
-  const committees = filteredWorkbodies.filter(w => w.type === 'committee');
-  const workingGroups = filteredWorkbodies.filter(w => w.type === 'working-group');
-  const taskForces = filteredWorkbodies.filter(w => w.type === 'task-force');
+  const committees = filteredWorkbodies
+    .filter(w => w.type === 'committee')
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const workingGroups = filteredWorkbodies
+    .filter(w => w.type === 'working-group')
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const taskForces = filteredWorkbodies
+    .filter(w => w.type === 'task-force')
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString('en-US', { 
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
 
   const WorkbodyGroup = ({ title, items, icon: Icon }: { title: string; items: any[]; icon: any }) => (
     <Collapsible className="w-full">

@@ -31,7 +31,6 @@ export default function Dashboard() {
   const { workbodies, isLoading } = useWorkbodies();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   
-  // Filter workbodies based on user role
   const filteredWorkbodies = user?.role === 'secretary' 
     ? workbodies.filter(w => w.id === user.workbodyId)
     : workbodies;
@@ -86,7 +85,15 @@ export default function Dashboard() {
     const meetingDate = new Date(meeting.date);
     return meetingDate >= today && meetingDate <= thirtyDaysFromNow;
   }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  
+
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString('en-US', { 
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -110,7 +117,6 @@ export default function Dashboard() {
     );
   }
 
-  // Secretary view - single workbody dashboard
   if (user?.role === 'secretary') {
     const workbody = filteredWorkbodies[0];
     if (!workbody) {
@@ -193,7 +199,6 @@ export default function Dashboard() {
     );
   }
 
-  // Admin and Chairman view - full dashboard with all workbodies
   return (
     <div className="space-y-6">
       <div>
@@ -249,7 +254,7 @@ export default function Dashboard() {
                     <div className="flex-grow">
                       <div className="font-medium">{meeting.workbodyName}</div>
                       <div className="text-sm text-muted-foreground">
-                        {new Date(meeting.date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })} at {meeting.time}
+                        {formatDate(meeting.date)} at {meeting.time}
                       </div>
                       <div className="mt-2">
                         <Button 
