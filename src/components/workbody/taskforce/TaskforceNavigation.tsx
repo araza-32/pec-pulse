@@ -18,9 +18,6 @@ export const TaskforceNavigation = ({
   isLastTab = false,
   isFirstTab = false,
 }: TaskforceNavigationProps) => {
-  // Ensure that we don't have conditional returns before any hooks
-  // This component doesn't use hooks, but let's make it more robust
-
   return (
     <div className="flex justify-between">
       <div>

@@ -76,45 +76,44 @@ const taskforceSchema = z.object({
 });
 
 export const useTaskforceForm = (initialData?: Partial<TaskforceFormValues>) => {
-  // Safely handle potentially undefined initialData
-  const safeInitialData = initialData || {};
+  // Create safe default values
+  const defaultValues: Partial<TaskforceFormValues> = {
+    name: "",
+    proposedBy: "",
+    purpose: "",
+    alignment: "",
+    expectedOutcomes: [],
+    mandates: [],
+    durationMonths: 3,
+    members: [],
+    meetings: [],
+    deliverables: [],
+    milestones: [],
+    proposerName: "",
+    proposerDate: "",
+    proposerSignature: "",
+    reviewerName: "",
+    reviewerDate: "",
+    reviewerSignature: "",
+    approverName: "",
+    approverDate: "",
+    approverSignature: "",
+    type: "task-force",
+    createdDate: new Date(),
+  };
   
-  // Always initialize the form with these default values
+  // Safely merge initialData with defaults
+  const mergedValues = initialData ? {
+    ...defaultValues,
+    ...initialData,
+  } : defaultValues;
+  
+  // Initialize the form
   const form = useForm<TaskforceFormValues>({
     resolver: zodResolver(taskforceSchema),
-    defaultValues: {
-      name: safeInitialData.name || "",
-      proposedBy: safeInitialData.proposedBy || "",
-      purpose: safeInitialData.purpose || "",
-      
-      alignment: safeInitialData.alignment || "",
-      expectedOutcomes: safeInitialData.expectedOutcomes || [],
-      mandates: safeInitialData.mandates || [],
-      durationMonths: safeInitialData.durationMonths || 3,
-      
-      members: safeInitialData.members || [],
-      meetings: safeInitialData.meetings || [],
-      deliverables: safeInitialData.deliverables || [],
-      milestones: safeInitialData.milestones || [],
-      
-      proposerName: safeInitialData.proposerName || "",
-      proposerDate: safeInitialData.proposerDate || "",
-      proposerSignature: safeInitialData.proposerSignature || "",
-      
-      reviewerName: safeInitialData.reviewerName || "",
-      reviewerDate: safeInitialData.reviewerDate || "",
-      reviewerSignature: safeInitialData.reviewerSignature || "",
-      
-      approverName: safeInitialData.approverName || "",
-      approverDate: safeInitialData.approverDate || "",
-      approverSignature: safeInitialData.approverSignature || "",
-      
-      type: "task-force",
-      createdDate: safeInitialData.createdDate || new Date(),
-      endDate: safeInitialData.endDate,
-    },
+    defaultValues: mergedValues as any,
     mode: "onChange"
   });
 
   return form;
-}
+};

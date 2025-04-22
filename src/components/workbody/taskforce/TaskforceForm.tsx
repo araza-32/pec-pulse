@@ -123,7 +123,7 @@ export function TaskforceForm({ onSubmit, onCancel, initialData }: TaskforceForm
                 });
               }}
               onCancel={onCancel}
-              isFirstTab
+              isFirstTab={true}
             />
           </TabsContent>
 
@@ -184,7 +184,7 @@ export function TaskforceForm({ onSubmit, onCancel, initialData }: TaskforceForm
               onPrevious={() => navigateToPreviousTab(activeTab)}
               onNext={() => form.handleSubmit(handleSubmit)()}
               onCancel={onCancel}
-              isLastTab
+              isLastTab={true}
             />
           </TabsContent>
         </Tabs>
