@@ -62,6 +62,7 @@ export function LoginForm({ onLogin }: LoginFormProps) {
     setIsLoading(true);
 
     try {
+      // First sign in with the admin credentials
       const { data, error } = await supabase.auth.signInWithPassword({
         email: "admin@pec.org.pk",
         password: "Coord@pec!@#123",
@@ -69,39 +70,63 @@ export function LoginForm({ onLogin }: LoginFormProps) {
 
       if (error) {
         setError("Admin login failed. Please contact system administrator.");
+        setIsLoading(false);
         return;
       }
 
       if (data?.session) {
-        // Update the admin user's role in the profiles table
-        const { error: updateError } = await supabase
+        // Check if profile exists for this user
+        const { data: existingProfile, error: profileCheckError } = await supabase
           .from('profiles')
-          .update({ role: 'admin' })
-          .eq('id', data.session.user.id);
-          
-        if (updateError) {
-          console.error('Error updating admin role:', updateError);
-        }
-        
-        // Now fetch the updated profile
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('role')
+          .select('*')
           .eq('id', data.session.user.id)
           .single();
-
-        if (profileError) {
-          setError('Error fetching user profile');
+          
+        if (profileCheckError && profileCheckError.code !== 'PGRST116') {
+          // PGRST116 means "no rows returned" - that's expected if profile doesn't exist yet
+          console.error('Error checking profile:', profileCheckError);
+          setError('Error checking user profile');
+          setIsLoading(false);
           return;
         }
+        
+        // If profile doesn't exist, create it with admin role
+        if (!existingProfile) {
+          const { error: insertError } = await supabase
+            .from('profiles')
+            .insert([{ id: data.session.user.id, role: 'admin' }]);
+            
+          if (insertError) {
+            console.error('Error creating admin profile:', insertError);
+            setError('Error setting admin privileges');
+            setIsLoading(false);
+            return;
+          }
+        } else {
+          // If profile exists, update it to ensure admin role
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .update({ role: 'admin' })
+            .eq('id', data.session.user.id);
+            
+          if (updateError) {
+            console.error('Error updating admin role:', updateError);
+            setError('Error updating admin privileges');
+            setIsLoading(false);
+            return;
+          }
+        }
 
+        // Login with admin role explicitly set
         onLogin({ ...data.session, role: 'admin' });
+        
         toast({
           title: "Admin Login Successful",
           description: "You are now logged in as admin with full access.",
         });
       }
     } catch (err) {
+      console.error('Admin login error:', err);
       setError('An unexpected error occurred');
     } finally {
       setIsLoading(false);
