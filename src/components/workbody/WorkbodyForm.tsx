@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -96,11 +95,9 @@ export function WorkbodyForm({
 
   const workbodyType = form.watch("type");
   
-  // Improved function to safely map initial data to taskforce format
   const mapInitialDataToTaskforce = (): Partial<TaskforceFormValues> | undefined => {
     if (!initialData) return undefined;
     
-    // Base properties that are always available
     const baseData: Partial<TaskforceFormValues> = {
       name: initialData.name || "",
       type: "task-force" as const,
@@ -108,7 +105,6 @@ export function WorkbodyForm({
       endDate: initialData.endDate ? new Date(initialData.endDate) : undefined,
     };
 
-    // Try to parse TOR JSON if it exists
     if (initialData.termsOfReference) {
       try {
         const torData = JSON.parse(initialData.termsOfReference);
@@ -137,16 +133,13 @@ export function WorkbodyForm({
         };
       } catch (e) {
         console.error("Error parsing TOR JSON:", e);
-        // Return base data if JSON parsing fails
         return baseData;
       }
     }
     
-    // Return base data if no TOR or parsing failed
     return baseData;
   };
-  
-  // Show TaskforceForm if type is task-force
+
   if (workbodyType === "task-force") {
     const mappedInitialData = mapInitialDataToTaskforce();
     
@@ -162,7 +155,6 @@ export function WorkbodyForm({
         <TaskforceForm 
           onSubmit={(data: TaskforceFormValues) => {
             try {
-              // Convert TaskforceFormValues to WorkbodyFormData
               onSubmit({
                 name: data.name,
                 type: "task-force",
@@ -218,7 +210,7 @@ export function WorkbodyForm({
       </div>
     );
   }
-  
+
   useEffect(() => {
     setShowEndDate(form.getValues("type") === "task-force");
     
