@@ -1,13 +1,8 @@
-
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
 const Index = () => {
   const navigate = useNavigate();
-
-  const handleLoginClick = () => {
-    navigate('/login');
-  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -22,7 +17,7 @@ const Index = () => {
           Pakistan Engineering Council's Workbody Management System
         </p>
         <Button 
-          onClick={handleLoginClick}
+          onClick={() => navigate('/login')}
           className="bg-pec-green hover:bg-pec-green-600"
         >
           Login to Access Dashboard
