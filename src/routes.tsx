@@ -27,11 +27,16 @@ export function AppRoutes() {
     return <Loading />;
   }
 
+  const handleLogin = (session: any) => {
+    // The login is handled by the AuthContext
+    console.log("Login successful:", session);
+  };
+
   if (!session) {
     return (
       <Routes>
         <Route path="/" element={<Index />} />
-        <Route path="/login" element={<LoginForm />} />
+        <Route path="/login" element={<LoginForm onLogin={handleLogin} />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     );
