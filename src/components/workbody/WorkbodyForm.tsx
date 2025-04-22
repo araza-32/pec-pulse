@@ -1,8 +1,9 @@
+
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Calendar, Upload } from "lucide-react";
+import { Calendar } from "lucide-react";
 import { format } from "date-fns";
 
 import { Button } from "@/components/ui/button";
@@ -38,8 +39,10 @@ import { ManualMemberAddition } from "./ManualMemberAddition";
 import { DocumentUpload } from "./DocumentUpload";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { TaskforceForm } from "./taskforce/TaskforceForm";
+import { TaskforceFormValues } from "@/types/taskforce";
 
-const formSchema = z.object({
+const standardFormSchema = z.object({
   name: z.string().min(3, {
     message: "Name must be at least 3 characters.",
   }),
@@ -77,8 +80,8 @@ export function WorkbodyForm({
   const [isUploadTorOpen, setIsUploadTorOpen] = useState(false);
   const { toast } = useToast();
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<z.infer<typeof standardFormSchema>>({
+    resolver: zodResolver(standardFormSchema),
     defaultValues: {
       name: initialData?.name || "",
       type: (initialData?.type as WorkbodyType) || "committee",
@@ -92,6 +95,102 @@ export function WorkbodyForm({
   });
 
   const workbodyType = form.watch("type");
+  
+  // Show TaskforceForm if type is task-force
+  if (workbodyType === "task-force") {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-medium">Create a Task Force</h2>
+          <Button variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+        </div>
+        
+        <TaskforceForm 
+          onSubmit={(data: TaskforceFormValues) => {
+            // Convert TaskforceFormValues to WorkbodyFormData
+            onSubmit({
+              name: data.name,
+              type: "task-force",
+              createdDate: data.createdDate,
+              endDate: data.endDate,
+              description: data.purpose,
+              termsOfReference: JSON.stringify({
+                overview: {
+                  proposedBy: data.proposedBy,
+                  purpose: data.purpose
+                },
+                scope: {
+                  alignment: data.alignment,
+                  expectedOutcomes: data.expectedOutcomes,
+                  mandates: data.mandates,
+                  durationMonths: data.durationMonths
+                },
+                composition: data.members,
+                procedures: data.meetings,
+                deliverables: data.deliverables,
+                milestones: data.milestones,
+                signatures: {
+                  proposer: {
+                    name: data.proposerName,
+                    date: data.proposerDate,
+                    signature: data.proposerSignature
+                  },
+                  reviewer: {
+                    name: data.reviewerName,
+                    date: data.reviewerDate,
+                    signature: data.reviewerSignature
+                  },
+                  approver: {
+                    name: data.approverName,
+                    date: data.approverDate,
+                    signature: data.approverSignature
+                  }
+                }
+              })
+            });
+          }}
+          onCancel={onCancel}
+          initialData={initialData ? {
+            name: initialData.name,
+            type: "task-force",
+            createdDate: initialData.createdDate ? new Date(initialData.createdDate) : new Date(),
+            endDate: initialData.endDate ? new Date(initialData.endDate) : undefined,
+            // Try to parse TOR JSON if it exists
+            ...(initialData.termsOfReference ? (() => {
+              try {
+                const torData = JSON.parse(initialData.termsOfReference);
+                return {
+                  proposedBy: torData.overview?.proposedBy || "",
+                  purpose: torData.overview?.purpose || "",
+                  alignment: torData.scope?.alignment || "",
+                  expectedOutcomes: torData.scope?.expectedOutcomes || [],
+                  mandates: torData.scope?.mandates || [],
+                  durationMonths: torData.scope?.durationMonths || 3,
+                  members: torData.composition || [],
+                  meetings: torData.procedures || [],
+                  deliverables: torData.deliverables || [],
+                  milestones: torData.milestones || [],
+                  proposerName: torData.signatures?.proposer?.name || "",
+                  proposerDate: torData.signatures?.proposer?.date || "",
+                  proposerSignature: torData.signatures?.proposer?.signature || "",
+                  reviewerName: torData.signatures?.reviewer?.name || "",
+                  reviewerDate: torData.signatures?.reviewer?.date || "",
+                  reviewerSignature: torData.signatures?.reviewer?.signature || "",
+                  approverName: torData.signatures?.approver?.name || "",
+                  approverDate: torData.signatures?.approver?.date || "",
+                  approverSignature: torData.signatures?.approver?.signature || ""
+                };
+              } catch (e) {
+                return {};
+              }
+            })() : {})
+          } : undefined}
+        />
+      </div>
+    );
+  }
   
   useEffect(() => {
     setShowEndDate(workbodyType === "task-force");
@@ -148,7 +247,7 @@ export function WorkbodyForm({
     }
   };
 
-  const handleSubmit = async (values: z.infer<typeof formSchema>) => {
+  const handleSubmit = async (values: z.infer<typeof standardFormSchema>) => {
     if (!workbodyId || !notificationUploaded || !membersAdded) {
       toast({
         title: "Required steps not completed",
