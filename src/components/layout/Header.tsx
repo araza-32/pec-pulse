@@ -16,6 +16,13 @@ interface HeaderProps {
 export function Header({ toggleSidebar, user, onLogout }: HeaderProps) {
   const [showUserMenu, setShowUserMenu] = useState(false);
   
+  const handleLogout = () => {
+    setShowUserMenu(false);
+    if (onLogout) {
+      onLogout();
+    }
+  };
+  
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-white px-4 md:px-6">
       <div className="flex items-center gap-4">
@@ -60,7 +67,7 @@ export function Header({ toggleSidebar, user, onLogout }: HeaderProps) {
           </Button>
           
           {showUserMenu && (
-            <div className="absolute right-0 mt-2 w-48 rounded-md border bg-white shadow-lg">
+            <div className="absolute right-0 mt-2 w-48 rounded-md border bg-white shadow-lg z-50">
               <div className="p-3">
                 <p className="font-medium">{user.name}</p>
                 <p className="text-sm text-muted-foreground capitalize">{user.role}</p>
@@ -69,7 +76,7 @@ export function Header({ toggleSidebar, user, onLogout }: HeaderProps) {
                 <Button
                   variant="ghost"
                   className="flex w-full items-center justify-start gap-2 rounded-none p-3"
-                  onClick={onLogout}
+                  onClick={handleLogout}
                 >
                   <LogOut className="h-4 w-4" />
                   <span>Logout</span>

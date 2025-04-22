@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -95,6 +96,53 @@ export function WorkbodyForm({
 
   const workbodyType = form.watch("type");
   
+  // Initialize task force form data with initial data if available
+  const mapInitialDataToTaskforce = () => {
+    if (!initialData) return undefined;
+    
+    try {
+      return {
+        name: initialData.name || "",
+        type: "task-force" as const,
+        createdDate: initialData.createdDate ? new Date(initialData.createdDate) : new Date(),
+        endDate: initialData.endDate ? new Date(initialData.endDate) : undefined,
+        // Try to parse TOR JSON if it exists
+        ...(initialData.termsOfReference ? (() => {
+          try {
+            const torData = JSON.parse(initialData.termsOfReference);
+            return {
+              proposedBy: torData.overview?.proposedBy || "",
+              purpose: torData.overview?.purpose || "",
+              alignment: torData.scope?.alignment || "",
+              expectedOutcomes: torData.scope?.expectedOutcomes || [],
+              mandates: torData.scope?.mandates || [],
+              durationMonths: torData.scope?.durationMonths || 3,
+              members: torData.composition || [],
+              meetings: torData.procedures || [],
+              deliverables: torData.deliverables || [],
+              milestones: torData.milestones || [],
+              proposerName: torData.signatures?.proposer?.name || "",
+              proposerDate: torData.signatures?.proposer?.date || "",
+              proposerSignature: torData.signatures?.proposer?.signature || "",
+              reviewerName: torData.signatures?.reviewer?.name || "",
+              reviewerDate: torData.signatures?.reviewer?.date || "",
+              reviewerSignature: torData.signatures?.reviewer?.signature || "",
+              approverName: torData.signatures?.approver?.name || "",
+              approverDate: torData.signatures?.approver?.date || "",
+              approverSignature: torData.signatures?.approver?.signature || ""
+            };
+          } catch (e) {
+            console.error("Error parsing TOR JSON:", e);
+            return {};
+          }
+        })() : {})
+      } as Partial<TaskforceFormValues>;
+    } catch (error) {
+      console.error("Error mapping initial data to task force form:", error);
+      return undefined;
+    }
+  };
+  
   // Show TaskforceForm if type is task-force
   if (workbodyType === "task-force") {
     return (
@@ -108,84 +156,59 @@ export function WorkbodyForm({
         
         <TaskforceForm 
           onSubmit={(data: TaskforceFormValues) => {
-            // Convert TaskforceFormValues to WorkbodyFormData
-            onSubmit({
-              name: data.name,
-              type: "task-force",
-              createdDate: data.createdDate,
-              endDate: data.endDate,
-              description: data.purpose,
-              termsOfReference: JSON.stringify({
-                overview: {
-                  proposedBy: data.proposedBy,
-                  purpose: data.purpose
-                },
-                scope: {
-                  alignment: data.alignment,
-                  expectedOutcomes: data.expectedOutcomes,
-                  mandates: data.mandates,
-                  durationMonths: data.durationMonths
-                },
-                composition: data.members,
-                procedures: data.meetings,
-                deliverables: data.deliverables,
-                milestones: data.milestones,
-                signatures: {
-                  proposer: {
-                    name: data.proposerName,
-                    date: data.proposerDate,
-                    signature: data.proposerSignature
+            try {
+              // Convert TaskforceFormValues to WorkbodyFormData
+              onSubmit({
+                name: data.name,
+                type: "task-force",
+                createdDate: data.createdDate,
+                endDate: data.endDate,
+                description: data.purpose,
+                termsOfReference: JSON.stringify({
+                  overview: {
+                    proposedBy: data.proposedBy,
+                    purpose: data.purpose
                   },
-                  reviewer: {
-                    name: data.reviewerName,
-                    date: data.reviewerDate,
-                    signature: data.reviewerSignature
+                  scope: {
+                    alignment: data.alignment,
+                    expectedOutcomes: data.expectedOutcomes,
+                    mandates: data.mandates,
+                    durationMonths: data.durationMonths
                   },
-                  approver: {
-                    name: data.approverName,
-                    date: data.approverDate,
-                    signature: data.approverSignature
+                  composition: data.members,
+                  procedures: data.meetings,
+                  deliverables: data.deliverables,
+                  milestones: data.milestones,
+                  signatures: {
+                    proposer: {
+                      name: data.proposerName,
+                      date: data.proposerDate,
+                      signature: data.proposerSignature
+                    },
+                    reviewer: {
+                      name: data.reviewerName,
+                      date: data.reviewerDate,
+                      signature: data.reviewerSignature
+                    },
+                    approver: {
+                      name: data.approverName,
+                      date: data.approverDate,
+                      signature: data.approverSignature
+                    }
                   }
-                }
-              })
-            });
+                })
+              });
+            } catch (error) {
+              console.error("Error submitting task force form:", error);
+              toast({
+                title: "Error",
+                description: "Failed to create task force. Please try again.",
+                variant: "destructive",
+              });
+            }
           }}
           onCancel={onCancel}
-          initialData={initialData ? {
-            name: initialData.name,
-            type: "task-force",
-            createdDate: initialData.createdDate ? new Date(initialData.createdDate) : new Date(),
-            endDate: initialData.endDate ? new Date(initialData.endDate) : undefined,
-            // Try to parse TOR JSON if it exists
-            ...(initialData.termsOfReference ? (() => {
-              try {
-                const torData = JSON.parse(initialData.termsOfReference);
-                return {
-                  proposedBy: torData.overview?.proposedBy || "",
-                  purpose: torData.overview?.purpose || "",
-                  alignment: torData.scope?.alignment || "",
-                  expectedOutcomes: torData.scope?.expectedOutcomes || [],
-                  mandates: torData.scope?.mandates || [],
-                  durationMonths: torData.scope?.durationMonths || 3,
-                  members: torData.composition || [],
-                  meetings: torData.procedures || [],
-                  deliverables: torData.deliverables || [],
-                  milestones: torData.milestones || [],
-                  proposerName: torData.signatures?.proposer?.name || "",
-                  proposerDate: torData.signatures?.proposer?.date || "",
-                  proposerSignature: torData.signatures?.proposer?.signature || "",
-                  reviewerName: torData.signatures?.reviewer?.name || "",
-                  reviewerDate: torData.signatures?.reviewer?.date || "",
-                  reviewerSignature: torData.signatures?.reviewer?.signature || "",
-                  approverName: torData.signatures?.approver?.name || "",
-                  approverDate: torData.signatures?.approver?.date || "",
-                  approverSignature: torData.signatures?.approver?.signature || ""
-                };
-              } catch (e) {
-                return {};
-              }
-            })() : {})
-          } : undefined}
+          initialData={mapInitialDataToTaskforce()}
         />
       </div>
     );

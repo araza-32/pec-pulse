@@ -15,7 +15,7 @@ import ChairmanDashboard from "./pages/ChairmanDashboard";
 import { LoginForm } from "./components/auth/LoginForm";
 
 export function AppRoutes() {
-  const { session, user, isLoading, isAuthChecked } = useAuth();
+  const { session, user, isLoading, isAuthChecked, signOut } = useAuth();
 
   // Don't render anything until we've at least checked auth once
   if (!isAuthChecked) {
@@ -31,7 +31,7 @@ export function AppRoutes() {
     return (
       <Routes>
         <Route path="/" element={<Index />} />
-        <Route path="/login" element={<LoginForm onLogin={null} />} />
+        <Route path="/login" element={<LoginForm />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     );
@@ -39,7 +39,7 @@ export function AppRoutes() {
 
   return (
     <Routes>
-      <Route element={<Layout user={user} onLogout={() => {}} />}>
+      <Route element={<Layout user={user} onLogout={signOut} />}>
         <Route path="/" element={<Navigate to="/dashboard" />} />
         <Route path="/login" element={<Navigate to="/dashboard" />} />
         <Route 
