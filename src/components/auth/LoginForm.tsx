@@ -16,6 +16,7 @@ export function LoginForm({ onLogin }: LoginFormProps) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isAdminLoading, setIsAdminLoading] = useState(false);
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -58,85 +59,103 @@ export function LoginForm({ onLogin }: LoginFormProps) {
   };
 
   const handleAdminLogin = async () => {
-    setEmail("admin@pec.org.pk");
-    setPassword("Coord@pec!@#123");
+    setIsAdminLoading(true);
     setError("");
-    setIsLoading(true);
-
+    
     try {
-      // Sign in with admin credentials
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: "admin@pec.org.pk",
-        password: "Coord@pec!@#123",
+      const adminEmail = "admin@pec.org.pk";
+      const adminPassword = "Coord@pec!@#123";
+      
+      console.log("Starting admin login process");
+      
+      // First check if the user exists in auth
+      const { data: userData, error: userError } = await supabase.auth.signInWithPassword({
+        email: adminEmail,
+        password: adminPassword,
       });
 
-      if (error) {
-        console.error('Admin login error:', error);
-        setError("Admin login failed: " + error.message);
-        setIsLoading(false);
+      if (userError) {
+        console.error('Admin auth error:', userError);
+        setError(`Admin login failed: ${userError.message}`);
+        setIsAdminLoading(false);
         return;
       }
 
-      if (!data?.session) {
+      if (!userData?.session) {
+        console.error('No session created');
         setError("Failed to create session");
-        setIsLoading(false);
+        setIsAdminLoading(false);
         return;
       }
 
-      // First check if the user exists in profiles table
-      const { data: existingProfile, error: profileQueryError } = await supabase
+      console.log("Admin authenticated successfully");
+
+      // Check if profile exists in profiles table
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('id, role')
-        .eq('id', data.session.user.id)
+        .select('*')
+        .eq('id', userData.session.user.id)
         .maybeSingle();
         
-      if (profileQueryError) {
-        console.error('Error checking profile:', profileQueryError);
-        setError('Error checking user profile');
-        setIsLoading(false);
+      if (profileError) {
+        console.error('Error checking profile:', profileError);
+        setError('Error checking admin profile');
+        setIsAdminLoading(false);
         return;
       }
 
-      // If no profile exists, create one
-      if (!existingProfile) {
+      console.log("Profile check result:", profileData);
+      
+      // If profile doesn't exist, create it
+      if (!profileData) {
+        console.log("Creating new admin profile");
         const { error: insertError } = await supabase
           .from('profiles')
-          .insert([{ id: data.session.user.id, role: 'admin' }]);
+          .insert([{ 
+            id: userData.session.user.id, 
+            role: 'admin' 
+          }]);
           
         if (insertError) {
-          console.error('Error creating admin profile:', insertError);
-          setError('Error creating admin profile');
-          setIsLoading(false);
+          console.error('Error creating profile:', insertError);
+          setError('Failed to create admin profile');
+          setIsAdminLoading(false);
           return;
         }
       } 
-      // If profile exists but role is not admin, update it
-      else if (existingProfile.role !== 'admin') {
+      // If role is not admin, update it
+      else if (profileData.role !== 'admin') {
+        console.log("Updating profile role to admin");
         const { error: updateError } = await supabase
           .from('profiles')
           .update({ role: 'admin' })
-          .eq('id', data.session.user.id);
+          .eq('id', userData.session.user.id);
           
         if (updateError) {
-          console.error('Error updating admin role:', updateError);
-          setError('Error updating admin role');
-          setIsLoading(false);
+          console.error('Error updating role:', updateError);
+          setError('Failed to update admin role');
+          setIsAdminLoading(false);
           return;
         }
       }
-
-      // Successfully created/updated profile, login as admin
-      onLogin({ ...data.session, role: 'admin' });
+      
+      console.log("Admin profile setup complete");
+      
+      // Return complete session with role
+      onLogin({ 
+        ...userData.session, 
+        role: 'admin'
+      });
       
       toast({
         title: "Admin Login Successful",
         description: "You are now logged in as admin with full access.",
       });
     } catch (err) {
-      console.error('Unexpected admin login error:', err);
+      console.error('Unexpected error during admin login:', err);
       setError('An unexpected error occurred');
     } finally {
-      setIsLoading(false);
+      setIsAdminLoading(false);
     }
   };
 
@@ -215,9 +234,9 @@ export function LoginForm({ onLogin }: LoginFormProps) {
               variant="outline"
               className="w-full"
               onClick={handleAdminLogin}
-              disabled={isLoading}
+              disabled={isAdminLoading}
             >
-              {isLoading ? "Signing in..." : "Login as Admin"}
+              {isAdminLoading ? "Signing in..." : "Login as Admin"}
             </Button>
           </form>
         </CardContent>
