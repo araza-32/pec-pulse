@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Edit, FileText, Upload, Clock, Trash2 } from "lucide-react";
 import { Workbody } from "@/types";
+import { cn } from "@/lib/utils"; // Import cn utility function
 
 interface WorkbodyTableProps {
   workbodies: Workbody[];
@@ -116,8 +117,4 @@ export function WorkbodyTable({
       </TableBody>
     </Table>
   );
-}
-
-function cn(...classes: any[]) {
-  return classes.filter(Boolean).join(" ");
 }
