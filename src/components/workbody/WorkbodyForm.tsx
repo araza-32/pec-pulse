@@ -96,55 +96,60 @@ export function WorkbodyForm({
 
   const workbodyType = form.watch("type");
   
-  // Initialize task force form data with initial data if available
-  const mapInitialDataToTaskforce = () => {
+  // Improved function to safely map initial data to taskforce format
+  const mapInitialDataToTaskforce = (): Partial<TaskforceFormValues> | undefined => {
     if (!initialData) return undefined;
     
-    try {
-      return {
-        name: initialData.name || "",
-        type: "task-force" as const,
-        createdDate: initialData.createdDate ? new Date(initialData.createdDate) : new Date(),
-        endDate: initialData.endDate ? new Date(initialData.endDate) : undefined,
-        // Try to parse TOR JSON if it exists
-        ...(initialData.termsOfReference ? (() => {
-          try {
-            const torData = JSON.parse(initialData.termsOfReference);
-            return {
-              proposedBy: torData.overview?.proposedBy || "",
-              purpose: torData.overview?.purpose || "",
-              alignment: torData.scope?.alignment || "",
-              expectedOutcomes: torData.scope?.expectedOutcomes || [],
-              mandates: torData.scope?.mandates || [],
-              durationMonths: torData.scope?.durationMonths || 3,
-              members: torData.composition || [],
-              meetings: torData.procedures || [],
-              deliverables: torData.deliverables || [],
-              milestones: torData.milestones || [],
-              proposerName: torData.signatures?.proposer?.name || "",
-              proposerDate: torData.signatures?.proposer?.date || "",
-              proposerSignature: torData.signatures?.proposer?.signature || "",
-              reviewerName: torData.signatures?.reviewer?.name || "",
-              reviewerDate: torData.signatures?.reviewer?.date || "",
-              reviewerSignature: torData.signatures?.reviewer?.signature || "",
-              approverName: torData.signatures?.approver?.name || "",
-              approverDate: torData.signatures?.approver?.date || "",
-              approverSignature: torData.signatures?.approver?.signature || ""
-            };
-          } catch (e) {
-            console.error("Error parsing TOR JSON:", e);
-            return {};
-          }
-        })() : {})
-      } as Partial<TaskforceFormValues>;
-    } catch (error) {
-      console.error("Error mapping initial data to task force form:", error);
-      return undefined;
+    // Base properties that are always available
+    const baseData: Partial<TaskforceFormValues> = {
+      name: initialData.name || "",
+      type: "task-force" as const,
+      createdDate: initialData.createdDate ? new Date(initialData.createdDate) : new Date(),
+      endDate: initialData.endDate ? new Date(initialData.endDate) : undefined,
+    };
+
+    // Try to parse TOR JSON if it exists
+    if (initialData.termsOfReference) {
+      try {
+        const torData = JSON.parse(initialData.termsOfReference);
+        
+        return {
+          ...baseData,
+          proposedBy: torData.overview?.proposedBy || "",
+          purpose: torData.overview?.purpose || "",
+          alignment: torData.scope?.alignment || "",
+          expectedOutcomes: Array.isArray(torData.scope?.expectedOutcomes) ? torData.scope.expectedOutcomes : [],
+          mandates: Array.isArray(torData.scope?.mandates) ? torData.scope.mandates : [],
+          durationMonths: Number(torData.scope?.durationMonths) || 3,
+          members: Array.isArray(torData.composition) ? torData.composition : [],
+          meetings: Array.isArray(torData.procedures) ? torData.procedures : [],
+          deliverables: Array.isArray(torData.deliverables) ? torData.deliverables : [],
+          milestones: Array.isArray(torData.milestones) ? torData.milestones : [],
+          proposerName: torData.signatures?.proposer?.name || "",
+          proposerDate: torData.signatures?.proposer?.date || "",
+          proposerSignature: torData.signatures?.proposer?.signature || "",
+          reviewerName: torData.signatures?.reviewer?.name || "",
+          reviewerDate: torData.signatures?.reviewer?.date || "",
+          reviewerSignature: torData.signatures?.reviewer?.signature || "",
+          approverName: torData.signatures?.approver?.name || "",
+          approverDate: torData.signatures?.approver?.date || "",
+          approverSignature: torData.signatures?.approver?.signature || ""
+        };
+      } catch (e) {
+        console.error("Error parsing TOR JSON:", e);
+        // Return base data if JSON parsing fails
+        return baseData;
+      }
     }
+    
+    // Return base data if no TOR or parsing failed
+    return baseData;
   };
   
   // Show TaskforceForm if type is task-force
   if (workbodyType === "task-force") {
+    const mappedInitialData = mapInitialDataToTaskforce();
+    
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -171,14 +176,14 @@ export function WorkbodyForm({
                   },
                   scope: {
                     alignment: data.alignment,
-                    expectedOutcomes: data.expectedOutcomes,
-                    mandates: data.mandates,
+                    expectedOutcomes: data.expectedOutcomes || [],
+                    mandates: data.mandates || [],
                     durationMonths: data.durationMonths
                   },
-                  composition: data.members,
-                  procedures: data.meetings,
-                  deliverables: data.deliverables,
-                  milestones: data.milestones,
+                  composition: data.members || [],
+                  procedures: data.meetings || [],
+                  deliverables: data.deliverables || [],
+                  milestones: data.milestones || [],
                   signatures: {
                     proposer: {
                       name: data.proposerName,
@@ -198,7 +203,7 @@ export function WorkbodyForm({
                   }
                 })
               });
-            } catch (error) {
+            } catch (error: any) {
               console.error("Error submitting task force form:", error);
               toast({
                 title: "Error",
@@ -208,7 +213,7 @@ export function WorkbodyForm({
             }
           }}
           onCancel={onCancel}
-          initialData={mapInitialDataToTaskforce()}
+          initialData={mappedInitialData}
         />
       </div>
     );

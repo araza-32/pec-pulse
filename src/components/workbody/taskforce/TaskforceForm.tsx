@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -96,7 +95,51 @@ export function TaskforceForm({ onSubmit, onCancel, initialData }: TaskforceForm
   const [activeTab, setActiveTab] = useState("overview");
   const { toast } = useToast();
 
-  // Set up the form with default values
+  // Set up default values with safety checks for all properties
+  // Handle arrays specially since they are often causing issues
+  const getDefaultMembers = () => {
+    if (initialData?.members && Array.isArray(initialData.members)) {
+      return initialData.members;
+    }
+    return [];
+  };
+
+  const getDefaultMeetings = () => {
+    if (initialData?.meetings && Array.isArray(initialData.meetings)) {
+      return initialData.meetings;
+    }
+    return [];
+  };
+
+  const getDefaultDeliverables = () => {
+    if (initialData?.deliverables && Array.isArray(initialData.deliverables)) {
+      return initialData.deliverables;
+    }
+    return [];
+  };
+
+  const getDefaultMilestones = () => {
+    if (initialData?.milestones && Array.isArray(initialData.milestones)) {
+      return initialData.milestones;
+    }
+    return [];
+  };
+
+  const getDefaultExpectedOutcomes = () => {
+    if (initialData?.expectedOutcomes && Array.isArray(initialData.expectedOutcomes)) {
+      return initialData.expectedOutcomes;
+    }
+    return [];
+  };
+
+  const getDefaultMandates = () => {
+    if (initialData?.mandates && Array.isArray(initialData.mandates)) {
+      return initialData.mandates;
+    }
+    return [];
+  };
+
+  // Set up the form with proper default values and safety checks
   const form = useForm<TaskforceFormValues>({
     resolver: zodResolver(taskforceSchema),
     defaultValues: {
@@ -105,14 +148,14 @@ export function TaskforceForm({ onSubmit, onCancel, initialData }: TaskforceForm
       purpose: initialData?.purpose || "",
       
       alignment: initialData?.alignment || "",
-      expectedOutcomes: initialData?.expectedOutcomes || [],
-      mandates: initialData?.mandates || [],
+      expectedOutcomes: getDefaultExpectedOutcomes(),
+      mandates: getDefaultMandates(),
       durationMonths: initialData?.durationMonths || 3,
       
-      members: initialData?.members || [],
-      meetings: initialData?.meetings || [],
-      deliverables: initialData?.deliverables || [],
-      milestones: initialData?.milestones || [],
+      members: getDefaultMembers(),
+      meetings: getDefaultMeetings(),
+      deliverables: getDefaultDeliverables(),
+      milestones: getDefaultMilestones(),
       
       proposerName: initialData?.proposerName || "",
       proposerDate: initialData?.proposerDate || "",
@@ -134,13 +177,22 @@ export function TaskforceForm({ onSubmit, onCancel, initialData }: TaskforceForm
   });
 
   const handleSubmit = (data: TaskforceFormValues) => {
-    // Calculate end date based on duration in months
-    const endDate = new Date(data.createdDate);
-    endDate.setMonth(endDate.getMonth() + data.durationMonths);
-    data.endDate = endDate;
-    
-    // Submit the form data
-    onSubmit(data);
+    try {
+      // Calculate end date based on duration in months
+      const endDate = new Date(data.createdDate);
+      endDate.setMonth(endDate.getMonth() + data.durationMonths);
+      data.endDate = endDate;
+      
+      // Submit the form data
+      onSubmit(data);
+    } catch (error) {
+      console.error("Error in TaskforceForm handleSubmit:", error);
+      toast({
+        title: "Error",
+        description: "An error occurred while submitting the form. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const navigateToNextTab = (currentTab: string) => {
