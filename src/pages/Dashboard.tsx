@@ -1,9 +1,12 @@
+
 import { useState } from "react";
 import { useWorkbodies } from "@/hooks/useWorkbodies";
 import { OverviewStats } from "@/components/dashboard/OverviewStats";
 import { UpcomingMeetings } from "@/components/dashboard/UpcomingMeetings";
 import { WorkbodyDistribution } from "@/components/dashboard/WorkbodyDistribution";
 import { ActionCompletionProgress } from "@/components/dashboard/ActionCompletionProgress";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Dashboard() {
   const { workbodies, isLoading } = useWorkbodies();

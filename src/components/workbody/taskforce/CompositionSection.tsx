@@ -158,7 +158,7 @@ export const CompositionSection = ({ form }: CompositionSectionProps) => {
         </div>
       )}
       
-      <FormMessage name="members" />
+      <FormMessage />
     </div>
   );
 };

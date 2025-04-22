@@ -168,7 +168,7 @@ export const DeliverablesSection = ({ form }: DeliverablesSectionProps) => {
           </div>
         )}
         
-        <FormMessage name="deliverables" />
+        <FormMessage />
       </div>
       
       <div className="space-y-6">
@@ -247,7 +247,7 @@ export const DeliverablesSection = ({ form }: DeliverablesSectionProps) => {
           </div>
         )}
         
-        <FormMessage name="milestones" />
+        <FormMessage />
       </div>
     </div>
   );

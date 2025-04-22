@@ -141,7 +141,7 @@ export const OperatingProceduresSection = ({ form }: OperatingProceduresSectionP
         </div>
       )}
       
-      <FormMessage name="meetings" />
+      <FormMessage />
     </div>
   );
 };
