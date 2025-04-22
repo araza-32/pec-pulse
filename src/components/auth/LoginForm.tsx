@@ -4,11 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { users } from "@/data/mockData";
-import { User } from "@/types";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 interface LoginFormProps {
-  onLogin: (user: User) => void;
+  onLogin: (session: any) => void;
 }
 
 export function LoginForm({ onLogin }: LoginFormProps) {
@@ -16,24 +16,43 @@ export function LoginForm({ onLogin }: LoginFormProps) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setIsLoading(true);
 
-    // Simulate authentication
-    setTimeout(() => {
-      const user = users.find(u => u.email === email);
-      
-      if (user && password === "password") { // In a real app, you would use proper auth
-        onLogin(user);
-      } else {
-        setError("Invalid email or password");
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        setError(error.message);
+        return;
       }
-      
+
+      if (data?.session) {
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', data.session.user.id)
+          .single();
+
+        if (profileError) {
+          setError('Error fetching user profile');
+          return;
+        }
+
+        onLogin({ ...data.session, role: profileData.role });
+      }
+    } catch (err) {
+      setError('An unexpected error occurred');
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (

@@ -4,7 +4,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import { Layout } from "./components/layout/Layout";
@@ -20,13 +21,52 @@ import { User } from "./types";
 const queryClient = new QueryClient();
 
 const App = () => {
+  const [session, setSession] = useState<any>(null);
   const [user, setUser] = useState<User | null>(null);
 
-  const handleLogin = (user: User) => {
-    setUser(user);
+  useEffect(() => {
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, currentSession) => {
+        if (currentSession) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', currentSession.user.id)
+            .single();
+
+          setUser({
+            id: currentSession.user.id,
+            name: currentSession.user.email?.split('@')[0] || 'User',
+            email: currentSession.user.email || '',
+            role: profile?.role || 'member',
+          });
+        } else {
+          setUser(null);
+        }
+        setSession(currentSession);
+      }
+    );
+
+    // Check initial session
+    supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
+      if (initialSession) {
+        setSession(initialSession);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const handleLogin = async (session: any) => {
+    setSession(session);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setSession(null);
     setUser(null);
   };
 
@@ -36,7 +76,7 @@ const App = () => {
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          {!user ? (
+          {!session ? (
             <Routes>
               <Route path="*" element={<LoginForm onLogin={handleLogin} />} />
             </Routes>
