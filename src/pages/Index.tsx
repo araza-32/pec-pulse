@@ -1,23 +1,9 @@
 
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 const Index = () => {
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const checkSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (data.session) {
-        // User is logged in, redirect to dashboard
-        navigate('/dashboard');
-      }
-    };
-    
-    checkSession();
-  }, [navigate]);
 
   const handleLoginClick = () => {
     navigate('/login');

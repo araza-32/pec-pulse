@@ -25,24 +25,9 @@ const App = () => {
   const [session, setSession] = useState<any>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
-    // Check if there's any user data in localStorage (from login)
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        const parsedUser = JSON.parse(storedUser);
-        setUser({
-          id: parsedUser.id,
-          name: parsedUser.email?.split('@')[0] || 'User',
-          email: parsedUser.email || '',
-          role: parsedUser.role as 'admin' | 'secretary' | 'chairman',
-        });
-      } catch (e) {
-        console.error("Error parsing stored user:", e);
-      }
-    }
-    
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
@@ -85,6 +70,7 @@ const App = () => {
         
         setSession(currentSession);
         setIsLoading(false);
+        setAuthChecked(true);
       }
     );
 
@@ -93,6 +79,7 @@ const App = () => {
       console.log("Initial session check:", initialSession?.user?.email);
       setSession(initialSession);
       setIsLoading(false);
+      setAuthChecked(true);
     });
 
     return () => {
@@ -134,7 +121,14 @@ const App = () => {
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          {!session ? (
+          {!authChecked ? (
+            <div className="flex min-h-screen items-center justify-center bg-slate-50">
+              <div className="text-center">
+                <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-pec-green border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
+                <p className="mt-4">Checking authentication...</p>
+              </div>
+            </div>
+          ) : !session ? (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<LoginForm onLogin={handleLogin} />} />
@@ -144,8 +138,8 @@ const App = () => {
             <Routes>
               <Route element={<Layout user={user} onLogout={handleLogout} />}>
                 <Route path="/" element={<Navigate to="/dashboard" />} />
+                <Route path="/login" element={<Navigate to="/dashboard" />} />
                 <Route path="/dashboard" element={
-                  // Always use regular dashboard for coordination (email) user
                   user?.role === 'chairman' && !user?.email?.includes('coordination') ? 
                     <ChairmanDashboard /> : 
                     <Dashboard />
