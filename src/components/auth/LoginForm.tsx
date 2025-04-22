@@ -44,14 +44,28 @@ export function LoginForm({ onLogin }: LoginFormProps) {
           .single();
 
         if (profileError) {
+          console.error("Profile fetch error:", profileError);
           setError('Error fetching user profile');
           setIsLoading(false);
           return;
         }
 
+        // Store user data in localStorage for use in components
+        localStorage.setItem('user', JSON.stringify({
+          id: data.session.user.id,
+          email: data.session.user.email,
+          role: profileData.role
+        }));
+
+        toast({
+          title: "Login Successful",
+          description: `Welcome ${data.session.user.email}`,
+        });
+
         onLogin({ ...data.session, role: profileData.role });
       }
     } catch (err) {
+      console.error("Login error:", err);
       setError('An unexpected error occurred');
     } finally {
       setIsLoading(false);
@@ -141,6 +155,13 @@ export function LoginForm({ onLogin }: LoginFormProps) {
       
       console.log("Admin profile setup complete");
       
+      // Store user data in localStorage
+      localStorage.setItem('user', JSON.stringify({
+        id: userData.session.user.id,
+        email: userData.session.user.email,
+        role: 'admin'
+      }));
+      
       // Return complete session with role
       onLogin({ 
         ...userData.session, 
@@ -153,6 +174,78 @@ export function LoginForm({ onLogin }: LoginFormProps) {
       });
     } catch (err) {
       console.error('Unexpected error during admin login:', err);
+      setError('An unexpected error occurred');
+    } finally {
+      setIsAdminLoading(false);
+    }
+  };
+
+  const handleCoordinationLogin = async () => {
+    setIsAdminLoading(true);
+    setError("");
+    
+    try {
+      const coordEmail = "coordination@pec.org.pk";
+      const coordPassword = "Coord@123!@#@";
+      
+      console.log("Starting coordination login process");
+      
+      const { data: userData, error: userError } = await supabase.auth.signInWithPassword({
+        email: coordEmail,
+        password: coordPassword,
+      });
+
+      if (userError) {
+        console.error('Coordination auth error:', userError);
+        setError(`Coordination login failed: ${userError.message}`);
+        setIsAdminLoading(false);
+        return;
+      }
+
+      if (!userData?.session) {
+        console.error('No session created');
+        setError("Failed to create session");
+        setIsAdminLoading(false);
+        return;
+      }
+
+      console.log("Coordination authenticated successfully");
+
+      // Check if profile exists 
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userData.session.user.id)
+        .maybeSingle();
+        
+      if (profileError) {
+        console.error('Error checking profile:', profileError);
+        setError('Error checking coordination profile');
+        setIsAdminLoading(false);
+        return;
+      }
+
+      console.log("Profile check result:", profileData);
+      
+      // Store user data in localStorage
+      localStorage.setItem('user', JSON.stringify({
+        id: userData.session.user.id,
+        email: userData.session.user.email,
+        role: 'admin'
+      }));
+      
+      // Return complete session with role
+      onLogin({ 
+        ...userData.session, 
+        role: 'admin'
+      });
+      
+      toast({
+        title: "Coordination Login Successful",
+        description: "You are now logged in as coordination with full access.",
+      });
+    } catch (err) {
+      console.error('Unexpected error during coordination login:', err);
       setError('An unexpected error occurred');
     } finally {
       setIsAdminLoading(false);
@@ -229,15 +322,25 @@ export function LoginForm({ onLogin }: LoginFormProps) {
               </div>
             </div>
             
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={handleAdminLogin}
-              disabled={isAdminLoading}
-            >
-              {isAdminLoading ? "Signing in..." : "Login as Admin"}
-            </Button>
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleAdminLogin}
+                disabled={isAdminLoading}
+              >
+                {isAdminLoading ? "Signing in..." : "Login as Admin"}
+              </Button>
+              
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleCoordinationLogin}
+                disabled={isAdminLoading}
+              >
+                Login as Coordination
+              </Button>
+            </div>
           </form>
         </CardContent>
       </Card>

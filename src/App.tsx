@@ -23,41 +23,75 @@ const queryClient = new QueryClient();
 const App = () => {
   const [session, setSession] = useState<any>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Check if there's any user data in localStorage (from login)
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setUser({
+          id: parsedUser.id,
+          name: parsedUser.email?.split('@')[0] || 'User',
+          email: parsedUser.email || '',
+          role: parsedUser.role as 'admin' | 'secretary' | 'chairman',
+        });
+      } catch (e) {
+        console.error("Error parsing stored user:", e);
+      }
+    }
+    
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
+        console.log("Auth state changed:", event, currentSession?.user?.email);
+        
         if (currentSession) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', currentSession.user.id)
-            .single();
+          try {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('role')
+              .eq('id', currentSession.user.id)
+              .single();
 
-          // Ensure the role is one of the valid User type roles
-          const userRole = profile?.role === 'admin' || profile?.role === 'secretary' || profile?.role === 'chairman' 
-            ? profile.role as 'admin' | 'secretary' | 'chairman'
-            : 'member' as 'admin' | 'secretary' | 'chairman';
+            // Ensure the role is one of the valid User type roles
+            const userRole = profile?.role === 'admin' || profile?.role === 'secretary' || profile?.role === 'chairman' 
+              ? profile.role as 'admin' | 'secretary' | 'chairman'
+              : 'member' as 'admin' | 'secretary' | 'chairman';
 
-          setUser({
-            id: currentSession.user.id,
-            name: currentSession.user.email?.split('@')[0] || 'User',
-            email: currentSession.user.email || '',
-            role: userRole,
-          });
+            const userObj = {
+              id: currentSession.user.id,
+              name: currentSession.user.email?.split('@')[0] || 'User',
+              email: currentSession.user.email || '',
+              role: userRole,
+            };
+            
+            setUser(userObj);
+            // Update localStorage
+            localStorage.setItem('user', JSON.stringify({
+              id: currentSession.user.id,
+              email: currentSession.user.email,
+              role: userRole
+            }));
+          } catch (e) {
+            console.error("Error fetching user profile:", e);
+          }
         } else {
           setUser(null);
+          localStorage.removeItem('user');
         }
+        
         setSession(currentSession);
+        setIsLoading(false);
       }
     );
 
     // Check initial session
     supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
-      if (initialSession) {
-        setSession(initialSession);
-      }
+      console.log("Initial session check:", initialSession?.user?.email);
+      setSession(initialSession);
+      setIsLoading(false);
     });
 
     return () => {
@@ -66,14 +100,32 @@ const App = () => {
   }, []);
 
   const handleLogin = async (session: any) => {
+    console.log("Login handler called with session:", session);
     setSession(session);
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setSession(null);
-    setUser(null);
+    try {
+      await supabase.auth.signOut();
+      setSession(null);
+      setUser(null);
+      localStorage.removeItem('user');
+      console.log("User logged out successfully");
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <div className="text-center">
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-pec-green border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
+          <p className="mt-4">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -89,22 +141,23 @@ const App = () => {
             <Routes>
               <Route element={<Layout user={user} onLogout={handleLogout} />}>
                 <Route path="/" element={
-                  user?.role === 'chairman' ? 
+                  // Always use regular dashboard for coordination (email) user
+                  user?.role === 'chairman' && !user?.email?.includes('coordination') ? 
                     <ChairmanDashboard /> : 
                     <Dashboard />
                 } />
                 <Route path="/workbody/:id" element={<WorkbodyDetail />} />
                 
-                {/* Secretary routes */}
-                {(user?.role === 'secretary' || user?.role === 'admin') && (
+                {/* Routes accessible to admin, coordination, and secretary */}
+                {(user?.role === 'secretary' || user?.role === 'admin' || user?.email?.includes('coordination')) && (
                   <Route path="/upload" element={<UploadMinutes />} />
                 )}
                 
                 {/* Calendar route for all users */}
                 <Route path="/calendar" element={<MeetingCalendar />} />
                 
-                {/* Admin only routes */}
-                {user?.role === 'admin' && (
+                {/* Admin and coordination only routes */}
+                {(user?.role === 'admin' || user?.email?.includes('coordination')) && (
                   <>
                     <Route path="/reports" element={<Reports />} />
                     <Route path="/manage-workbodies" element={<WorkbodyManagement />} />

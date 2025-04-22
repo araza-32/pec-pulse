@@ -12,9 +12,13 @@ export default function Dashboard() {
   const { workbodies, isLoading } = useWorkbodies();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   
-  const filteredWorkbodies = user?.role === 'secretary' 
-    ? workbodies.filter(w => w.id === user.workbodyId)
-    : workbodies;
+  // Show all workbodies for admin and coordination users
+  const isCoordinationUser = user?.email?.includes('coordination');
+  const shouldShowAllWorkbodies = user?.role === 'admin' || isCoordinationUser;
+  
+  const filteredWorkbodies = shouldShowAllWorkbodies
+    ? workbodies
+    : workbodies.filter(w => w.id === user.workbodyId);
 
   const initialMeetings = [
     {
@@ -90,7 +94,7 @@ export default function Dashboard() {
     );
   }
 
-  if (user?.role === 'secretary') {
+  if (user?.role === 'secretary' && !isCoordinationUser) {
     const workbody = filteredWorkbodies[0];
     if (!workbody) {
       return (

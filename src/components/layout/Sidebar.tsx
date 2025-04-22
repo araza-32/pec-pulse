@@ -1,3 +1,4 @@
+
 import { NavLink } from "react-router-dom";
 import { 
   BarChart3, 
@@ -38,8 +39,15 @@ export function Sidebar({
   userWorkbodyId 
 }: SidebarProps) {
   const { workbodies, isLoading } = useWorkbodies();
+  
+  // Get user information to check if it's coordination user
+  const userEmail = JSON.parse(localStorage.getItem('user') || '{}')?.email || '';
+  const isCoordinationUser = userEmail.includes('coordination');
 
-  const filteredWorkbodies = userRole === 'secretary'
+  // Show admin options for both admin role and coordination user
+  const showAdminOptions = userRole === 'admin' || isCoordinationUser;
+
+  const filteredWorkbodies = userRole === 'secretary' && !isCoordinationUser
     ? workbodies.filter(w => w.id === userWorkbodyId)
     : workbodies;
 
@@ -139,7 +147,7 @@ export function Sidebar({
                 Dashboard
               </NavLink>
               
-              {userRole === 'admin' && (
+              {showAdminOptions && (
                 <>
                   <NavLink
                     to="/reports"
@@ -188,7 +196,7 @@ export function Sidebar({
                 Calendar
               </NavLink>
               
-              {(userRole === 'secretary' || userRole === 'admin') && (
+              {(userRole === 'secretary' || showAdminOptions) && (
                 <NavLink
                   to="/upload"
                   className={({ isActive }) =>
@@ -205,7 +213,7 @@ export function Sidebar({
                 </NavLink>
               )}
               
-              {userRole === 'chairman' && (
+              {userRole === 'chairman' && !isCoordinationUser && (
                 <NavLink
                   to="/chairman-dashboard"
                   className={({ isActive }) =>
@@ -241,7 +249,7 @@ export function Sidebar({
               </div>
             ) : (
               <>
-                {(userRole === 'admin' || userRole === 'chairman') && (
+                {(showAdminOptions || userRole === 'chairman') && (
                   <div className="space-y-2">
                     {committees.length > 0 && (
                       <WorkbodyGroup title="Committees" items={committees} icon={Users} />
@@ -257,7 +265,7 @@ export function Sidebar({
                   </div>
                 )}
                 
-                {userRole === 'secretary' && filteredWorkbodies.length > 0 && (
+                {userRole === 'secretary' && !isCoordinationUser && filteredWorkbodies.length > 0 && (
                   <div>
                     <h4 className="mb-2 px-3 text-xs font-semibold uppercase text-muted-foreground">
                       My Workbody
