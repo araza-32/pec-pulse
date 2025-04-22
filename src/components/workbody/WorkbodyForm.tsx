@@ -192,9 +192,9 @@ export function WorkbodyForm({
   }
   
   useEffect(() => {
-    setShowEndDate(workbodyType === "task-force");
+    setShowEndDate(form.getValues("type") === "task-force");
     
-    if (workbodyType !== "task-force") {
+    if (form.getValues("type") === "task-force") {
       form.setValue("endDate", undefined);
     }
   }, [workbodyType, form]);
