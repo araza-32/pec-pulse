@@ -18,13 +18,18 @@ export const TaskforceNavigation = ({
   isLastTab = false,
   isFirstTab = false,
 }: TaskforceNavigationProps) => {
+  // Ensure that we don't have conditional returns before any hooks
+  // This component doesn't use hooks, but let's make it more robust
+
   return (
     <div className="flex justify-between">
-      {!isFirstTab ? (
-        <Button type="button" variant="outline" onClick={onPrevious}>Previous</Button>
-      ) : (
-        <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
-      )}
+      <div>
+        {isFirstTab ? (
+          <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
+        ) : (
+          <Button type="button" variant="outline" onClick={onPrevious}>Previous</Button>
+        )}
+      </div>
       <Button type="button" onClick={onNext}>
         {isLastTab ? "Submit" : "Next"}
       </Button>

@@ -76,41 +76,45 @@ const taskforceSchema = z.object({
 });
 
 export const useTaskforceForm = (initialData?: Partial<TaskforceFormValues>) => {
+  // Safely handle potentially undefined initialData
+  const safeInitialData = initialData || {};
+  
+  // Always initialize the form with these default values
   const form = useForm<TaskforceFormValues>({
     resolver: zodResolver(taskforceSchema),
     defaultValues: {
-      name: initialData?.name || "",
-      proposedBy: initialData?.proposedBy || "",
-      purpose: initialData?.purpose || "",
+      name: safeInitialData.name || "",
+      proposedBy: safeInitialData.proposedBy || "",
+      purpose: safeInitialData.purpose || "",
       
-      alignment: initialData?.alignment || "",
-      expectedOutcomes: initialData?.expectedOutcomes || [],
-      mandates: initialData?.mandates || [],
-      durationMonths: initialData?.durationMonths || 3,
+      alignment: safeInitialData.alignment || "",
+      expectedOutcomes: safeInitialData.expectedOutcomes || [],
+      mandates: safeInitialData.mandates || [],
+      durationMonths: safeInitialData.durationMonths || 3,
       
-      members: initialData?.members || [],
-      meetings: initialData?.meetings || [],
-      deliverables: initialData?.deliverables || [],
-      milestones: initialData?.milestones || [],
+      members: safeInitialData.members || [],
+      meetings: safeInitialData.meetings || [],
+      deliverables: safeInitialData.deliverables || [],
+      milestones: safeInitialData.milestones || [],
       
-      proposerName: initialData?.proposerName || "",
-      proposerDate: initialData?.proposerDate || "",
-      proposerSignature: initialData?.proposerSignature || "",
+      proposerName: safeInitialData.proposerName || "",
+      proposerDate: safeInitialData.proposerDate || "",
+      proposerSignature: safeInitialData.proposerSignature || "",
       
-      reviewerName: initialData?.reviewerName || "",
-      reviewerDate: initialData?.reviewerDate || "",
-      reviewerSignature: initialData?.reviewerSignature || "",
+      reviewerName: safeInitialData.reviewerName || "",
+      reviewerDate: safeInitialData.reviewerDate || "",
+      reviewerSignature: safeInitialData.reviewerSignature || "",
       
-      approverName: initialData?.approverName || "",
-      approverDate: initialData?.approverDate || "",
-      approverSignature: initialData?.approverSignature || "",
+      approverName: safeInitialData.approverName || "",
+      approverDate: safeInitialData.approverDate || "",
+      approverSignature: safeInitialData.approverSignature || "",
       
       type: "task-force",
-      createdDate: initialData?.createdDate || new Date(),
-      endDate: initialData?.endDate,
+      createdDate: safeInitialData.createdDate || new Date(),
+      endDate: safeInitialData.endDate,
     },
     mode: "onChange"
   });
 
   return form;
-};
+}

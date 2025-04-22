@@ -21,6 +21,7 @@ interface TaskforceFormProps {
 }
 
 export function TaskforceForm({ onSubmit, onCancel, initialData }: TaskforceFormProps) {
+  // Initialize all hooks at the top level - never conditionally
   const [activeTab, setActiveTab] = useState("overview");
   const { toast } = useToast();
   const form = useTaskforceForm(initialData);
@@ -87,6 +88,7 @@ export function TaskforceForm({ onSubmit, onCancel, initialData }: TaskforceForm
     }
   };
 
+  // Always render the full component structure
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
