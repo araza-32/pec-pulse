@@ -35,11 +35,16 @@ const App = () => {
             .eq('id', currentSession.user.id)
             .single();
 
+          // Ensure the role is one of the valid User type roles
+          const userRole = profile?.role === 'admin' || profile?.role === 'secretary' || profile?.role === 'chairman' 
+            ? profile.role as 'admin' | 'secretary' | 'chairman'
+            : 'member' as 'admin' | 'secretary' | 'chairman';
+
           setUser({
             id: currentSession.user.id,
             name: currentSession.user.email?.split('@')[0] || 'User',
             email: currentSession.user.email || '',
-            role: profile?.role || 'member',
+            role: userRole,
           });
         } else {
           setUser(null);
@@ -84,14 +89,14 @@ const App = () => {
             <Routes>
               <Route element={<Layout user={user} onLogout={handleLogout} />}>
                 <Route path="/" element={
-                  user.role === 'chairman' ? 
+                  user?.role === 'chairman' ? 
                     <ChairmanDashboard /> : 
                     <Dashboard />
                 } />
                 <Route path="/workbody/:id" element={<WorkbodyDetail />} />
                 
                 {/* Secretary routes */}
-                {(user.role === 'secretary' || user.role === 'admin') && (
+                {(user?.role === 'secretary' || user?.role === 'admin') && (
                   <Route path="/upload" element={<UploadMinutes />} />
                 )}
                 
@@ -99,7 +104,7 @@ const App = () => {
                 <Route path="/calendar" element={<MeetingCalendar />} />
                 
                 {/* Admin only routes */}
-                {user.role === 'admin' && (
+                {user?.role === 'admin' && (
                   <>
                     <Route path="/reports" element={<Reports />} />
                     <Route path="/manage-workbodies" element={<WorkbodyManagement />} />
@@ -107,7 +112,7 @@ const App = () => {
                 )}
                 
                 {/* Chairman only routes */}
-                {user.role === 'chairman' && (
+                {user?.role === 'chairman' && (
                   <Route path="/chairman-dashboard" element={<ChairmanDashboard />} />
                 )}
                 
