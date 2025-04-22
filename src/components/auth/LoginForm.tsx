@@ -55,6 +55,48 @@ export function LoginForm({ onLogin }: LoginFormProps) {
     }
   };
 
+  const handleAdminLogin = async () => {
+    setEmail("admin@pec.org.pk");
+    setPassword("admin123");
+    setError("");
+    setIsLoading(true);
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: "admin@pec.org.pk",
+        password: "admin123",
+      });
+
+      if (error) {
+        setError("Admin login failed. Please contact system administrator.");
+        return;
+      }
+
+      if (data?.session) {
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', data.session.user.id)
+          .single();
+
+        if (profileError) {
+          setError('Error fetching user profile');
+          return;
+        }
+
+        onLogin({ ...data.session, role: profileData.role });
+        toast({
+          title: "Admin Login Successful",
+          description: "You are now logged in as admin.",
+        });
+      }
+    } catch (err) {
+      setError('An unexpected error occurred');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
       <Card className="w-full max-w-md">
@@ -112,6 +154,26 @@ export function LoginForm({ onLogin }: LoginFormProps) {
               disabled={isLoading}
             >
               {isLoading ? "Signing in..." : "Sign in"}
+            </Button>
+            
+            <div className="relative mt-4">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white px-2 text-muted-foreground">
+                  Development Options
+                </span>
+              </div>
+            </div>
+            
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={handleAdminLogin}
+            >
+              Login as Admin
             </Button>
           </form>
         </CardContent>
