@@ -21,7 +21,7 @@ interface TaskforceFormProps {
 }
 
 export function TaskforceForm({ onSubmit, onCancel, initialData }: TaskforceFormProps) {
-  // Initialize all hooks at the top level - never conditionally
+  // Initialize all hooks at the top level
   const [activeTab, setActiveTab] = useState("overview");
   const { toast } = useToast();
   const form = useTaskforceForm(initialData);
