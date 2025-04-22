@@ -17,6 +17,7 @@ import WorkbodyManagement from "./pages/WorkbodyManagement";
 import MeetingCalendar from "./pages/MeetingCalendar";
 import ChairmanDashboard from "./pages/ChairmanDashboard";
 import { User } from "./types";
+import Index from "./pages/Index";
 
 const queryClient = new QueryClient();
 
@@ -135,7 +136,9 @@ const App = () => {
         <BrowserRouter>
           {!session ? (
             <Routes>
-              <Route path="*" element={<LoginForm onLogin={handleLogin} />} />
+              <Route path="/" element={<Index />} />
+              <Route path="/login" element={<LoginForm onLogin={handleLogin} />} />
+              <Route path="*" element={<Navigate to="/" />} />
             </Routes>
           ) : (
             <Routes>
