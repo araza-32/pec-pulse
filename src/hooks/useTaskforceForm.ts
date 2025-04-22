@@ -106,6 +106,13 @@ export const useTaskforceForm = (initialData?: Partial<TaskforceFormValues>) => 
   const mergedValues = initialData ? {
     ...defaultValues,
     ...initialData,
+    // Ensure arrays are properly initialized
+    expectedOutcomes: initialData.expectedOutcomes || defaultValues.expectedOutcomes,
+    mandates: initialData.mandates || defaultValues.mandates,
+    members: initialData.members || defaultValues.members,
+    meetings: initialData.meetings || defaultValues.meetings,
+    deliverables: initialData.deliverables || defaultValues.deliverables,
+    milestones: initialData.milestones || defaultValues.milestones,
   } : defaultValues;
   
   // Initialize the form

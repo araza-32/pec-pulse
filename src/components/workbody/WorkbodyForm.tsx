@@ -40,20 +40,16 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { TaskforceForm } from "./taskforce/TaskforceForm";
 import { TaskforceFormValues } from "@/types/taskforce";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const standardFormSchema = z.object({
   name: z.string().min(3, {
     message: "Name must be at least 3 characters.",
   }),
-  type: z.enum(["committee", "working-group", "task-force"] as const),
+  type: z.enum(["committee", "working-group"] as const),
   createdDate: z.date(),
   endDate: z.date().optional(),
   termsOfReference: z.string().optional(),
-}).refine((data) => {
-  return data.type !== "task-force" || data.endDate !== undefined;
-}, {
-  message: "End date is required for task forces",
-  path: ["endDate"]
 });
 
 type WorkbodyFormProps = {
@@ -67,9 +63,8 @@ export function WorkbodyForm({
   onSubmit,
   onCancel,
 }: WorkbodyFormProps) {
-  const [showEndDate, setShowEndDate] = useState(
-    initialData?.type === "task-force" || false
-  );
+  const [showTaskforceForm, setShowTaskforceForm] = useState(false);
+  const [showEndDate, setShowEndDate] = useState(false);
   const [activeTab, setActiveTab] = useState("basic-info");
   const [workbodyId, setWorkbodyId] = useState<string | null>(null);
   const [notificationUploaded, setNotificationUploaded] = useState(false);
@@ -83,7 +78,7 @@ export function WorkbodyForm({
     resolver: zodResolver(standardFormSchema),
     defaultValues: {
       name: initialData?.name || "",
-      type: (initialData?.type as WorkbodyType) || "committee",
+      type: (initialData?.type as "committee" | "working-group") || "committee",
       createdDate: initialData?.createdDate
         ? new Date(initialData.createdDate)
         : new Date(),
@@ -93,10 +88,9 @@ export function WorkbodyForm({
     mode: "onChange"
   });
 
-  const workbodyType = form.watch("type");
-  
   const mapInitialDataToTaskforce = (): Partial<TaskforceFormValues> | undefined => {
     if (!initialData) return undefined;
+    if (initialData.type !== "task-force") return undefined;
     
     const baseData: Partial<TaskforceFormValues> = {
       name: initialData.name || "",
@@ -140,84 +134,64 @@ export function WorkbodyForm({
     return baseData;
   };
 
-  if (workbodyType === "task-force") {
-    const mappedInitialData = mapInitialDataToTaskforce();
-    
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-medium">Create a Task Force</h2>
-          <Button variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
-        </div>
-        
-        <TaskforceForm 
-          onSubmit={(data: TaskforceFormValues) => {
-            try {
-              onSubmit({
-                name: data.name,
-                type: "task-force",
-                createdDate: data.createdDate,
-                endDate: data.endDate,
-                description: data.purpose,
-                termsOfReference: JSON.stringify({
-                  overview: {
-                    proposedBy: data.proposedBy,
-                    purpose: data.purpose
-                  },
-                  scope: {
-                    alignment: data.alignment,
-                    expectedOutcomes: data.expectedOutcomes || [],
-                    mandates: data.mandates || [],
-                    durationMonths: data.durationMonths
-                  },
-                  composition: data.members || [],
-                  procedures: data.meetings || [],
-                  deliverables: data.deliverables || [],
-                  milestones: data.milestones || [],
-                  signatures: {
-                    proposer: {
-                      name: data.proposerName,
-                      date: data.proposerDate,
-                      signature: data.proposerSignature
-                    },
-                    reviewer: {
-                      name: data.reviewerName,
-                      date: data.reviewerDate,
-                      signature: data.reviewerSignature
-                    },
-                    approver: {
-                      name: data.approverName,
-                      date: data.approverDate,
-                      signature: data.approverSignature
-                    }
-                  }
-                })
-              });
-            } catch (error: any) {
-              console.error("Error submitting task force form:", error);
-              toast({
-                title: "Error",
-                description: "Failed to create task force. Please try again.",
-                variant: "destructive",
-              });
-            }
-          }}
-          onCancel={onCancel}
-          initialData={mappedInitialData}
-        />
-      </div>
-    );
-  }
-
+  // Open task force form if initial data is for a task force
   useEffect(() => {
-    setShowEndDate(form.getValues("type") === "task-force");
-    
-    if (form.getValues("type") === "task-force") {
-      form.setValue("endDate", undefined);
+    if (initialData?.type === "task-force") {
+      setShowTaskforceForm(true);
     }
-  }, [workbodyType, form]);
+  }, [initialData]);
+
+  const handleTaskforceSubmit = (data: TaskforceFormValues) => {
+    try {
+      onSubmit({
+        name: data.name,
+        type: "task-force",
+        createdDate: data.createdDate,
+        endDate: data.endDate,
+        description: data.purpose,
+        termsOfReference: JSON.stringify({
+          overview: {
+            proposedBy: data.proposedBy,
+            purpose: data.purpose
+          },
+          scope: {
+            alignment: data.alignment,
+            expectedOutcomes: data.expectedOutcomes || [],
+            mandates: data.mandates || [],
+            durationMonths: data.durationMonths
+          },
+          composition: data.members || [],
+          procedures: data.meetings || [],
+          deliverables: data.deliverables || [],
+          milestones: data.milestones || [],
+          signatures: {
+            proposer: {
+              name: data.proposerName,
+              date: data.proposerDate,
+              signature: data.proposerSignature
+            },
+            reviewer: {
+              name: data.reviewerName,
+              date: data.reviewerDate,
+              signature: data.reviewerSignature
+            },
+            approver: {
+              name: data.approverName,
+              date: data.approverDate,
+              signature: data.approverSignature
+            }
+          }
+        })
+      });
+    } catch (error: any) {
+      console.error("Error submitting task force form:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create task force. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   useEffect(() => {
     if (!workbodyId && form.formState.isValid && activeTab === "documents") {
@@ -321,8 +295,41 @@ export function WorkbodyForm({
 
   const isDocumentsTabEnabled = form.formState.isValid;
 
+  if (showTaskforceForm) {
+    const taskforceInitialData = mapInitialDataToTaskforce();
+    
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-medium">Create a Task Force</h2>
+          <Button variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+        </div>
+        
+        <TaskforceForm 
+          onSubmit={handleTaskforceSubmit}
+          onCancel={onCancel}
+          initialData={taskforceInitialData}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
+        <div>
+          <h2 className="text-lg font-medium">Create a Committee or Working Group</h2>
+          <p className="text-sm text-muted-foreground mt-1">Fill out the form below to create a new workbody</p>
+        </div>
+        <div className="mt-4 md:mt-0">
+          <Button variant="secondary" onClick={() => setShowTaskforceForm(true)}>
+            Need to create a Task Force instead?
+          </Button>
+        </div>
+      </div>
+
       <Tabs 
         value={activeTab}
         onValueChange={setActiveTab}
@@ -350,7 +357,7 @@ export function WorkbodyForm({
                         <Input placeholder="Enter workbody name" {...field} />
                       </FormControl>
                       <FormDescription>
-                        Full name of the committee, working group or task force
+                        Full name of the committee or working group
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -364,7 +371,7 @@ export function WorkbodyForm({
                     <FormItem>
                       <FormLabel>Type</FormLabel>
                       <Select
-                        onValueChange={(value: WorkbodyType) => {
+                        onValueChange={(value: "committee" | "working-group") => {
                           field.onChange(value);
                         }}
                         defaultValue={field.value}
@@ -377,7 +384,6 @@ export function WorkbodyForm({
                         <SelectContent>
                           <SelectItem value="committee">Committee</SelectItem>
                           <SelectItem value="working-group">Working Group</SelectItem>
-                          <SelectItem value="task-force">Task Force</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormDescription>Type of workbody</FormDescription>
@@ -467,9 +473,6 @@ export function WorkbodyForm({
                             />
                           </PopoverContent>
                         </Popover>
-                        <FormDescription>
-                          End date is required for task forces
-                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -710,6 +713,21 @@ export function WorkbodyForm({
           />
         </>
       )}
+
+      {/* Task Force creation dialog */}
+      <Dialog open={showTaskforceForm && initialData?.type !== "task-force"} onOpenChange={(open) => {
+        if (!open) setShowTaskforceForm(false);
+      }}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create Task Force</DialogTitle>
+          </DialogHeader>
+          <TaskforceForm 
+            onSubmit={handleTaskforceSubmit}
+            onCancel={() => setShowTaskforceForm(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

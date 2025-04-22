@@ -88,7 +88,6 @@ export function TaskforceForm({ onSubmit, onCancel, initialData }: TaskforceForm
     }
   };
 
-  // Always render the full component structure
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
