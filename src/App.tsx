@@ -143,7 +143,8 @@ const App = () => {
           ) : (
             <Routes>
               <Route element={<Layout user={user} onLogout={handleLogout} />}>
-                <Route path="/" element={
+                <Route path="/" element={<Navigate to="/dashboard" />} />
+                <Route path="/dashboard" element={
                   // Always use regular dashboard for coordination (email) user
                   user?.role === 'chairman' && !user?.email?.includes('coordination') ? 
                     <ChairmanDashboard /> : 

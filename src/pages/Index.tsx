@@ -2,6 +2,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -11,12 +12,16 @@ const Index = () => {
       const { data } = await supabase.auth.getSession();
       if (data.session) {
         // User is logged in, redirect to dashboard
-        navigate('/');
+        navigate('/dashboard');
       }
     };
     
     checkSession();
   }, [navigate]);
+
+  const handleLoginClick = () => {
+    navigate('/login');
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -30,9 +35,12 @@ const Index = () => {
         <p className="text-xl text-gray-600 mb-8">
           Pakistan Engineering Council's Workbody Management System
         </p>
-        <p className="text-gray-500 mb-4">
-          Please log in to access your dashboard.
-        </p>
+        <Button 
+          onClick={handleLoginClick}
+          className="bg-pec-green hover:bg-pec-green-600"
+        >
+          Login to Access Dashboard
+        </Button>
       </div>
     </div>
   );
