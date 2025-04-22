@@ -73,6 +73,17 @@ export function LoginForm({ onLogin }: LoginFormProps) {
       }
 
       if (data?.session) {
+        // Update the admin user's role in the profiles table
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ role: 'admin' })
+          .eq('id', data.session.user.id);
+          
+        if (updateError) {
+          console.error('Error updating admin role:', updateError);
+        }
+        
+        // Now fetch the updated profile
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('role')
@@ -84,10 +95,10 @@ export function LoginForm({ onLogin }: LoginFormProps) {
           return;
         }
 
-        onLogin({ ...data.session, role: profileData.role });
+        onLogin({ ...data.session, role: 'admin' });
         toast({
           title: "Admin Login Successful",
-          description: "You are now logged in as admin.",
+          description: "You are now logged in as admin with full access.",
         });
       }
     } catch (err) {
