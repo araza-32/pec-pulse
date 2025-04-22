@@ -1,89 +1,18 @@
+
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { TaskforceFormValues } from "@/types/taskforce";
+import { useToast } from "@/hooks/use-toast";
 import { CompositionSection } from "./CompositionSection";
 import { DeliverablesSection } from "./DeliverablesSection";
 import { OperatingProceduresSection } from "./OperatingProceduresSection";
 import { OverviewSection } from "./OverviewSection";
 import { ScopeSection } from "./ScopeSection";
 import { SignaturesSection } from "./SignaturesSection";
-import { TaskforceFormValues } from "@/types/taskforce";
-import { useToast } from "@/hooks/use-toast";
-
-// Create schema based on the TaskforceFormValues type
-const taskforceSchema = z.object({
-  // Overview section
-  name: z.string().min(3, "Name must be at least 3 characters"),
-  proposedBy: z.string().min(2, "Proposed by is required"),
-  purpose: z.string().max(300, "Purpose cannot exceed 300 words"),
-  
-  // Scope section
-  alignment: z.string().max(300, "Alignment cannot exceed 300 words"),
-  expectedOutcomes: z.array(z.string()),
-  mandates: z.array(z.string()),
-  durationMonths: z.number().min(1, "Duration must be at least 1 month"),
-  
-  // Composition section
-  members: z.array(
-    z.object({
-      name: z.string(),
-      role: z.string(),
-      expertise: z.string(),
-      responsibilities: z.string(),
-      mobile: z.string(),
-      email: z.string(),
-      address: z.string(),
-    })
-  ),
-  
-  // Operating procedures section
-  meetings: z.array(
-    z.object({
-      meetingRequired: z.string(),
-      dateTime: z.string(),
-      mode: z.enum(["physical", "hybrid", "virtual"]),
-      venue: z.string(),
-    })
-  ),
-  
-  // Deliverables section
-  deliverables: z.array(
-    z.object({
-      name: z.string(),
-      description: z.string(),
-      deadline: z.string(),
-      status: z.enum(["pending", "in-progress", "completed", "delayed"]),
-    })
-  ),
-  milestones: z.array(
-    z.object({
-      name: z.string(),
-      description: z.string(),
-    })
-  ),
-  
-  // Signatures section
-  proposerName: z.string(),
-  proposerDate: z.string(),
-  proposerSignature: z.string(),
-  
-  reviewerName: z.string(),
-  reviewerDate: z.string(),
-  reviewerSignature: z.string(),
-  
-  approverName: z.string(),
-  approverDate: z.string(),
-  approverSignature: z.string(),
-  
-  // Workbody standard fields
-  type: z.literal("task-force"),
-  createdDate: z.date(),
-  endDate: z.date().optional(),
-});
+import { TaskforceNavigation } from "./TaskforceNavigation";
+import { useTaskforceForm } from "@/hooks/useTaskforceForm";
 
 interface TaskforceFormProps {
   onSubmit: (data: TaskforceFormValues) => void;
@@ -94,87 +23,7 @@ interface TaskforceFormProps {
 export function TaskforceForm({ onSubmit, onCancel, initialData }: TaskforceFormProps) {
   const [activeTab, setActiveTab] = useState("overview");
   const { toast } = useToast();
-
-  // Set up default values with safety checks for all properties
-  // Handle arrays specially since they are often causing issues
-  const getDefaultMembers = () => {
-    if (initialData?.members && Array.isArray(initialData.members)) {
-      return initialData.members;
-    }
-    return [];
-  };
-
-  const getDefaultMeetings = () => {
-    if (initialData?.meetings && Array.isArray(initialData.meetings)) {
-      return initialData.meetings;
-    }
-    return [];
-  };
-
-  const getDefaultDeliverables = () => {
-    if (initialData?.deliverables && Array.isArray(initialData.deliverables)) {
-      return initialData.deliverables;
-    }
-    return [];
-  };
-
-  const getDefaultMilestones = () => {
-    if (initialData?.milestones && Array.isArray(initialData.milestones)) {
-      return initialData.milestones;
-    }
-    return [];
-  };
-
-  const getDefaultExpectedOutcomes = () => {
-    if (initialData?.expectedOutcomes && Array.isArray(initialData.expectedOutcomes)) {
-      return initialData.expectedOutcomes;
-    }
-    return [];
-  };
-
-  const getDefaultMandates = () => {
-    if (initialData?.mandates && Array.isArray(initialData.mandates)) {
-      return initialData.mandates;
-    }
-    return [];
-  };
-
-  // Set up the form with proper default values and safety checks
-  const form = useForm<TaskforceFormValues>({
-    resolver: zodResolver(taskforceSchema),
-    defaultValues: {
-      name: initialData?.name || "",
-      proposedBy: initialData?.proposedBy || "",
-      purpose: initialData?.purpose || "",
-      
-      alignment: initialData?.alignment || "",
-      expectedOutcomes: getDefaultExpectedOutcomes(),
-      mandates: getDefaultMandates(),
-      durationMonths: initialData?.durationMonths || 3,
-      
-      members: getDefaultMembers(),
-      meetings: getDefaultMeetings(),
-      deliverables: getDefaultDeliverables(),
-      milestones: getDefaultMilestones(),
-      
-      proposerName: initialData?.proposerName || "",
-      proposerDate: initialData?.proposerDate || "",
-      proposerSignature: initialData?.proposerSignature || "",
-      
-      reviewerName: initialData?.reviewerName || "",
-      reviewerDate: initialData?.reviewerDate || "",
-      reviewerSignature: initialData?.reviewerSignature || "",
-      
-      approverName: initialData?.approverName || "",
-      approverDate: initialData?.approverDate || "",
-      approverSignature: initialData?.approverSignature || "",
-      
-      type: "task-force",
-      createdDate: initialData?.createdDate || new Date(),
-      endDate: initialData?.endDate,
-    },
-    mode: "onChange"
-  });
+  const form = useTaskforceForm(initialData);
 
   const handleSubmit = (data: TaskforceFormValues) => {
     try {
@@ -183,7 +32,6 @@ export function TaskforceForm({ onSubmit, onCancel, initialData }: TaskforceForm
       endDate.setMonth(endDate.getMonth() + data.durationMonths);
       data.endDate = endDate;
       
-      // Submit the form data
       onSubmit(data);
     } catch (error) {
       console.error("Error in TaskforceForm handleSubmit:", error);
@@ -256,94 +104,86 @@ export function TaskforceForm({ onSubmit, onCancel, initialData }: TaskforceForm
             <div className="rounded-lg border p-6">
               <OverviewSection form={form} />
             </div>
-            <div className="flex justify-between">
-              <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
-              <Button 
-                type="button" 
-                onClick={() => {
-                  form.trigger(["name", "proposedBy", "purpose"]).then(isValid => {
-                    if (isValid) {
-                      navigateToNextTab("overview");
-                    } else {
-                      toast({
-                        title: "Validation Error",
-                        description: "Please fill in all required fields correctly before proceeding.",
-                        variant: "destructive",
-                      });
-                    }
-                  });
-                }}
-              >
-                Next
-              </Button>
-            </div>
+            <TaskforceNavigation
+              activeTab={activeTab}
+              onPrevious={() => navigateToPreviousTab(activeTab)}
+              onNext={() => {
+                form.trigger(["name", "proposedBy", "purpose"]).then(isValid => {
+                  if (isValid) {
+                    navigateToNextTab(activeTab);
+                  } else {
+                    toast({
+                      title: "Validation Error",
+                      description: "Please fill in all required fields correctly before proceeding.",
+                      variant: "destructive",
+                    });
+                  }
+                });
+              }}
+              onCancel={onCancel}
+              isFirstTab
+            />
           </TabsContent>
 
           <TabsContent value="scope" className="space-y-6 pt-4">
             <div className="rounded-lg border p-6">
               <ScopeSection form={form} />
             </div>
-            <div className="flex justify-between">
-              <Button type="button" variant="outline" onClick={() => navigateToPreviousTab("scope")}>Previous</Button>
-              <Button 
-                type="button" 
-                onClick={() => {
-                  form.trigger(["alignment", "durationMonths"]).then(isValid => {
-                    if (isValid) {
-                      navigateToNextTab("scope");
-                    } else {
-                      toast({
-                        title: "Validation Error",
-                        description: "Please fill in all required fields correctly before proceeding.",
-                        variant: "destructive",
-                      });
-                    }
-                  });
-                }}
-              >
-                Next
-              </Button>
-            </div>
+            <TaskforceNavigation
+              activeTab={activeTab}
+              onPrevious={() => navigateToPreviousTab(activeTab)}
+              onNext={() => navigateToNextTab(activeTab)}
+              onCancel={onCancel}
+            />
           </TabsContent>
 
           <TabsContent value="composition" className="space-y-6 pt-4">
             <div className="rounded-lg border p-6">
               <CompositionSection form={form} />
             </div>
-            <div className="flex justify-between">
-              <Button type="button" variant="outline" onClick={() => navigateToPreviousTab("composition")}>Previous</Button>
-              <Button type="button" onClick={() => navigateToNextTab("composition")}>Next</Button>
-            </div>
+            <TaskforceNavigation
+              activeTab={activeTab}
+              onPrevious={() => navigateToPreviousTab(activeTab)}
+              onNext={() => navigateToNextTab(activeTab)}
+              onCancel={onCancel}
+            />
           </TabsContent>
 
           <TabsContent value="procedures" className="space-y-6 pt-4">
             <div className="rounded-lg border p-6">
               <OperatingProceduresSection form={form} />
             </div>
-            <div className="flex justify-between">
-              <Button type="button" variant="outline" onClick={() => navigateToPreviousTab("procedures")}>Previous</Button>
-              <Button type="button" onClick={() => navigateToNextTab("procedures")}>Next</Button>
-            </div>
+            <TaskforceNavigation
+              activeTab={activeTab}
+              onPrevious={() => navigateToPreviousTab(activeTab)}
+              onNext={() => navigateToNextTab(activeTab)}
+              onCancel={onCancel}
+            />
           </TabsContent>
 
           <TabsContent value="deliverables" className="space-y-6 pt-4">
             <div className="rounded-lg border p-6">
               <DeliverablesSection form={form} />
             </div>
-            <div className="flex justify-between">
-              <Button type="button" variant="outline" onClick={() => navigateToPreviousTab("deliverables")}>Previous</Button>
-              <Button type="button" onClick={() => navigateToNextTab("deliverables")}>Next</Button>
-            </div>
+            <TaskforceNavigation
+              activeTab={activeTab}
+              onPrevious={() => navigateToPreviousTab(activeTab)}
+              onNext={() => navigateToNextTab(activeTab)}
+              onCancel={onCancel}
+            />
           </TabsContent>
 
           <TabsContent value="signatures" className="space-y-6 pt-4">
             <div className="rounded-lg border p-6">
               <SignaturesSection form={form} />
             </div>
-            <div className="flex justify-between">
-              <Button type="button" variant="outline" onClick={() => navigateToPreviousTab("signatures")}>Previous</Button>
-              <Button type="submit">Submit Taskforce</Button>
-            </div>
+            <TaskforceNavigation
+              activeTab={activeTab}
+              onPrevious={() => navigateToPreviousTab(activeTab)}
+              onNext={() => form.handleSubmit(handleSubmit)()}
+              onCancel={onCancel}
+              isLastTab
+            />
           </TabsContent>
         </Tabs>
       </form>
