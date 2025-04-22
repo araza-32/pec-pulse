@@ -28,6 +28,8 @@ const App = () => {
   const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
+    console.log("Setting up auth state listener");
+    
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
