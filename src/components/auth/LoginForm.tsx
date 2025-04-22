@@ -57,14 +57,14 @@ export function LoginForm({ onLogin }: LoginFormProps) {
 
   const handleAdminLogin = async () => {
     setEmail("admin@pec.org.pk");
-    setPassword("admin123");
+    setPassword("Coord@pec!@#123");
     setError("");
     setIsLoading(true);
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email: "admin@pec.org.pk",
-        password: "admin123",
+        password: "Coord@pec!@#123",
       });
 
       if (error) {
