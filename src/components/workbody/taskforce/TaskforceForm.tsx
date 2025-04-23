@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,22 +19,41 @@ interface TaskforceFormProps {
   onSubmit: (data: TaskforceFormValues) => void;
   onCancel: () => void;
   initialData?: Partial<TaskforceFormValues>;
+  showAfterRequestSuccess?: boolean;
 }
 
-export function TaskforceForm({ onSubmit, onCancel, initialData }: TaskforceFormProps) {
+export function TaskforceForm({ onSubmit, onCancel, initialData, showAfterRequestSuccess }: TaskforceFormProps) {
+  // MOCK_USER_ROLE is a fallback. In app, role should come from auth/user context.
   const [userRole] = useState<"admin" | "coordination" | "secretary">(
     (window as any).MOCK_USER_ROLE || "admin"
   );
+  // The review tab is only shown to secretary
+  const showReviewTab = userRole === "secretary";
+  // Print is only for admin/coordination
+  const canPrint = userRole === "admin" || userRole === "coordination";
+
+  // Remove 'review' tab for admin/coordination
   const [activeTab, setActiveTab] = useState("overview");
   const { toast } = useToast();
   const form = useTaskforceForm(initialData);
 
+  // For post-submission success state
+  const [requestSubmitted, setRequestSubmitted] = useState(false);
+
   const handleSubmit = (data: TaskforceFormValues) => {
     try {
+      // Calculate endDate based on durationMonths for storage consistency
       const endDate = new Date(data.createdDate);
       endDate.setMonth(endDate.getMonth() + data.durationMonths);
       data.endDate = endDate;
       onSubmit(data);
+      if (userRole === "secretary") {
+        setRequestSubmitted(true);
+        toast({
+          title: "Request Submitted",
+          description: "Your Task Force Formation request has been submitted successfully and is being reviewed.",
+        });
+      }
     } catch (error) {
       console.error("Error in TaskforceForm handleSubmit:", error);
       toast({
@@ -62,7 +82,7 @@ export function TaskforceForm({ onSubmit, onCancel, initialData }: TaskforceForm
         setActiveTab("signatures");
         break;
       case "signatures":
-        setActiveTab("review");
+        if (showReviewTab) setActiveTab("submit-request");
         break;
       default:
         break;
@@ -86,7 +106,7 @@ export function TaskforceForm({ onSubmit, onCancel, initialData }: TaskforceForm
       case "signatures":
         setActiveTab("deliverables");
         break;
-      case "review":
+      case "submit-request":
         setActiveTab("signatures");
         break;
       default:
@@ -102,16 +122,14 @@ export function TaskforceForm({ onSubmit, onCancel, initialData }: TaskforceForm
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 md:grid-cols-7">
+          <TabsList className={canPrint ? "grid w-full grid-cols-6" : "grid w-full grid-cols-7"}>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="scope">Scope & ToRs</TabsTrigger>
             <TabsTrigger value="composition">Composition</TabsTrigger>
             <TabsTrigger value="procedures">Procedures</TabsTrigger>
             <TabsTrigger value="deliverables">Deliverables</TabsTrigger>
             <TabsTrigger value="signatures">Signatures</TabsTrigger>
-            <TabsTrigger value="review">{
-              userRole === "secretary" ? "Submit Request" : "Review Details"
-            }</TabsTrigger>
+            {showReviewTab && <TabsTrigger value="submit-request">Submit Request</TabsTrigger>}
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6 pt-4">
@@ -120,7 +138,7 @@ export function TaskforceForm({ onSubmit, onCancel, initialData }: TaskforceForm
             </div>
             <TaskforceNavigation
               activeTab={activeTab}
-              onPrevious={() => navigateToPreviousTab(activeTab)}
+              onPrevious={onCancel}
               onNext={() => {
                 form.trigger(["name", "proposedBy", "purpose"]).then(isValid => {
                   if (isValid) {
@@ -150,7 +168,6 @@ export function TaskforceForm({ onSubmit, onCancel, initialData }: TaskforceForm
               onCancel={onCancel}
             />
           </TabsContent>
-
           <TabsContent value="composition" className="space-y-6 pt-4">
             <div className="rounded-lg border p-6">
               <CompositionSection form={form} />
@@ -162,7 +179,6 @@ export function TaskforceForm({ onSubmit, onCancel, initialData }: TaskforceForm
               onCancel={onCancel}
             />
           </TabsContent>
-
           <TabsContent value="procedures" className="space-y-6 pt-4">
             <div className="rounded-lg border p-6">
               <OperatingProceduresSection form={form} />
@@ -174,7 +190,6 @@ export function TaskforceForm({ onSubmit, onCancel, initialData }: TaskforceForm
               onCancel={onCancel}
             />
           </TabsContent>
-
           <TabsContent value="deliverables" className="space-y-6 pt-4">
             <div className="rounded-lg border p-6">
               <DeliverablesSection form={form} />
@@ -187,6 +202,7 @@ export function TaskforceForm({ onSubmit, onCancel, initialData }: TaskforceForm
             />
           </TabsContent>
 
+          {/* Move Signatures before review/submit-request */}
           <TabsContent value="signatures" className="space-y-6 pt-4">
             <div className="rounded-lg border p-6">
               <SignaturesSection form={form} />
@@ -194,26 +210,29 @@ export function TaskforceForm({ onSubmit, onCancel, initialData }: TaskforceForm
             <TaskforceNavigation
               activeTab={activeTab}
               onPrevious={() => navigateToPreviousTab(activeTab)}
-              onNext={() => navigateToNextTab(activeTab)}
+              onNext={() => {
+                if (showReviewTab) {
+                  navigateToNextTab(activeTab);
+                } else {
+                  // If admin/coordination: skip review, just inform user to print, no need to show next
+                  // Potential: Could show a summary if desired
+                }
+              }}
               onCancel={onCancel}
-              isLastTab={false}
+              isLastTab={!showReviewTab}
             />
           </TabsContent>
 
-          <TabsContent value="review" className="space-y-6 pt-4 bg-white print:bg-white">
+          {/* Secretary: the final Submit Request section */}
+          {showReviewTab && (
+          <TabsContent value="submit-request" className="space-y-6 pt-4 bg-white print:bg-white">
             <div className="rounded-lg border p-6 bg-white print:bg-white">
               <TaskforcePrintableSummary form={form} userRole={userRole} />
             </div>
             <div className="flex flex-col md:flex-row gap-2 md:gap-4 justify-end">
-              {userRole === "secretary" ? (
-                <Button type="submit" className="bg-pec-green hover:bg-pec-green-600">
-                  Submit Request
-                </Button>
-              ) : (
-                <Button type="button" variant="secondary" onClick={handlePrint}>
-                  Print / Save as PDF
-                </Button>
-              )}
+              <Button type="submit" className="bg-pec-green hover:bg-pec-green-600">
+                Submit Request
+              </Button>
               <TaskforceNavigation
                 activeTab={activeTab}
                 onPrevious={() => navigateToPreviousTab(activeTab)}
@@ -222,7 +241,25 @@ export function TaskforceForm({ onSubmit, onCancel, initialData }: TaskforceForm
                 isLastTab={true}
               />
             </div>
+            {requestSubmitted && (
+              <div className="rounded-lg bg-green-50 border border-green-200 p-4 mt-4">
+                <p className="text-green-700 font-medium">Your task force formation request has been submitted and is being reviewed by the Admin/Coordination team. You can track the status in "My Task Force Requests".</p>
+              </div>
+            )}
           </TabsContent>
+          )}
+
+          {/* Admin/Coordination: after Signatures show only Print button, no review section */}
+          {(canPrint && !showReviewTab) && (
+            <TabsContent value="signatures" className="space-y-6 pt-4 bg-white print:bg-white">
+              <div className="flex justify-end gap-2 mt-2">
+                <Button type="button" variant="secondary" onClick={handlePrint}>
+                  Print / Save as PDF
+                </Button>
+              </div>
+            </TabsContent>
+          )}
+
         </Tabs>
       </form>
     </Form>

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -20,6 +19,9 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, CheckCircle } from "lucide-react";
 import { CreateWorkbodyForm } from "@/components/workbody/CreateWorkbodyForm";
 import { TaskforceForm } from "@/components/workbody/taskforce/TaskforceForm";
+import { Input } from "@/components/ui/input";
+
+import { TaskforceRequestsPanel } from "@/components/workbody/taskforce/TaskforceRequestsPanel";
 
 // Task Force Request interface
 interface TaskForceRequest {
@@ -30,6 +32,7 @@ interface TaskForceRequest {
   requestDate: Date;
   status: 'pending' | 'approved' | 'rejected';
   data: any;
+  notificationUploaded?: boolean;
 }
 
 export default function WorkbodyManagement() {
@@ -49,6 +52,7 @@ export default function WorkbodyManagement() {
   const [taskForceRequests, setTaskForceRequests] = useState<TaskForceRequest[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<TaskForceRequest | null>(null);
   const [isApprovalDialogOpen, setIsApprovalDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<"workbodies" | "requests">("workbodies");
 
   // Mock user role - in real app, get this from auth context
   const [userRole, setUserRole] = useState<'admin' | 'coordination' | 'secretary'>('admin');
@@ -183,7 +187,7 @@ export default function WorkbodyManagement() {
 
       // Update the request status
       const updatedRequests = taskForceRequests.map(req => 
-        req.id === request.id ? { ...req, status: 'approved' as const } : req
+        req.id === request.id ? { ...req, status: 'approved' as const, notificationUploaded: false } : req
       );
       setTaskForceRequests(updatedRequests);
       
@@ -333,6 +337,12 @@ export default function WorkbodyManagement() {
   };
 
   const handleApprovalNotificationUpload = (documentId: string) => {
+    if (selectedRequest) {
+      const updatedRequests = taskForceRequests.map(req =>
+        req.id === selectedRequest.id ? { ...req, notificationUploaded: true } : req
+      );
+      setTaskForceRequests(updatedRequests);
+    }
     toast({
       title: "Notification Uploaded",
       description: "The notification for the approved task force has been uploaded.",
@@ -347,10 +357,18 @@ export default function WorkbodyManagement() {
       workbody.type.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Only show requests to admin and coordination roles
-  const pendingRequests = taskForceRequests.filter(req => 
-    req.status === 'pending' && (userRole === 'admin' || userRole === 'coordination')
+  // Helpers for taskforce request panel
+  const myRequests = taskForceRequests.filter(
+    (req) => userRole === 'secretary' && req.requestedBy === "Current Secretary"
   );
+  const adminPendingRequests = taskForceRequests.filter(
+    (req) => (userRole === 'admin' || userRole === 'coordination') && req.status === 'pending'
+  );
+
+  // Handler for opening requests tab after submit (for secretary)
+  const handleAfterRequestSubmit = () => {
+    setActiveTab("requests");
+  };
 
   const checkExpiringTaskForces = () => {
     const today = new Date();
@@ -407,132 +425,159 @@ export default function WorkbodyManagement() {
         </Alert>
       )}
 
-      {pendingRequests.length > 0 && (userRole === 'admin' || userRole === 'coordination') && (
-        <Alert className="bg-amber-50 border-amber-200">
-          <AlertCircle className="h-4 w-4 text-amber-600" />
-          <AlertTitle className="text-amber-800">Pending Task Force Requests</AlertTitle>
-          <AlertDescription>
-            <div className="mt-2 space-y-2">
-              {pendingRequests.map(request => (
-                <div key={request.id} className="bg-white p-3 rounded border flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">{request.name}</p>
-                    <p className="text-sm text-muted-foreground">Requested by {request.requestedBy} on {new Date(request.requestDate).toLocaleDateString()}</p>
-                    <p className="text-sm mt-1">{request.purpose}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button 
-                      size="sm" 
-                      onClick={() => handleApproveTaskForce(request)}
-                      className="bg-green-600 hover:bg-green-700"
-                    >
-                      Approve
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => handleRejectTaskForce(request)}
-                    >
-                      Reject
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </AlertDescription>
-        </Alert>
-      )}
-
-      <div className="flex flex-col md:flex-row md:items-center justify-between">
-        <div className="flex w-full max-w-sm items-center space-x-2">
-          <Input
-            placeholder="Search workbodies..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full"
-          />
-        </div>
-        <div className="flex gap-2 mt-4 md:mt-0">
-          {/* Only show Committee and Working Group buttons to admin and coordination */}
-          {(userRole === 'admin' || userRole === 'coordination') && (
-            <>
-              <Button onClick={() => setCreateMode("committee")}>
-                <span className="mr-2">+</span> New Committee
-              </Button>
-              
-              <Button onClick={() => setCreateMode("working-group")} variant="outline">
-                <span className="mr-2">+</span> New Working Group
-              </Button>
-            </>
-          )}
-          
-          {/* Show Task Force button to all roles */}
-          <Button 
-            onClick={() => setCreateMode("task-force")} 
-            variant={userRole === 'secretary' ? "default" : "outline"}
+      <div className="flex justify-between items-end border-b mb-4">
+        <div className="flex gap-3">
+          <button
+            className={`px-4 py-2 border-b-2 ${activeTab === "workbodies" ? "border-pec-green text-pec-green font-bold" : "border-transparent text-gray-500"}`}
+            onClick={() => setActiveTab("workbodies")}
           >
-            <span className="mr-2">+</span> New Task Force
-            {userRole === 'secretary' && <span className="ml-2 text-xs bg-green-800 px-2 py-0.5 rounded-full">Available</span>}
-          </Button>
+            Workbodies
+          </button>
+          <button
+            className={`px-4 py-2 border-b-2 ${activeTab === "requests" ? "border-pec-green text-pec-green font-bold" : "border-transparent text-gray-500"}`}
+            onClick={() => setActiveTab("requests")}
+          >
+            {userRole === 'secretary' ? "My Task Force Requests" : "Task Force Formation Requests"}
+            {userRole !== 'secretary' && adminPendingRequests.length > 0 && (
+              <span className="ml-2 px-2 py-0.5 rounded-full bg-amber-200 text-xs text-amber-800">{adminPendingRequests.length}</span>
+            )}
+          </button>
+        </div>
+        <div className="flex flex-col md:flex-row md:items-center justify-between">
+          <div className="flex w-full max-w-sm items-center space-x-2">
+            <Input
+              placeholder="Search workbodies..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full"
+            />
+          </div>
+          <div className="flex gap-2 mt-4 md:mt-0">
+            {/* Only show Committee and Working Group buttons to admin and coordination */}
+            {(userRole === 'admin' || userRole === 'coordination') && (
+              <>
+                <Button onClick={() => setCreateMode("committee")}>
+                  <span className="mr-2">+</span> New Committee
+                </Button>
+                
+                <Button onClick={() => setCreateMode("working-group")} variant="outline">
+                  <span className="mr-2">+</span> New Working Group
+                </Button>
+              </>
+            )}
+            
+            {/* Show Task Force button to all roles */}
+            <Button 
+              onClick={() => setCreateMode("task-force")} 
+              variant={userRole === 'secretary' ? "default" : "outline"}
+            >
+              <span className="mr-2">+</span> New Task Force
+              {userRole === 'secretary' && <span className="ml-2 text-xs bg-green-800 px-2 py-0.5 rounded-full">Available</span>}
+            </Button>
+          </div>
         </div>
       </div>
 
-      {isLoading ? (
-        <div className="text-center py-8">Loading workbodies...</div>
-      ) : filteredWorkbodies.length === 0 ? (
-        <div className="text-center py-8">No workbodies found</div>
-      ) : (
-        <WorkbodyTable 
-          workbodies={filteredWorkbodies}
-          onEdit={(workbody) => {
-            setSelectedWorkbody(workbody);
-            setIsEditDialogOpen(true);
-          }}
-          onViewTor={(workbody) => {
-            setSelectedWorkbody(workbody);
-            setIsTorDialogOpen(true);
-          }}
-          onUploadNotification={(workbody) => {
-            setSelectedWorkbody(workbody);
-            setExtractionError(null);
-            setIsUploadNotificationOpen(true);
-          }}
-          onViewHistory={(workbody) => {
-            setSelectedWorkbody(workbody);
-            setIsHistoryVisible(true);
-          }}
-          onDelete={(workbody) => {
-            setSelectedWorkbody(workbody);
-            setIsDeleteDialogOpen(true);
-          }}
-        />
-      )}
-
-      {selectedWorkbody && (
+      {activeTab === "workbodies" ? (
         <>
-          <DocumentUpload
-            workbodyId={selectedWorkbody.id}
-            documentType="notification"
-            isOpen={isUploadNotificationOpen}
-            onClose={() => setIsUploadNotificationOpen(false)}
-            onUploadComplete={handleNotificationUpload}
-          />
-
-          <DocumentUpload
-            workbodyId={selectedWorkbody.id}
-            documentType="tor"
-            isOpen={isUploadTorOpen}
-            onClose={() => setIsUploadTorOpen(false)}
-            onUploadComplete={() => window.location.reload()}
-          />
-
-          {isHistoryVisible && (
-            <CompositionHistory
-              workbodyId={selectedWorkbody.id}
-              onClose={() => setIsHistoryVisible(false)}
+          {isLoading ? (
+            <div className="text-center py-8">Loading workbodies...</div>
+          ) : filteredWorkbodies.length === 0 ? (
+            <div className="text-center py-8">No workbodies found</div>
+          ) : (
+            <WorkbodyTable 
+              workbodies={filteredWorkbodies}
+              onEdit={(workbody) => {
+                setSelectedWorkbody(workbody);
+                setIsEditDialogOpen(true);
+              }}
+              onViewTor={(workbody) => {
+                setSelectedWorkbody(workbody);
+                setIsTorDialogOpen(true);
+              }}
+              onUploadNotification={(workbody) => {
+                setSelectedWorkbody(workbody);
+                setExtractionError(null);
+                setIsUploadNotificationOpen(true);
+              }}
+              onViewHistory={(workbody) => {
+                setSelectedWorkbody(workbody);
+                setIsHistoryVisible(true);
+              }}
+              onDelete={(workbody) => {
+                setSelectedWorkbody(workbody);
+                setIsDeleteDialogOpen(true);
+              }}
             />
           )}
+
+          {selectedWorkbody && (
+            <>
+              <DocumentUpload
+                workbodyId={selectedWorkbody.id}
+                documentType="notification"
+                isOpen={isUploadNotificationOpen}
+                onClose={() => setIsUploadNotificationOpen(false)}
+                onUploadComplete={handleNotificationUpload}
+              />
+
+              <DocumentUpload
+                workbodyId={selectedWorkbody.id}
+                documentType="tor"
+                isOpen={isUploadTorOpen}
+                onClose={() => setIsUploadTorOpen(false)}
+                onUploadComplete={() => window.location.reload()}
+              />
+
+              {isHistoryVisible && (
+                <CompositionHistory
+                  workbodyId={selectedWorkbody.id}
+                  onClose={() => setIsHistoryVisible(false)}
+                />
+              )}
+            </>
+          )}
         </>
+      ) : (
+        <div className="mt-4">
+          <TaskforceRequestsPanel
+            requests={
+              userRole === "secretary"
+                ? myRequests
+                : adminPendingRequests
+            }
+            userRole={userRole}
+            onApprove={handleApproveTaskForce}
+            onReject={handleRejectTaskForce}
+            onUpload={(req) => {
+              setSelectedRequest(req);
+              setIsApprovalDialogOpen(true);
+            }}
+          />
+          {selectedRequest && isApprovalDialogOpen && (
+            <Dialog open={true} onOpenChange={(open) => {
+                setIsApprovalDialogOpen(open);
+                if (!open) setSelectedRequest(null);
+              }}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Upload Notification</DialogTitle>
+                </DialogHeader>
+                <div className="py-4">
+                  <p>Upload the notification document for the approved task force: <strong>{selectedRequest.name}</strong></p>
+                  <div className="mt-4">
+                    <Input type="file" accept=".pdf" />
+                    <div className="mt-4 flex justify-end">
+                      <Button onClick={() => handleApprovalNotificationUpload("mock-document-id")}>
+                        Upload Notification
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
       )}
 
       {/* Committee Creation Dialog */}
@@ -601,33 +646,6 @@ export default function WorkbodyManagement() {
         onSubmit={handleTorSubmit}
       />
 
-      {/* Approval Notification Upload Dialog */}
-      {selectedRequest && (
-        <Dialog open={isApprovalDialogOpen} onOpenChange={(open) => {
-          if (!open) {
-            setIsApprovalDialogOpen(false);
-            setSelectedRequest(null);
-          }
-        }}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Upload Notification</DialogTitle>
-            </DialogHeader>
-            <div className="py-4">
-              <p>Upload the notification document for the approved task force: <strong>{selectedRequest.name}</strong></p>
-              <div className="mt-4">
-                <Input type="file" accept=".pdf" />
-                <div className="mt-4 flex justify-end">
-                  <Button onClick={() => handleApprovalNotificationUpload("mock-document-id")}>
-                    Upload Notification
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
-
       {/* UI for testing different user roles */}
       <div className="fixed bottom-4 right-4 bg-white p-2 border rounded-md shadow-md">
         <div className="text-xs font-medium mb-2">Testing: Switch User Role</div>
@@ -639,14 +657,4 @@ export default function WorkbodyManagement() {
       </div>
     </div>
   );
-};
-
-// Add the Input component since we're using it directly in this file
-const Input = ({ className, ...props }: React.InputHTMLAttributes<HTMLInputElement>) => {
-  return (
-    <input
-      className={`flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
-      {...props}
-    />
-  );
-};
+}
