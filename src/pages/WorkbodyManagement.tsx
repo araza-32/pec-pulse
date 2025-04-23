@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -18,6 +17,8 @@ import { useWorkbodies } from "@/hooks/useWorkbodies";
 import { WorkbodyHeader } from "@/components/workbody/WorkbodyHeader";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
+import { CreateWorkbodyForm } from "@/components/workbody/CreateWorkbodyForm";
+import { TaskforceForm } from "@/components/workbody/taskforce/TaskforceForm";
 
 export default function WorkbodyManagement() {
   const { toast } = useToast();
@@ -32,6 +33,7 @@ export default function WorkbodyManagement() {
   const [isHistoryVisible, setIsHistoryVisible] = useState(false);
   const [extractionError, setExtractionError] = useState<string | null>(null);
   const [hideErrors, setHideErrors] = useState(false);
+  const [createMode, setCreateMode] = useState<"none" | "committee-or-working-group" | "task-force">("none");
 
   const { workbodies, isLoading, createWorkbody, updateWorkbody, deleteWorkbody, refetch } = useWorkbodies();
   const { extractMembersFromDocument, isExtracting, extractionError: hookExtractionError, clearExtractionError } = usePdfMemberExtraction();
@@ -40,7 +42,7 @@ export default function WorkbodyManagement() {
     setHideErrors(false);
   }, [workbodies]);
 
-  const handleAddSubmit = async (data: WorkbodyFormData) => {
+  const handleAddCommitteeOrWGSubmit = async (data: WorkbodyFormData) => {
     try {
       console.log("Submitting new workbody data:", data);
       
@@ -49,7 +51,7 @@ export default function WorkbodyManagement() {
           title: "Workbody Created",
           description: `${data.name} has been successfully created.`,
         });
-        setIsAddDialogOpen(false);
+        setCreateMode("none");
         await refetch();
       } else {
         await createWorkbody.mutateAsync(data);
@@ -57,13 +59,39 @@ export default function WorkbodyManagement() {
           title: "Workbody Created",
           description: `${data.name} has been successfully created.`,
         });
-        setIsAddDialogOpen(false);
+        setCreateMode("none");
       }
     } catch (error: any) {
       console.error('Error creating workbody:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to create workbody. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAddTaskforceSubmit = async (data: any) => {
+    try {
+      await createWorkbody.mutateAsync({
+        name: data.name,
+        type: "task-force",
+        createdDate: new Date(data.createdDate),
+        endDate: data.endDate ? new Date(data.endDate) : undefined,
+        termsOfReference: data.scope || "",
+        description: data.purpose || "",
+      });
+      toast({
+        title: "Task Force Created",
+        description: `${data.name} has been successfully created.`,
+      });
+      setCreateMode("none");
+      await refetch();
+    } catch (error: any) {
+      console.error('Error creating task force:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create task force. Please try again.",
         variant: "destructive",
       });
     }
@@ -247,7 +275,7 @@ export default function WorkbodyManagement() {
       <WorkbodyHeader
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
-        onAddClick={() => setIsAddDialogOpen(true)}
+        onAddClick={() => setCreateMode("committee-or-working-group")}
       />
 
       {isLoading ? (
@@ -308,28 +336,43 @@ export default function WorkbodyManagement() {
         </>
       )}
 
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+      <Dialog open={createMode !== "none"} onOpenChange={(open) => setCreateMode(open ? createMode : "none")}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Add New Workbody</DialogTitle>
+            <DialogTitle>Create Workbody</DialogTitle>
           </DialogHeader>
-          <WorkbodyForm
-            onSubmit={handleAddSubmit}
-            onCancel={() => setIsAddDialogOpen(false)}
-          />
-        </DialogContent>
-      </Dialog>
+          {createMode === "none" ? null : (
+            <div>
+              <div className="flex flex-col items-center gap-4 pb-4">
+                <span className="font-semibold mb-2">What do you want to create?</span>
+                <div className="flex gap-4">
+                  <Button
+                    variant={createMode === "committee-or-working-group" ? "default" : "outline"}
+                    onClick={() => setCreateMode("committee-or-working-group")}
+                  >
+                    Committee / Working Group
+                  </Button>
+                  <Button
+                    variant={createMode === "task-force" ? "default" : "outline"}
+                    onClick={() => setCreateMode("task-force")}
+                  >
+                    Task Force
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
 
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Workbody</DialogTitle>
-          </DialogHeader>
-          {selectedWorkbody && (
-            <WorkbodyForm
-              initialData={selectedWorkbody}
-              onSubmit={handleEditSubmit}
-              onCancel={() => setIsEditDialogOpen(false)}
+          {createMode === "committee-or-working-group" && (
+            <CreateWorkbodyForm
+              onSubmit={handleAddCommitteeOrWGSubmit}
+              onCancel={() => setCreateMode("none")}
+            />
+          )}
+          {createMode === "task-force" && (
+            <TaskforceForm
+              onSubmit={handleAddTaskforceSubmit}
+              onCancel={() => setCreateMode("none")}
             />
           )}
         </DialogContent>

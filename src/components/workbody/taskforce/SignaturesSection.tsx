@@ -1,16 +1,22 @@
-
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { TaskforceFormValues } from "@/types/taskforce";
 import { UseFormReturn } from "react-hook-form";
+import { Button } from "@/components/ui/button";
+import { Printer } from "lucide-react";
+import React from "react";
 
 interface SignaturesSectionProps {
   form: UseFormReturn<TaskforceFormValues>;
 }
 
 export const SignaturesSection = ({ form }: SignaturesSectionProps) => {
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 print:bg-white print:text-black print:shadow-none">
       <div className="space-y-4">
         <h3 className="text-lg font-medium">Proposed by</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -150,6 +156,12 @@ export const SignaturesSection = ({ form }: SignaturesSectionProps) => {
             )}
           />
         </div>
+      </div>
+      
+      <div className="flex justify-end mt-4 print:hidden">
+        <Button onClick={handlePrint} type="button" variant="secondary">
+          <Printer className="mr-2" /> Print as PDF
+        </Button>
       </div>
     </div>
   );
