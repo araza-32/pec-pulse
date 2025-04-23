@@ -1,3 +1,4 @@
+
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -11,16 +12,18 @@ import React from "react";
 interface OperatingProceduresSectionProps {
   form: UseFormReturn<TaskforceFormValues>;
 }
+
 export const OperatingProceduresSection = ({ form }: OperatingProceduresSectionProps) => {
+  const meetings = form.watch("meetings") || [];
+  
   const handleAddMeeting = () => {
-    form.setValue("meetings", [
-      ...form.getValues().meetings,
-      { meetingRequired: "", dateTime: "", mode: "physical", venue: "" },
-    ]);
+    const currentMeetings = [...meetings];
+    currentMeetings.push({ meetingRequired: "", dateTime: "", mode: "physical", venue: "" });
+    form.setValue("meetings", currentMeetings);
   };
 
   const handleRemoveMeeting = (index: number) => {
-    const updatedMeetings = [...form.getValues().meetings];
+    const updatedMeetings = [...meetings];
     updatedMeetings.splice(index, 1);
     form.setValue("meetings", updatedMeetings);
   };
@@ -40,7 +43,7 @@ export const OperatingProceduresSection = ({ form }: OperatingProceduresSectionP
           </TableRow>
         </TableHeader>
         <TableBody>
-          {form.getValues().meetings.map((meeting, index) => (
+          {meetings.map((meeting, index) => (
             <TableRow key={index}>
               <TableCell>
                 <FormField

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
 import React, { useRef } from "react";
 import { TaskforcePrintableSummary } from "./TaskforcePrintableSummary";
+import { Table } from "@/components/ui/table";
 
 interface SignaturesSectionProps {
   form: UseFormReturn<TaskforceFormValues>;
@@ -24,6 +25,14 @@ export const SignaturesSection = ({ form }: SignaturesSectionProps) => {
       {/* Hidden printable section */}
       <div style={{ display: "none" }} className="print:block" ref={printRef}>
         <TaskforcePrintableSummary form={form} />
+      </div>
+
+      <div className="space-y-6">
+        <h3 className="text-lg font-medium">Review Task Force Details</h3>
+        <div className="border rounded-md p-4 bg-muted/50">
+          <h4 className="font-medium mb-4">Review all details before finalizing</h4>
+          <TaskforcePrintableSummary form={form} />
+        </div>
       </div>
 
       <div className="space-y-4">

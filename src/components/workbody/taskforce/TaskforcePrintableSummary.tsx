@@ -1,245 +1,277 @@
 
-import { UseFormReturn } from "react-hook-form";
 import { TaskforceFormValues } from "@/types/taskforce";
-import { format } from "date-fns";
+import { UseFormReturn } from "react-hook-form";
 
-// Show a summary for printing: all form values.
-export const TaskforcePrintableSummary = ({ form }: { form: UseFormReturn<TaskforceFormValues> }) => {
+interface TaskforcePrintableSummaryProps {
+  form: UseFormReturn<TaskforceFormValues>;
+}
+
+export const TaskforcePrintableSummary = ({ form }: TaskforcePrintableSummaryProps) => {
   const values = form.getValues();
-
+  
   return (
-    <div className="p-8 text-black">
-      <h1 className="text-2xl font-bold mb-6">Taskforce Submission Summary</h1>
-      
+    <div className="p-6 space-y-8 text-black print:text-black">
+      <div className="text-center border-b pb-4">
+        <h1 className="text-2xl font-bold">{values.name}</h1>
+        <p className="text-lg">Task Force Proposal</p>
+      </div>
+
       {/* Overview Section */}
-      <section className="mb-8 border-b pb-6">
-        <h2 className="text-xl font-bold mb-4">1. Overview</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <div><strong>Taskforce Name:</strong> {values.name || "N/A"}</div>
-          <div><strong>Proposed By:</strong> {values.proposedBy || "N/A"}</div>
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold border-b pb-2">1. Overview</h2>
+        <div className="grid grid-cols-1 gap-4">
+          <div>
+            <p className="font-semibold">Proposed By:</p>
+            <p>{values.proposedBy || "Not specified"}</p>
+          </div>
+          <div>
+            <p className="font-semibold">Purpose:</p>
+            <p>{values.purpose || "Not specified"}</p>
+          </div>
+          <div>
+            <p className="font-semibold">Created Date:</p>
+            <p>{values.createdDate ? values.createdDate.toLocaleDateString() : "Not specified"}</p>
+          </div>
         </div>
-        <div className="mb-4">
-          <strong>Purpose:</strong> 
-          <p className="mt-1">{values.purpose || "N/A"}</p>
-        </div>
-      </section>
+      </div>
 
-      {/* Scope & ToRs */}
-      <section className="mb-8 border-b pb-6">
-        <h2 className="text-xl font-bold mb-4">2. Scope & Terms of Reference</h2>
-        <div className="mb-4">
-          <strong>Alignment:</strong> 
-          <p className="mt-1">{values.alignment || "N/A"}</p>
+      {/* Scope Section */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold border-b pb-2">2. Scope & Terms of Reference</h2>
+        <div className="grid grid-cols-1 gap-4">
+          <div>
+            <p className="font-semibold">Alignment with PEC Strategic Objectives:</p>
+            <p>{values.alignment || "Not specified"}</p>
+          </div>
+          <div>
+            <p className="font-semibold">Duration:</p>
+            <p>{values.durationMonths} months</p>
+            {values.endDate && (
+              <p className="text-sm">
+                End Date: {values.endDate.toLocaleDateString()}
+              </p>
+            )}
+          </div>
+          <div>
+            <p className="font-semibold">Expected Outcomes:</p>
+            {values.expectedOutcomes && values.expectedOutcomes.length > 0 ? (
+              <ul className="list-disc pl-5 space-y-1">
+                {values.expectedOutcomes.map((outcome, index) => (
+                  <li key={index}>{outcome}</li>
+                ))}
+              </ul>
+            ) : (
+              <p>No outcomes specified</p>
+            )}
+          </div>
+          <div>
+            <p className="font-semibold">Mandates:</p>
+            {values.mandates && values.mandates.length > 0 ? (
+              <ul className="list-disc pl-5 space-y-1">
+                {values.mandates.map((mandate, index) => (
+                  <li key={index}>{mandate}</li>
+                ))}
+              </ul>
+            ) : (
+              <p>No mandates specified</p>
+            )}
+          </div>
         </div>
-        
-        <div className="mb-4">
-          <strong>Expected Outcomes:</strong>
-          {values.expectedOutcomes?.length > 0 ? (
-            <ul className="list-disc list-inside mt-1 ml-4">
-              {values.expectedOutcomes.map((o, i) => (
-                <li key={i}>{o}</li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-1">None specified</p>
-          )}
-        </div>
-        
-        <div className="mb-4">
-          <strong>Mandates:</strong>
-          {values.mandates?.length > 0 ? (
-            <ul className="list-disc list-inside mt-1 ml-4">
-              {values.mandates.map((m, i) => (
-                <li key={i}>{m}</li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-1">None specified</p>
-          )}
-        </div>
-        
-        <div className="mb-4">
-          <strong>Duration:</strong> {values.durationMonths || "N/A"} months
-        </div>
-      </section>
+      </div>
 
-      {/* Composition */}
-      <section className="mb-8 border-b pb-6">
-        <h2 className="text-xl font-bold mb-4">3. Composition</h2>
+      {/* Composition Section */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold border-b pb-2">3. Composition</h2>
         {values.members && values.members.length > 0 ? (
-          <table className="w-full border-collapse border border-gray-400 text-sm mb-4">
+          <table className="w-full border-collapse">
             <thead>
               <tr className="bg-gray-100">
                 <th className="border p-2 text-left">Name</th>
                 <th className="border p-2 text-left">Role</th>
                 <th className="border p-2 text-left">Expertise</th>
-                <th className="border p-2 text-left">Responsibilities</th>
-                <th className="border p-2 text-left">Contact Information</th>
+                <th className="border p-2 text-left">Contact</th>
               </tr>
             </thead>
             <tbody>
-              {values.members.map((member, i) => (
-                <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                  <td className="border p-2">{member.name || "N/A"}</td>
-                  <td className="border p-2">{member.role || "N/A"}</td>
-                  <td className="border p-2">{member.expertise || "N/A"}</td>
-                  <td className="border p-2">{member.responsibilities || "N/A"}</td>
+              {values.members.map((member, index) => (
+                <tr key={index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                  <td className="border p-2">{member.name}</td>
+                  <td className="border p-2">{member.role}</td>
+                  <td className="border p-2">{member.expertise}</td>
                   <td className="border p-2">
-                    <div>Mobile: {member.mobile || "N/A"}</div>
-                    <div>Email: {member.email || "N/A"}</div>
-                    <div>Address: {member.address || "N/A"}</div>
-                    {member.cvUrl && <div>CV: Available</div>}
+                    <div>{member.email}</div>
+                    <div>{member.mobile}</div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         ) : (
-          <p>No members added.</p>
+          <p>No members specified</p>
         )}
-      </section>
+      </div>
 
-      {/* Operating Procedures */}
-      <section className="mb-8 border-b pb-6">
-        <h2 className="text-xl font-bold mb-4">4. Operating Procedures</h2>
+      {/* Procedures Section */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold border-b pb-2">4. Operating Procedures</h2>
         {values.meetings && values.meetings.length > 0 ? (
-          <table className="w-full border-collapse border border-gray-400 text-sm mb-4">
+          <table className="w-full border-collapse">
             <thead>
               <tr className="bg-gray-100">
-                <th className="border p-2 text-left">Meeting Required</th>
+                <th className="border p-2 text-left">Meeting</th>
                 <th className="border p-2 text-left">Date & Time</th>
                 <th className="border p-2 text-left">Mode</th>
                 <th className="border p-2 text-left">Venue</th>
               </tr>
             </thead>
             <tbody>
-              {values.meetings.map((m, i) => (
-                <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                  <td className="border p-2">{m.meetingRequired || "N/A"}</td>
-                  <td className="border p-2">{m.dateTime || "N/A"}</td>
-                  <td className="border p-2">{m.mode || "N/A"}</td>
-                  <td className="border p-2">{m.venue || "N/A"}</td>
+              {values.meetings.map((meeting, index) => (
+                <tr key={index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                  <td className="border p-2">{meeting.meetingRequired}</td>
+                  <td className="border p-2">{meeting.dateTime}</td>
+                  <td className="border p-2">{meeting.mode}</td>
+                  <td className="border p-2">{meeting.venue}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         ) : (
-          <p>No meetings scheduled.</p>
+          <p>No meetings specified</p>
         )}
-      </section>
+      </div>
 
-      {/* Deliverables */}
-      <section className="mb-8 border-b pb-6">
-        <h2 className="text-xl font-bold mb-4">5. Deliverables</h2>
+      {/* Deliverables Section */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold border-b pb-2">5. Deliverables</h2>
         
-        {/* Deliverables Table */}
-        <h3 className="text-lg font-medium mb-2">Deliverables & Deadlines</h3>
-        {values.deliverables && values.deliverables.length > 0 ? (
-          <table className="w-full border-collapse border border-gray-400 text-sm mb-6">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="border p-2 text-left">Name</th>
-                <th className="border p-2 text-left">Description</th>
-                <th className="border p-2 text-left">Deadline</th>
-                <th className="border p-2 text-left">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {values.deliverables.map((d, i) => (
-                <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                  <td className="border p-2">{d.name || "N/A"}</td>
-                  <td className="border p-2">{d.description || "N/A"}</td>
-                  <td className="border p-2">
-                    {d.deadline ? format(new Date(d.deadline), "PPP") : "N/A"}
-                  </td>
-                  <td className="border p-2">
-                    <span className={`capitalize ${
-                      d.status === "completed" ? "text-green-600" :
-                      d.status === "in-progress" ? "text-blue-600" :
-                      d.status === "delayed" ? "text-red-600" :
-                      "text-gray-600"
-                    }`}>
-                      {d.status ? d.status.replace("-", " ") : "N/A"}
-                    </span>
-                  </td>
+        <div>
+          <p className="font-semibold">Deliverables:</p>
+          {values.deliverables && values.deliverables.length > 0 ? (
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="border p-2 text-left">Name</th>
+                  <th className="border p-2 text-left">Description</th>
+                  <th className="border p-2 text-left">Deadline</th>
+                  <th className="border p-2 text-left">Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <p className="mb-6">No deliverables specified.</p>
-        )}
-        
-        {/* Milestones Table */}
-        <h3 className="text-lg font-medium mb-2">Milestones</h3>
-        {values.milestones && values.milestones.length > 0 ? (
-          <table className="w-full border-collapse border border-gray-400 text-sm">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="border p-2 text-left">Name</th>
-                <th className="border p-2 text-left">Description</th>
-              </tr>
-            </thead>
-            <tbody>
-              {values.milestones.map((m, i) => (
-                <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                  <td className="border p-2">{m.name || "N/A"}</td>
-                  <td className="border p-2">{m.description || "N/A"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <p>No milestones specified.</p>
-        )}
-      </section>
+              </thead>
+              <tbody>
+                {values.deliverables.map((deliverable, index) => (
+                  <tr key={index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                    <td className="border p-2">{deliverable.name}</td>
+                    <td className="border p-2">{deliverable.description}</td>
+                    <td className="border p-2">{deliverable.deadline}</td>
+                    <td className="border p-2">{deliverable.status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p>No deliverables specified</p>
+          )}
+        </div>
 
-      {/* Signatures */}
-      <section className="mb-8">
-        <h2 className="text-xl font-bold mb-4">6. Signatures</h2>
+        <div>
+          <p className="font-semibold">Milestones:</p>
+          {values.milestones && values.milestones.length > 0 ? (
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="border p-2 text-left">Name</th>
+                  <th className="border p-2 text-left">Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                {values.milestones.map((milestone, index) => (
+                  <tr key={index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                    <td className="border p-2">{milestone.name}</td>
+                    <td className="border p-2">{milestone.description}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p>No milestones specified</p>
+          )}
+        </div>
+      </div>
+
+      {/* Signatures Section */}
+      <div className="space-y-6 mt-8 page-break-before">
+        <h2 className="text-xl font-semibold border-b pb-2">6. Signatures</h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Proposer Signature Block */}
-          <div className="border p-4 rounded">
-            <h3 className="font-semibold mb-2">Proposed by:</h3>
-            <div className="mb-1"><strong>Name:</strong> {values.proposerName || "N/A"}</div>
-            <div className="mb-1">
-              <strong>Date:</strong> {values.proposerDate ? format(new Date(values.proposerDate), "PPP") : "N/A"}
+        <div className="space-y-4">
+          <div>
+            <h3 className="font-medium text-lg">Proposed by:</h3>
+            <div className="grid grid-cols-2 gap-4 mt-2">
+              <div>
+                <p className="font-semibold">Name:</p>
+                <p>{values.proposerName || "___________________"}</p>
+              </div>
+              <div>
+                <p className="font-semibold">Date:</p>
+                <p>{values.proposerDate || "___________________"}</p>
+              </div>
             </div>
-            <div className="mt-4 pt-4 border-t">
-              <strong>Signature:</strong> {values.proposerSignature || "N/A"}
+            <div className="mt-4">
+              <p className="font-semibold">Signature:</p>
+              <p>{values.proposerSignature || "___________________"}</p>
             </div>
           </div>
           
-          {/* Reviewer Signature Block */}
-          <div className="border p-4 rounded">
-            <h3 className="font-semibold mb-2">Reviewed and Recommended by:</h3>
-            <div className="mb-1"><strong>Name:</strong> {values.reviewerName || "N/A"}</div>
-            <div className="mb-1">
-              <strong>Date:</strong> {values.reviewerDate ? format(new Date(values.reviewerDate), "PPP") : "N/A"}
+          <div className="mt-8">
+            <h3 className="font-medium text-lg">Reviewed and Recommended by:</h3>
+            <div className="grid grid-cols-2 gap-4 mt-2">
+              <div>
+                <p className="font-semibold">Name:</p>
+                <p>{values.reviewerName || "___________________"}</p>
+              </div>
+              <div>
+                <p className="font-semibold">Date:</p>
+                <p>{values.reviewerDate || "___________________"}</p>
+              </div>
             </div>
-            <div className="mt-4 pt-4 border-t">
-              <strong>Signature:</strong> {values.reviewerSignature || "N/A"}
+            <div className="mt-4">
+              <p className="font-semibold">Signature:</p>
+              <p>{values.reviewerSignature || "___________________"}</p>
             </div>
           </div>
           
-          {/* Approver Signature Block */}
-          <div className="border p-4 rounded">
-            <h3 className="font-semibold mb-2">Approved by:</h3>
-            <div className="mb-1"><strong>Name:</strong> {values.approverName || "N/A"}</div>
-            <div className="mb-1">
-              <strong>Date:</strong> {values.approverDate ? format(new Date(values.approverDate), "PPP") : "N/A"}
+          <div className="mt-8">
+            <h3 className="font-medium text-lg">Approved by:</h3>
+            <div className="grid grid-cols-2 gap-4 mt-2">
+              <div>
+                <p className="font-semibold">Name:</p>
+                <p>{values.approverName || "___________________"}</p>
+              </div>
+              <div>
+                <p className="font-semibold">Date:</p>
+                <p>{values.approverDate || "___________________"}</p>
+              </div>
             </div>
-            <div className="mt-4 pt-4 border-t">
-              <strong>Signature:</strong> {values.approverSignature || "N/A"}
+            <div className="mt-4">
+              <p className="font-semibold">Signature:</p>
+              <p>{values.approverSignature || "___________________"}</p>
             </div>
           </div>
         </div>
-      </section>
-      
-      <div className="text-center text-sm text-gray-500 mt-10">
-        <p>Printed on: {format(new Date(), "PPP")}</p>
       </div>
+
+      {/* Print styling */}
+      <style jsx global>{`
+        @media print {
+          @page {
+            margin: 2cm;
+          }
+          body {
+            font-size: 12pt;
+          }
+          .page-break-before {
+            page-break-before: always;
+          }
+        }
+      `}</style>
     </div>
   );
 };

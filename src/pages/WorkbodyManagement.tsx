@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -16,13 +17,23 @@ import { usePdfMemberExtraction } from "@/hooks/usePdfMemberExtraction";
 import { useWorkbodies } from "@/hooks/useWorkbodies";
 import { WorkbodyHeader } from "@/components/workbody/WorkbodyHeader";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, CheckCircle } from "lucide-react";
 import { CreateWorkbodyForm } from "@/components/workbody/CreateWorkbodyForm";
 import { TaskforceForm } from "@/components/workbody/taskforce/TaskforceForm";
 
+// Task Force Request interface
+interface TaskForceRequest {
+  id: string;
+  name: string;
+  purpose: string;
+  requestedBy: string;
+  requestDate: Date;
+  status: 'pending' | 'approved' | 'rejected';
+  data: any;
+}
+
 export default function WorkbodyManagement() {
   const { toast } = useToast();
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isTorDialogOpen, setIsTorDialogOpen] = useState(false);
@@ -33,7 +44,14 @@ export default function WorkbodyManagement() {
   const [isHistoryVisible, setIsHistoryVisible] = useState(false);
   const [extractionError, setExtractionError] = useState<string | null>(null);
   const [hideErrors, setHideErrors] = useState(false);
-  const [createMode, setCreateMode] = useState<"none" | "committee-or-working-group" | "task-force">("none");
+  const [createMode, setCreateMode] = useState<"none" | "committee" | "working-group" | "task-force">("none");
+  const [isRequestDialogOpen, setIsRequestDialogOpen] = useState(false);
+  const [taskForceRequests, setTaskForceRequests] = useState<TaskForceRequest[]>([]);
+  const [selectedRequest, setSelectedRequest] = useState<TaskForceRequest | null>(null);
+  const [isApprovalDialogOpen, setIsApprovalDialogOpen] = useState(false);
+
+  // Mock user role - in real app, get this from auth context
+  const [userRole, setUserRole] = useState<'admin' | 'coordination' | 'secretary'>('admin');
 
   const { workbodies, isLoading, createWorkbody, updateWorkbody, deleteWorkbody, refetch } = useWorkbodies();
   const { extractMembersFromDocument, isExtracting, extractionError: hookExtractionError, clearExtractionError } = usePdfMemberExtraction();
@@ -42,13 +60,14 @@ export default function WorkbodyManagement() {
     setHideErrors(false);
   }, [workbodies]);
 
-  const handleAddCommitteeOrWGSubmit = async (data: WorkbodyFormData) => {
+  const handleAddCommitteeSubmit = async (data: WorkbodyFormData) => {
     try {
-      console.log("Submitting new workbody data:", data);
+      data.type = "committee";
+      console.log("Submitting new committee data:", data);
       
       if ('id' in data) {
         toast({
-          title: "Workbody Created",
+          title: "Committee Created",
           description: `${data.name} has been successfully created.`,
         });
         setCreateMode("none");
@@ -56,16 +75,46 @@ export default function WorkbodyManagement() {
       } else {
         await createWorkbody.mutateAsync(data);
         toast({
-          title: "Workbody Created",
+          title: "Committee Created",
           description: `${data.name} has been successfully created.`,
         });
         setCreateMode("none");
       }
     } catch (error: any) {
-      console.error('Error creating workbody:', error);
+      console.error('Error creating committee:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to create workbody. Please try again.",
+        description: error.message || "Failed to create committee. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAddWorkingGroupSubmit = async (data: WorkbodyFormData) => {
+    try {
+      data.type = "working-group";
+      console.log("Submitting new working group data:", data);
+      
+      if ('id' in data) {
+        toast({
+          title: "Working Group Created",
+          description: `${data.name} has been successfully created.`,
+        });
+        setCreateMode("none");
+        await refetch();
+      } else {
+        await createWorkbody.mutateAsync(data);
+        toast({
+          title: "Working Group Created",
+          description: `${data.name} has been successfully created.`,
+        });
+        setCreateMode("none");
+      }
+    } catch (error: any) {
+      console.error('Error creating working group:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create working group. Please try again.",
         variant: "destructive",
       });
     }
@@ -73,19 +122,42 @@ export default function WorkbodyManagement() {
 
   const handleAddTaskforceSubmit = async (data: any) => {
     try {
-      await createWorkbody.mutateAsync({
-        name: data.name,
-        type: "task-force",
-        createdDate: new Date(data.createdDate),
-        endDate: data.endDate ? new Date(data.endDate) : undefined,
-        termsOfReference: data.scope || "",
-        description: data.purpose || "",
-      });
-      toast({
-        title: "Task Force Created",
-        description: `${data.name} has been successfully created.`,
-      });
-      setCreateMode("none");
+      // For secretaries, create a request instead of directly creating
+      if (userRole === 'secretary') {
+        const request: TaskForceRequest = {
+          id: Math.random().toString(36).substring(7), // Generate random ID
+          name: data.name,
+          purpose: data.purpose,
+          requestedBy: "Current Secretary", // In real app, get from auth context
+          requestDate: new Date(),
+          status: 'pending',
+          data: data // Store full task force data
+        };
+        
+        // Store in mock state (in real app, this would go to the database)
+        setTaskForceRequests(prev => [...prev, request]);
+        
+        toast({
+          title: "Task Force Requested",
+          description: `Your request for ${data.name} has been submitted for approval.`,
+        });
+        setCreateMode("none");
+      } else {
+        // For admin and coordination, create directly
+        await createWorkbody.mutateAsync({
+          name: data.name,
+          type: "task-force",
+          createdDate: new Date(data.createdDate),
+          endDate: data.endDate ? new Date(data.endDate) : undefined,
+          termsOfReference: data.scope || "",
+          description: data.purpose || "",
+        });
+        toast({
+          title: "Task Force Created",
+          description: `${data.name} has been successfully created.`,
+        });
+        setCreateMode("none");
+      }
       await refetch();
     } catch (error: any) {
       console.error('Error creating task force:', error);
@@ -95,6 +167,55 @@ export default function WorkbodyManagement() {
         variant: "destructive",
       });
     }
+  };
+
+  const handleApproveTaskForce = async (request: TaskForceRequest) => {
+    try {
+      // Create the workbody from the stored data
+      await createWorkbody.mutateAsync({
+        name: request.data.name,
+        type: "task-force",
+        createdDate: new Date(request.data.createdDate),
+        endDate: request.data.endDate ? new Date(request.data.endDate) : undefined,
+        termsOfReference: request.data.scope || "",
+        description: request.data.purpose || "",
+      });
+
+      // Update the request status
+      const updatedRequests = taskForceRequests.map(req => 
+        req.id === request.id ? { ...req, status: 'approved' as const } : req
+      );
+      setTaskForceRequests(updatedRequests);
+      
+      toast({
+        title: "Task Force Approved",
+        description: `${request.name} has been approved and created.`,
+      });
+      
+      // Open notification upload dialog
+      setSelectedRequest(request);
+      setIsApprovalDialogOpen(true);
+      
+    } catch (error: any) {
+      console.error('Error approving task force:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to approve task force. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRejectTaskForce = (request: TaskForceRequest) => {
+    const updatedRequests = taskForceRequests.map(req => 
+      req.id === request.id ? { ...req, status: 'rejected' as const } : req
+    );
+    setTaskForceRequests(updatedRequests);
+    
+    toast({
+      title: "Task Force Rejected",
+      description: `The request for ${request.name} has been rejected.`,
+    });
   };
 
   const handleEditSubmit = async (data: WorkbodyFormData) => {
@@ -211,10 +332,24 @@ export default function WorkbodyManagement() {
     }
   };
 
+  const handleApprovalNotificationUpload = (documentId: string) => {
+    toast({
+      title: "Notification Uploaded",
+      description: "The notification for the approved task force has been uploaded.",
+    });
+    setIsApprovalDialogOpen(false);
+    setSelectedRequest(null);
+  };
+
   const filteredWorkbodies = workbodies.filter(
     (workbody) =>
       workbody.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       workbody.type.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Only show requests to admin and coordination roles
+  const pendingRequests = taskForceRequests.filter(req => 
+    req.status === 'pending' && (userRole === 'admin' || userRole === 'coordination')
   );
 
   const checkExpiringTaskForces = () => {
@@ -272,11 +407,75 @@ export default function WorkbodyManagement() {
         </Alert>
       )}
 
-      <WorkbodyHeader
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        onAddClick={() => setCreateMode("committee-or-working-group")}
-      />
+      {pendingRequests.length > 0 && (userRole === 'admin' || userRole === 'coordination') && (
+        <Alert className="bg-amber-50 border-amber-200">
+          <AlertCircle className="h-4 w-4 text-amber-600" />
+          <AlertTitle className="text-amber-800">Pending Task Force Requests</AlertTitle>
+          <AlertDescription>
+            <div className="mt-2 space-y-2">
+              {pendingRequests.map(request => (
+                <div key={request.id} className="bg-white p-3 rounded border flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">{request.name}</p>
+                    <p className="text-sm text-muted-foreground">Requested by {request.requestedBy} on {new Date(request.requestDate).toLocaleDateString()}</p>
+                    <p className="text-sm mt-1">{request.purpose}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      size="sm" 
+                      onClick={() => handleApproveTaskForce(request)}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      Approve
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => handleRejectTaskForce(request)}
+                    >
+                      Reject
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <div className="flex flex-col md:flex-row md:items-center justify-between">
+        <div className="flex w-full max-w-sm items-center space-x-2">
+          <Input
+            placeholder="Search workbodies..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full"
+          />
+        </div>
+        <div className="flex gap-2 mt-4 md:mt-0">
+          {/* Only show Committee and Working Group buttons to admin and coordination */}
+          {(userRole === 'admin' || userRole === 'coordination') && (
+            <>
+              <Button onClick={() => setCreateMode("committee")}>
+                <span className="mr-2">+</span> New Committee
+              </Button>
+              
+              <Button onClick={() => setCreateMode("working-group")} variant="outline">
+                <span className="mr-2">+</span> New Working Group
+              </Button>
+            </>
+          )}
+          
+          {/* Show Task Force button to all roles */}
+          <Button 
+            onClick={() => setCreateMode("task-force")} 
+            variant={userRole === 'secretary' ? "default" : "outline"}
+          >
+            <span className="mr-2">+</span> New Task Force
+            {userRole === 'secretary' && <span className="ml-2 text-xs bg-green-800 px-2 py-0.5 rounded-full">Available</span>}
+          </Button>
+        </div>
+      </div>
 
       {isLoading ? (
         <div className="text-center py-8">Loading workbodies...</div>
@@ -336,48 +535,56 @@ export default function WorkbodyManagement() {
         </>
       )}
 
-      <Dialog open={createMode !== "none"} onOpenChange={(open) => setCreateMode(open ? createMode : "none")}>
+      {/* Committee Creation Dialog */}
+      <Dialog open={createMode === "committee"} onOpenChange={(open) => {
+        if (!open) setCreateMode("none");
+      }}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Create Workbody</DialogTitle>
+            <DialogTitle>Create Committee</DialogTitle>
           </DialogHeader>
-          {createMode === "none" ? null : (
-            <div>
-              <div className="flex flex-col items-center gap-4 pb-4">
-                <span className="font-semibold mb-2">What do you want to create?</span>
-                <div className="flex gap-4">
-                  <Button
-                    variant={createMode === "committee-or-working-group" ? "default" : "outline"}
-                    onClick={() => setCreateMode("committee-or-working-group")}
-                  >
-                    Committee / Working Group
-                  </Button>
-                  <Button
-                    variant={createMode === "task-force" ? "default" : "outline"}
-                    onClick={() => setCreateMode("task-force")}
-                  >
-                    Task Force
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {createMode === "committee-or-working-group" && (
-            <CreateWorkbodyForm
-              onSubmit={handleAddCommitteeOrWGSubmit}
-              onCancel={() => setCreateMode("none")}
-            />
-          )}
-          {createMode === "task-force" && (
-            <TaskforceForm
-              onSubmit={handleAddTaskforceSubmit}
-              onCancel={() => setCreateMode("none")}
-            />
-          )}
+          <CreateWorkbodyForm
+            onSubmit={handleAddCommitteeSubmit}
+            onCancel={() => setCreateMode("none")}
+            initialData={{ type: "committee" }}
+          />
         </DialogContent>
       </Dialog>
 
+      {/* Working Group Creation Dialog */}
+      <Dialog open={createMode === "working-group"} onOpenChange={(open) => {
+        if (!open) setCreateMode("none");
+      }}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create Working Group</DialogTitle>
+          </DialogHeader>
+          <CreateWorkbodyForm
+            onSubmit={handleAddWorkingGroupSubmit}
+            onCancel={() => setCreateMode("none")}
+            initialData={{ type: "working-group" }}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Task Force Creation Dialog */}
+      <Dialog open={createMode === "task-force"} onOpenChange={(open) => {
+        if (!open) setCreateMode("none");
+      }}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {userRole === 'secretary' ? 'Request New Task Force' : 'Create Task Force'}
+            </DialogTitle>
+          </DialogHeader>
+          <TaskforceForm
+            onSubmit={handleAddTaskforceSubmit}
+            onCancel={() => setCreateMode("none")}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Workbody Dialog */}
       <DeleteWorkbodyDialog
         isOpen={isDeleteDialogOpen}
         onClose={() => setIsDeleteDialogOpen(false)}
@@ -385,6 +592,7 @@ export default function WorkbodyManagement() {
         onDelete={handleDeleteWorkbody}
       />
 
+      {/* Terms of Reference Dialog */}
       <TermsOfReferenceDialog
         isOpen={isTorDialogOpen}
         onClose={() => setIsTorDialogOpen(false)}
@@ -392,6 +600,53 @@ export default function WorkbodyManagement() {
         initialTermsOfReference={selectedWorkbody?.termsOfReference || ""}
         onSubmit={handleTorSubmit}
       />
+
+      {/* Approval Notification Upload Dialog */}
+      {selectedRequest && (
+        <Dialog open={isApprovalDialogOpen} onOpenChange={(open) => {
+          if (!open) {
+            setIsApprovalDialogOpen(false);
+            setSelectedRequest(null);
+          }
+        }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Upload Notification</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <p>Upload the notification document for the approved task force: <strong>{selectedRequest.name}</strong></p>
+              <div className="mt-4">
+                <Input type="file" accept=".pdf" />
+                <div className="mt-4 flex justify-end">
+                  <Button onClick={() => handleApprovalNotificationUpload("mock-document-id")}>
+                    Upload Notification
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* UI for testing different user roles */}
+      <div className="fixed bottom-4 right-4 bg-white p-2 border rounded-md shadow-md">
+        <div className="text-xs font-medium mb-2">Testing: Switch User Role</div>
+        <div className="flex gap-2">
+          <Button size="sm" variant={userRole === 'admin' ? "default" : "outline"} onClick={() => setUserRole('admin')}>Admin</Button>
+          <Button size="sm" variant={userRole === 'coordination' ? "default" : "outline"} onClick={() => setUserRole('coordination')}>Coordination</Button>
+          <Button size="sm" variant={userRole === 'secretary' ? "default" : "outline"} onClick={() => setUserRole('secretary')}>Secretary</Button>
+        </div>
+      </div>
     </div>
   );
-}
+};
+
+// Add the Input component since we're using it directly in this file
+const Input = ({ className, ...props }: React.InputHTMLAttributes<HTMLInputElement>) => {
+  return (
+    <input
+      className={`flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+      {...props}
+    />
+  );
+};
