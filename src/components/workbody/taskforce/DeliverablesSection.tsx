@@ -1,3 +1,4 @@
+
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -6,12 +7,11 @@ import { UseFormReturn } from "react-hook-form";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
 import { v4 as uuidv4 } from 'uuid';
-import { Trash2 } from "lucide-react";
 
 interface DeliverablesSectionProps {
   form: UseFormReturn<TaskforceFormValues>;
@@ -238,7 +238,7 @@ export const DeliverablesSection = ({ form }: DeliverablesSectionProps) => {
                       value={milestone.description || field.value}
                       onChange={(e) => {
                         field.onChange(e);
-                        updateMilestone(milestone.id || "", "description", e.target.value);
+                        updateMilestone(milestone.id || "", "name", e.target.value);
                       }}
                     />
                   </FormControl>

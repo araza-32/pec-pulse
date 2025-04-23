@@ -1,5 +1,5 @@
-
 export interface TaskforceMember {
+  id?: string;
   name: string;
   role: string;
   expertise: string;
@@ -10,6 +10,7 @@ export interface TaskforceMember {
 }
 
 export interface TaskforceMeeting {
+  id?: string;
   meetingRequired: string;
   dateTime: string;
   mode: "physical" | "hybrid" | "virtual";
@@ -17,6 +18,7 @@ export interface TaskforceMeeting {
 }
 
 export interface TaskforceDeliverable {
+  id?: string;
   name: string;
   description: string;
   deadline: string;
@@ -24,6 +26,7 @@ export interface TaskforceDeliverable {
 }
 
 export interface TaskforceMilestone {
+  id?: string;
   name: string;
   description: string;
 }
@@ -68,4 +71,3 @@ export interface TaskforceFormValues {
   createdDate: Date;
   endDate?: Date;
 }
-
