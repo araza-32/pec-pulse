@@ -31,7 +31,13 @@ export const TaskforcePrintableSummary = ({ form }: TaskforcePrintableSummaryPro
           </div>
           <div>
             <p className="font-semibold">Created Date:</p>
-            <p>{values.createdDate ? values.createdDate.toLocaleDateString() : "Not specified"}</p>
+            <p>
+              {values.createdDate
+                ? typeof values.createdDate === "string"
+                  ? new Date(values.createdDate).toLocaleDateString()
+                  : values.createdDate.toLocaleDateString()
+                : "Not specified"}
+            </p>
           </div>
         </div>
       </div>
@@ -49,7 +55,9 @@ export const TaskforcePrintableSummary = ({ form }: TaskforcePrintableSummaryPro
             <p>{values.durationMonths} months</p>
             {values.endDate && (
               <p className="text-sm">
-                End Date: {values.endDate.toLocaleDateString()}
+                End Date: {typeof values.endDate === "string"
+                  ? new Date(values.endDate).toLocaleDateString()
+                  : values.endDate.toLocaleDateString()}
               </p>
             )}
           </div>

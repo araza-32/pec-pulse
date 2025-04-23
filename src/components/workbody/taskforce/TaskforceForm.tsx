@@ -1,5 +1,4 @@
 
-// Only update the imports and usage to use the now separate sections
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,6 +13,7 @@ import { DeliverablesSection } from "./DeliverablesSection";
 import { SignaturesSection } from "./SignaturesSection";
 import { TaskforceNavigation } from "./TaskforceNavigation";
 import { useTaskforceForm } from "@/hooks/useTaskforceForm";
+import { TaskforcePrintableSummary } from "./TaskforcePrintableSummary";
 
 interface TaskforceFormProps {
   onSubmit: (data: TaskforceFormValues) => void;
@@ -22,7 +22,6 @@ interface TaskforceFormProps {
 }
 
 export function TaskforceForm({ onSubmit, onCancel, initialData }: TaskforceFormProps) {
-  // Initialize all hooks at the top level
   const [activeTab, setActiveTab] = useState("overview");
   const { toast } = useToast();
   const form = useTaskforceForm(initialData);
@@ -33,7 +32,6 @@ export function TaskforceForm({ onSubmit, onCancel, initialData }: TaskforceForm
       const endDate = new Date(data.createdDate);
       endDate.setMonth(endDate.getMonth() + data.durationMonths);
       data.endDate = endDate;
-      
       onSubmit(data);
     } catch (error) {
       console.error("Error in TaskforceForm handleSubmit:", error);
@@ -45,6 +43,7 @@ export function TaskforceForm({ onSubmit, onCancel, initialData }: TaskforceForm
     }
   };
 
+  // New helper to handle the new review tab navigation
   const navigateToNextTab = (currentTab: string) => {
     switch(currentTab) {
       case "overview":
@@ -60,6 +59,9 @@ export function TaskforceForm({ onSubmit, onCancel, initialData }: TaskforceForm
         setActiveTab("deliverables");
         break;
       case "deliverables":
+        setActiveTab("review");
+        break;
+      case "review":
         setActiveTab("signatures");
         break;
       default:
@@ -81,24 +83,33 @@ export function TaskforceForm({ onSubmit, onCancel, initialData }: TaskforceForm
       case "deliverables":
         setActiveTab("procedures");
         break;
-      case "signatures":
+      case "review":
         setActiveTab("deliverables");
+        break;
+      case "signatures":
+        setActiveTab("review");
         break;
       default:
         break;
     }
   };
 
+  // Print handler for the review section
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 md:grid-cols-6">
+          <TabsList className="grid w-full grid-cols-3 md:grid-cols-7">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="scope">Scope & ToRs</TabsTrigger>
             <TabsTrigger value="composition">Composition</TabsTrigger>
             <TabsTrigger value="procedures">Procedures</TabsTrigger>
             <TabsTrigger value="deliverables">Deliverables</TabsTrigger>
+            <TabsTrigger value="review">Review Details</TabsTrigger>
             <TabsTrigger value="signatures">Signatures</TabsTrigger>
           </TabsList>
 
@@ -173,6 +184,25 @@ export function TaskforceForm({ onSubmit, onCancel, initialData }: TaskforceForm
               onNext={() => navigateToNextTab(activeTab)}
               onCancel={onCancel}
             />
+          </TabsContent>
+
+          <TabsContent value="review" className="space-y-6 pt-4">
+            <div className="rounded-lg border p-6 bg-white print:bg-white">
+              {/* Print Preview with exact printout */}
+              <TaskforcePrintableSummary form={form} />
+            </div>
+            <div className="flex flex-col md:flex-row gap-2 md:gap-4 justify-end">
+              <Button type="button" variant="secondary" onClick={handlePrint}>
+                Print / Save as PDF
+              </Button>
+              <TaskforceNavigation
+                activeTab={activeTab}
+                onPrevious={() => navigateToPreviousTab(activeTab)}
+                onNext={() => navigateToNextTab(activeTab)}
+                onCancel={onCancel}
+                // Not first or last tab
+              />
+            </div>
           </TabsContent>
 
           <TabsContent value="signatures" className="space-y-6 pt-4">
