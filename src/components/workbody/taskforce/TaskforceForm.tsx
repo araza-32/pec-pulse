@@ -14,6 +14,7 @@ import { SignaturesSection } from "./SignaturesSection";
 import { TaskforceNavigation } from "./TaskforceNavigation";
 import { useTaskforceForm } from "@/hooks/useTaskforceForm";
 import { TaskforcePrintableSummary } from "./TaskforcePrintableSummary";
+import { Check } from "lucide-react"; // Add the missing import for Check icon
 
 interface TaskforceFormProps {
   onSubmit: (data: TaskforceFormValues) => void;
