@@ -4,19 +4,27 @@ import { TaskforceFormValues } from "@/types/taskforce";
 import { UseFormReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
-import React from "react";
+import React, { useRef } from "react";
+import { TaskforcePrintableSummary } from "./TaskforcePrintableSummary";
 
 interface SignaturesSectionProps {
   form: UseFormReturn<TaskforceFormValues>;
 }
 
 export const SignaturesSection = ({ form }: SignaturesSectionProps) => {
+  const printRef = useRef<HTMLDivElement>(null);
+
   const handlePrint = () => {
     window.print();
   };
 
   return (
     <div className="space-y-8 print:bg-white print:text-black print:shadow-none">
+      {/* Hidden printable section */}
+      <div style={{ display: "none" }} className="print:block" ref={printRef}>
+        <TaskforcePrintableSummary form={form} />
+      </div>
+
       <div className="space-y-4">
         <h3 className="text-lg font-medium">Proposed by</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

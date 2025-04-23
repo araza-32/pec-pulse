@@ -7,6 +7,7 @@ export interface TaskforceMember {
   mobile: string;
   email: string;
   address: string;
+  cvUrl?: string; // URL to uploaded CV (PDF)
 }
 
 export interface TaskforceMeeting {

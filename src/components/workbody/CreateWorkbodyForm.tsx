@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -43,15 +42,10 @@ const formSchema = z.object({
   name: z.string().min(3, {
     message: "Name must be at least 3 characters.",
   }),
-  type: z.enum(["committee", "working-group", "task-force"] as const),
+  type: z.enum(["committee", "working-group"] as const),
   createdDate: z.date(),
   endDate: z.date().optional(),
   termsOfReference: z.string().optional(),
-}).refine((data) => {
-  return data.type !== "task-force" || data.endDate !== undefined;
-}, {
-  message: "End date is required for task forces",
-  path: ["endDate"]
 });
 
 type CreateWorkbodyFormProps = {
@@ -66,7 +60,7 @@ export function CreateWorkbodyForm({
   onCancel,
 }: CreateWorkbodyFormProps) {
   const [showEndDate, setShowEndDate] = useState(
-    initialData?.type === "task-force" || false
+    false
   );
   const [manualMemberAddition, setManualMemberAddition] = useState(false);
   const [documentUploaded, setDocumentUploaded] = useState(false);
@@ -101,52 +95,26 @@ export function CreateWorkbodyForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        <Tabs defaultValue="details" className="w-full">
+        <Tabs defaultValue={workbodyType === "working-group" ? "working-group" : "committee"} className="w-full">
           <TabsList className="w-full">
-            <TabsTrigger value="details" className="flex-1">Details</TabsTrigger>
-            <TabsTrigger value="documents" className="flex-1">Documents</TabsTrigger>
-            <TabsTrigger value="members" className="flex-1">Members</TabsTrigger>
+            <TabsTrigger value="committee" className="flex-1" onClick={() => form.setValue("type", "committee")}>
+              Committee
+            </TabsTrigger>
+            <TabsTrigger value="working-group" className="flex-1" onClick={() => form.setValue("type", "working-group")}>
+              Working Group
+            </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="details" className="space-y-4 mt-4">
+          <TabsContent value="committee" className="space-y-4 mt-4">
             <FormField
               control={form.control}
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel>Committee Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter workbody name" {...field} />
+                    <Input placeholder="Enter committee name" {...field} />
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Type</FormLabel>
-                  <Select
-                    onValueChange={(value: WorkbodyType) => {
-                      field.onChange(value);
-                      setShowEndDate(value === "task-force");
-                    }}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select workbody type" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="committee">Committee</SelectItem>
-                      <SelectItem value="working-group">Working Group</SelectItem>
-                      <SelectItem value="task-force">Task Force</SelectItem>
-                    </SelectContent>
-                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
@@ -231,56 +199,138 @@ export function CreateWorkbodyForm({
                 )}
               />
             )}
+
+            <FormField
+              control={form.control}
+              name="termsOfReference"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Terms of Reference</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Enter terms of reference"
+                      className="min-h-[120px]"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </TabsContent>
 
-          <TabsContent value="documents" className="space-y-4 mt-4">
-            <div className="space-y-4">
-              <div>
-                <h4 className="text-sm font-medium mb-2">Notification</h4>
-                <DocumentUpload
-                  workbodyId={initialData?.id || "temp"}
-                  documentType="notification"
-                  isOpen={true}
-                  onClose={() => {}}
-                  onUploadComplete={handleDocumentUpload}
-                />
-              </div>
-              
-              <div className="mt-6">
-                <FormField
-                  control={form.control}
-                  name="termsOfReference"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Terms of Reference</FormLabel>
+          <TabsContent value="working-group" className="space-y-4 mt-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Working Group Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter working group name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="createdDate"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Creation Date</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
                       <FormControl>
-                        <Textarea
-                          placeholder="Enter terms of reference"
-                          className="min-h-[120px]"
-                          {...field}
-                        />
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value ? (
+                            format(field.value, "PPP")
+                          ) : (
+                            <span>Pick a date</span>
+                          )}
+                          <Calendar className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </div>
-          </TabsContent>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          <TabsContent value="members" className="space-y-4 mt-4">
-            <div className="space-y-4">
-              <ManualMemberAddition
-                workbodyId={initialData?.id || "temp"}
-                onMembersAdded={() => {
-                  toast({
-                    title: "Members Added",
-                    description: "Members have been successfully added to the workbody.",
-                  });
-                }}
-                onCancel={() => {}}
+            {showEndDate && (
+              <FormField
+                control={form.control}
+                name="endDate"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>End Date</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, "PPP")
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
+                            <Calendar className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <CalendarComponent
+                          mode="single"
+                          selected={field.value || undefined}
+                          onSelect={field.onChange}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
+            )}
+
+            <FormField
+              control={form.control}
+              name="termsOfReference"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Terms of Reference</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Enter terms of reference"
+                      className="min-h-[120px]"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </TabsContent>
         </Tabs>
 
@@ -288,7 +338,7 @@ export function CreateWorkbodyForm({
           <Button variant="outline" onClick={onCancel} type="button">
             Cancel
           </Button>
-          <Button type="submit">Save Workbody</Button>
+          <Button type="submit">Save {workbodyType === "working-group" ? "Working Group" : "Committee"}</Button>
         </div>
       </form>
     </Form>
