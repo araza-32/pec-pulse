@@ -1,147 +1,129 @@
-
-import { Button } from "@/components/ui/button";
-import { FormDescription, FormLabel, FormMessage } from "@/components/ui/form";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { TaskforceFormValues } from "@/types/taskforce";
-import { PlusCircle, Trash2 } from "lucide-react";
 import { UseFormReturn } from "react-hook-form";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Trash } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import React from "react";
 
 interface OperatingProceduresSectionProps {
   form: UseFormReturn<TaskforceFormValues>;
 }
-
 export const OperatingProceduresSection = ({ form }: OperatingProceduresSectionProps) => {
-  const meetings = form.watch("meetings") || [];
-  
-  const addMeeting = () => {
-    if (meetings.length < 15) {
-      form.setValue("meetings", [
-        ...meetings, 
-        { 
-          meetingRequired: "", 
-          dateTime: "", 
-          mode: "physical", 
-          venue: "" 
-        }
-      ]);
-    }
-  };
-  
-  const removeMeeting = (index: number) => {
-    const updated = [...meetings];
-    updated.splice(index, 1);
-    form.setValue("meetings", updated);
+  const handleAddMeeting = () => {
+    form.setValue("meetings", [
+      ...form.getValues().meetings,
+      { meetingRequired: "", dateTime: "", mode: "physical", venue: "" },
+    ]);
   };
 
-  const updateMeetingField = (index: number, field: string, value: string) => {
-    const updated = [...meetings];
-    updated[index] = { ...updated[index], [field]: value };
-    form.setValue("meetings", updated);
+  const handleRemoveMeeting = (index: number) => {
+    const updatedMeetings = [...form.getValues().meetings];
+    updatedMeetings.splice(index, 1);
+    form.setValue("meetings", updatedMeetings);
   };
-  
+
   return (
-    <div className="space-y-6">
-      <div>
-        <div className="flex justify-between items-center mb-4">
-          <FormLabel className="text-base">Operating Procedures</FormLabel>
-          <Button
-            type="button"
-            onClick={addMeeting}
-            variant="outline"
-            size="sm"
-            disabled={meetings.length >= 15}
-            className="flex items-center gap-1"
-          >
-            <PlusCircle className="h-4 w-4" /> Add Meeting
-          </Button>
-        </div>
-        
-        <FormDescription className="mb-4">
-          Define the meetings required for this taskforce (maximum 15 entries)
-        </FormDescription>
-      </div>
-
-      {meetings.length > 0 ? (
-        <div className="border rounded-md overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Meetings Required</TableHead>
-                <TableHead>Date & Time</TableHead>
-                <TableHead>Mode</TableHead>
-                <TableHead>Venue</TableHead>
-                <TableHead className="w-[70px]">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {meetings.map((meeting, index) => (
-                <TableRow key={index}>
-                  <TableCell>
-                    <Input 
-                      value={meeting.meetingRequired} 
-                      onChange={(e) => updateMeetingField(index, "meetingRequired", e.target.value)}
-                      placeholder="Meeting description" 
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Input 
-                      value={meeting.dateTime} 
-                      onChange={(e) => updateMeetingField(index, "dateTime", e.target.value)}
-                      placeholder="Date & Time" 
-                      type="datetime-local"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Select 
-                      value={meeting.mode} 
-                      onValueChange={(value) => updateMeetingField(index, "mode", value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select mode" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="physical">Physical</SelectItem>
-                        <SelectItem value="hybrid">Hybrid</SelectItem>
-                        <SelectItem value="virtual">Virtual</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-                  <TableCell>
-                    <Input 
-                      value={meeting.venue} 
-                      onChange={(e) => updateMeetingField(index, "venue", e.target.value)}
-                      placeholder="Venue"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => removeMeeting(index)}
-                    >
-                      <Trash2 className="h-4 w-4 text-red-500" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      ) : (
-        <div className="flex flex-col items-center justify-center p-8 border border-dashed rounded-md">
-          <p className="text-sm text-muted-foreground mb-4">No meetings added yet</p>
-          <Button 
-            variant="outline" 
-            onClick={addMeeting}
-          >
-            Add First Meeting
-          </Button>
-        </div>
-      )}
-      
-      <FormMessage />
+    <div className="space-y-4">
+      <h3 className="text-lg font-medium">Meetings</h3>
+      <Table>
+        <TableCaption>Add details of required meetings.</TableCaption>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Meeting Required</TableHead>
+            <TableHead>Date & Time</TableHead>
+            <TableHead>Mode</TableHead>
+            <TableHead>Venue</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {form.getValues().meetings.map((meeting, index) => (
+            <TableRow key={index}>
+              <TableCell>
+                <FormField
+                  control={form.control}
+                  name={`meetings.${index}.meetingRequired`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Input placeholder="Enter meeting requirement" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </TableCell>
+              <TableCell>
+                <FormField
+                  control={form.control}
+                  name={`meetings.${index}.dateTime`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Input type="datetime-local" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </TableCell>
+              <TableCell>
+                <FormField
+                  control={form.control}
+                  name={`meetings.${index}.mode`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select mode" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="physical">Physical</SelectItem>
+                            <SelectItem value="hybrid">Hybrid</SelectItem>
+                            <SelectItem value="virtual">Virtual</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </TableCell>
+              <TableCell>
+                <FormField
+                  control={form.control}
+                  name={`meetings.${index}.venue`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Input placeholder="Enter venue" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </TableCell>
+              <TableCell className="text-right">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleRemoveMeeting(index)}
+                >
+                  <Trash className="h-4 w-4" />
+                </Button>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+      <Button type="button" variant="secondary" onClick={handleAddMeeting}>
+        Add Meeting
+      </Button>
     </div>
   );
 };

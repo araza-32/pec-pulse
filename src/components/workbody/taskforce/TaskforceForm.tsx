@@ -1,15 +1,16 @@
 
+// Only update the imports and usage to use the now separate sections
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
 import { TaskforceFormValues } from "@/types/taskforce";
 import { useToast } from "@/hooks/use-toast";
-import { CompositionSection } from "./CompositionSection";
-import { DeliverablesSection } from "./DeliverablesSection";
-import { OperatingProceduresSection } from "./OperatingProceduresSection";
 import { OverviewSection } from "./OverviewSection";
 import { ScopeSection } from "./ScopeSection";
+import { CompositionSection } from "./CompositionSection";
+import { OperatingProceduresSection } from "./OperatingProceduresSection";
+import { DeliverablesSection } from "./DeliverablesSection";
 import { SignaturesSection } from "./SignaturesSection";
 import { TaskforceNavigation } from "./TaskforceNavigation";
 import { useTaskforceForm } from "@/hooks/useTaskforceForm";
