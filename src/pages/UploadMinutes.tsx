@@ -1,21 +1,13 @@
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { FileUp, Check } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
-
-const MOCK_WORKBODIES = [
-  { id: "w1", name: "Committee A", type: "committee" },
-  { id: "w2", name: "Working Group B", type: "working-group" },
-  { id: "w3", name: "Task Force C", type: "task-force" }
-];
-const SECRETARY_ASSIGNED_WORKBODIES = [
-  { id: "w2", name: "Working Group B", type: "working-group" }
-];
+import { useToast } from "@/hooks/use-toast";
+import { useWorkbodies } from "@/hooks/useWorkbodies";
 
 const WORKBODY_TYPES = [
   { value: "committee", label: "Committee" },
@@ -27,18 +19,35 @@ export default function UploadMinutes() {
   const { toast } = useToast();
   const [isUploading, setIsUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  // User role and (optionally) assigned workbodyId from global/user context (custom logic, stubbed here)
   const [userRole] = useState<"admin" | "coordination" | "secretary">(
     (window as any).MOCK_USER_ROLE || "admin"
   );
+  const userWorkbodyId = (window as any).MOCK_USER_WORKBODY_ID || null; // secretary's assigned workbody
+
   const [selectedWorkbodyType, setSelectedWorkbodyType] = useState<string>("");
   const [selectedWorkbody, setSelectedWorkbody] = useState<string>("");
 
-  // Add type property to filter later
-  const workbodies =
-    userRole === "secretary" ? SECRETARY_ASSIGNED_WORKBODIES : MOCK_WORKBODIES;
+  // Fetch all workbodies from DB
+  const { workbodies = [], isLoading } = useWorkbodies();
 
+  // Filtering logic based on user role:
+  const availableWorkbodies = useMemo(() => {
+    if (userRole === "secretary") {
+      // Secretary: only assigned workbody (if assigned)
+      return workbodies.filter(wb =>
+        wb.id === userWorkbodyId
+      );
+    } else {
+      // Admin and Coordination: all workbodies
+      return workbodies;
+    }
+  }, [workbodies, userRole, userWorkbodyId]);
+
+  // Filter by selected type
   const filteredWorkbodies = selectedWorkbodyType
-    ? workbodies.filter((wb) => wb.type === selectedWorkbodyType)
+    ? availableWorkbodies.filter(wb => wb.type === selectedWorkbodyType)
     : [];
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -101,6 +110,7 @@ export default function UploadMinutes() {
                     setSelectedWorkbody(""); // Reset workbody if type changes
                   }}
                   required
+                  disabled={isLoading || availableWorkbodies.length === 0}
                 >
                   <option value="">Select type...</option>
                   {WORKBODY_TYPES.map(wbt => (
@@ -118,7 +128,7 @@ export default function UploadMinutes() {
                   value={selectedWorkbody}
                   onChange={e => setSelectedWorkbody(e.target.value)}
                   required
-                  disabled={!selectedWorkbodyType}
+                  disabled={!selectedWorkbodyType || filteredWorkbodies.length === 0}
                 >
                   <option value="">Select...</option>
                   {filteredWorkbodies.map(wb => (
