@@ -9,26 +9,37 @@ import { FileUp, Check } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
 const MOCK_WORKBODIES = [
-  { id: "w1", name: "Committee A" },
-  { id: "w2", name: "Working Group B" },
-  { id: "w3", name: "Task Force C" }
+  { id: "w1", name: "Committee A", type: "committee" },
+  { id: "w2", name: "Working Group B", type: "working-group" },
+  { id: "w3", name: "Task Force C", type: "task-force" }
 ];
 const SECRETARY_ASSIGNED_WORKBODIES = [
-  { id: "w2", name: "Working Group B" }
+  { id: "w2", name: "Working Group B", type: "working-group" }
+];
+
+const WORKBODY_TYPES = [
+  { value: "committee", label: "Committee" },
+  { value: "working-group", label: "Working Group" },
+  { value: "task-force", label: "Task Force" }
 ];
 
 export default function UploadMinutes() {
   const { toast } = useToast();
   const [isUploading, setIsUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  // For demo, use local storage or context in real app
   const [userRole] = useState<"admin" | "coordination" | "secretary">(
     (window as any).MOCK_USER_ROLE || "admin"
   );
+  const [selectedWorkbodyType, setSelectedWorkbodyType] = useState<string>("");
   const [selectedWorkbody, setSelectedWorkbody] = useState<string>("");
 
+  // Add type property to filter later
   const workbodies =
     userRole === "secretary" ? SECRETARY_ASSIGNED_WORKBODIES : MOCK_WORKBODIES;
+
+  const filteredWorkbodies = selectedWorkbodyType
+    ? workbodies.filter((wb) => wb.type === selectedWorkbodyType)
+    : [];
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -38,6 +49,14 @@ export default function UploadMinutes() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedWorkbodyType) {
+      toast({
+        title: "Select Workbody Type",
+        description: "Please select the type of workbody (Committee, Working Group, or Task Force).",
+        variant: "destructive"
+      });
+      return;
+    }
     if (!selectedWorkbody) {
       toast({
         title: "Select Workbody",
@@ -72,6 +91,26 @@ export default function UploadMinutes() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
+                <Label htmlFor="workbody-type-select">Select Workbody Type</Label>
+                <select
+                  id="workbody-type-select"
+                  className="w-full border rounded px-3 py-2 text-sm"
+                  value={selectedWorkbodyType}
+                  onChange={e => {
+                    setSelectedWorkbodyType(e.target.value);
+                    setSelectedWorkbody(""); // Reset workbody if type changes
+                  }}
+                  required
+                >
+                  <option value="">Select type...</option>
+                  {WORKBODY_TYPES.map(wbt => (
+                    <option key={wbt.value} value={wbt.value}>
+                      {wbt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="workbody-select">Select Workbody</Label>
                 <select
                   id="workbody-select"
@@ -79,19 +118,18 @@ export default function UploadMinutes() {
                   value={selectedWorkbody}
                   onChange={e => setSelectedWorkbody(e.target.value)}
                   required
+                  disabled={!selectedWorkbodyType}
                 >
                   <option value="">Select...</option>
-                  {workbodies.map(wb => (
+                  {filteredWorkbodies.map(wb => (
                     <option key={wb.id} value={wb.id}>{wb.name}</option>
                   ))}
                 </select>
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="meeting-date">Meeting Date</Label>
                 <Input id="meeting-date" type="date" required />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="meeting-location">Meeting Location</Label>
                 <Input id="meeting-location" placeholder="e.g., PEC Headquarters, Islamabad" required />
