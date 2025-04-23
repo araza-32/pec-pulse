@@ -1,12 +1,17 @@
 
 import { TaskforceFormValues } from "@/types/taskforce";
 import { UseFormReturn } from "react-hook-form";
+import { TaskforceSignaturesSection } from "./TaskforceSignaturesSection";
 
 interface TaskforcePrintableSummaryProps {
   form: UseFormReturn<TaskforceFormValues>;
+  userRole?: "admin" | "coordination" | "secretary";
 }
 
-export const TaskforcePrintableSummary = ({ form }: TaskforcePrintableSummaryProps) => {
+export const TaskforcePrintableSummary = ({
+  form,
+  userRole = "admin",
+}: TaskforcePrintableSummaryProps) => {
   const values = form.getValues();
 
   return (
@@ -213,76 +218,20 @@ export const TaskforcePrintableSummary = ({ form }: TaskforcePrintableSummaryPro
       </div>
 
       {/* Signatures Section */}
-      <div className="space-y-6 mt-8 page-break-before">
-        <h2 className="text-xl font-bold border-b pb-2">6. Signatures</h2>
-        <div className="space-y-4">
-          <div>
-            <h3 className="font-medium text-lg">Proposed by:</h3>
-            <div className="grid grid-cols-2 gap-4 mt-2">
-              <div>
-                <p className="font-semibold">Name:</p>
-                <p>{values.proposerName || "___________________"}</p>
-              </div>
-              <div>
-                <p className="font-semibold">Date:</p>
-                <p>{values.proposerDate || "___________________"}</p>
-              </div>
-            </div>
-            <div className="mt-4">
-              <p className="font-semibold">Signature:</p>
-              <p>{values.proposerSignature || "___________________"}</p>
-            </div>
-          </div>
-          <div className="mt-8">
-            <h3 className="font-medium text-lg">Reviewed and Recommended by:</h3>
-            <div className="grid grid-cols-2 gap-4 mt-2">
-              <div>
-                <p className="font-semibold">Name:</p>
-                <p>{values.reviewerName || "___________________"}</p>
-              </div>
-              <div>
-                <p className="font-semibold">Date:</p>
-                <p>{values.reviewerDate || "___________________"}</p>
-              </div>
-            </div>
-            <div className="mt-4">
-              <p className="font-semibold">Signature:</p>
-              <p>{values.reviewerSignature || "___________________"}</p>
-            </div>
-          </div>
-          <div className="mt-8">
-            <h3 className="font-medium text-lg">Approved by:</h3>
-            <div className="grid grid-cols-2 gap-4 mt-2">
-              <div>
-                <p className="font-semibold">Name:</p>
-                <p>{values.approverName || "___________________"}</p>
-              </div>
-              <div>
-                <p className="font-semibold">Date:</p>
-                <p>{values.approverDate || "___________________"}</p>
-              </div>
-            </div>
-            <div className="mt-4">
-              <p className="font-semibold">Signature:</p>
-              <p>{values.approverSignature || "___________________"}</p>
-            </div>
-          </div>
-        </div>
-      </div>
+      <TaskforceSignaturesSection form={form} />
 
-      {/* Review Details Section (print matches preview, all info shown, always last) */}
-      <div className="space-y-4 mt-8 page-break-before">
-        <h2 className="text-xl font-bold border-b pb-2">7. Review Details</h2>
-        <div>
-          <p>This section contains a complete summary of the task force data submitted above, ready for print or review.</p>
+      {/* 7. Review Details / Submit Request (role-based) */}
+      {(userRole === "secretary") && (
+        <div className="space-y-4 mt-8 page-break-before">
+          <h2 className="text-xl font-bold border-b pb-2">7. Submit Request</h2>
+          <div>
+            <p>This section contains a complete summary of the task force data submitted above, ready to submit as a request.</p>
+          </div>
+          <pre className="text-xs bg-gray-100 p-2 rounded whitespace-pre-wrap overflow-x-auto">
+            {JSON.stringify(values, null, 2)}
+          </pre>
         </div>
-        {/* Optionally: Insert the exact same summary or a condensed version as above */}
-        {/* For full information, we can re-use all the key sections above or just display "See above for details." */}
-        {/* If you want a human-readable dump of all values, you can add: */}
-        <pre className="text-xs bg-gray-100 p-2 rounded whitespace-pre-wrap overflow-x-auto">
-          {JSON.stringify(values, null, 2)}
-        </pre>
-      </div>
+      )}
 
       <style>
         {`

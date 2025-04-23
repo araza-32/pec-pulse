@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -22,6 +21,9 @@ interface TaskforceFormProps {
 }
 
 export function TaskforceForm({ onSubmit, onCancel, initialData }: TaskforceFormProps) {
+  const [userRole] = useState<"admin" | "coordination" | "secretary">(
+    (window as any).MOCK_USER_ROLE || "admin"
+  );
   const [activeTab, setActiveTab] = useState("overview");
   const { toast } = useToast();
   const form = useTaskforceForm(initialData);
@@ -107,7 +109,9 @@ export function TaskforceForm({ onSubmit, onCancel, initialData }: TaskforceForm
             <TabsTrigger value="procedures">Procedures</TabsTrigger>
             <TabsTrigger value="deliverables">Deliverables</TabsTrigger>
             <TabsTrigger value="signatures">Signatures</TabsTrigger>
-            <TabsTrigger value="review">Review Details</TabsTrigger>
+            <TabsTrigger value="review">{
+              userRole === "secretary" ? "Submit Request" : "Review Details"
+            }</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6 pt-4">
@@ -183,7 +187,6 @@ export function TaskforceForm({ onSubmit, onCancel, initialData }: TaskforceForm
             />
           </TabsContent>
 
-          {/* Signatures BEFORE Review */}
           <TabsContent value="signatures" className="space-y-6 pt-4">
             <div className="rounded-lg border p-6">
               <SignaturesSection form={form} />
@@ -197,15 +200,20 @@ export function TaskforceForm({ onSubmit, onCancel, initialData }: TaskforceForm
             />
           </TabsContent>
 
-          {/* Review/Print always LAST, shows EVERYTHING */}
           <TabsContent value="review" className="space-y-6 pt-4 bg-white print:bg-white">
             <div className="rounded-lg border p-6 bg-white print:bg-white">
-              <TaskforcePrintableSummary form={form} />
+              <TaskforcePrintableSummary form={form} userRole={userRole} />
             </div>
             <div className="flex flex-col md:flex-row gap-2 md:gap-4 justify-end">
-              <Button type="button" variant="secondary" onClick={handlePrint}>
-                Print / Save as PDF
-              </Button>
+              {userRole === "secretary" ? (
+                <Button type="submit" className="bg-pec-green hover:bg-pec-green-600">
+                  Submit Request
+                </Button>
+              ) : (
+                <Button type="button" variant="secondary" onClick={handlePrint}>
+                  Print / Save as PDF
+                </Button>
+              )}
               <TaskforceNavigation
                 activeTab={activeTab}
                 onPrevious={() => navigateToPreviousTab(activeTab)}
