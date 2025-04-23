@@ -8,12 +8,13 @@ interface TaskforcePrintableSummaryProps {
 
 export const TaskforcePrintableSummary = ({ form }: TaskforcePrintableSummaryProps) => {
   const values = form.getValues();
-  
+
   return (
     <div className="p-6 space-y-8 text-black print:text-black">
       <div className="text-center border-b pb-4">
+        {/* Heading updated */}
         <h1 className="text-2xl font-bold">{values.name}</h1>
-        <p className="text-lg">Task Force Proposal</p>
+        <p className="text-lg">Task Force Formation Request Form</p>
       </div>
 
       {/* Overview Section */}
@@ -277,4 +278,3 @@ export const TaskforcePrintableSummary = ({ form }: TaskforcePrintableSummaryPro
     </div>
   );
 };
-
