@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -38,11 +39,13 @@ import { WorkbodyFormData } from "@/types/workbody";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
+// Modify the formSchema to explicitly use the correct type
 const formSchema = z.object({
   name: z.string().min(3, {
     message: "Name must be at least 3 characters.",
   }),
-  type: z.enum(["committee", "working-group"] as const),
+  // Update the type to only allow committee or working-group
+  type: z.enum(["committee", "working-group"]),
   createdDate: z.date(),
   endDate: z.date().optional(),
   termsOfReference: z.string().optional(),
@@ -66,11 +69,16 @@ export function CreateWorkbodyForm({
   const [documentUploaded, setDocumentUploaded] = useState(false);
   const { toast } = useToast();
 
+  // Ensure initialData.type is either "committee" or "working-group"
+  const initialType = initialData?.type === "committee" || initialData?.type === "working-group" 
+    ? initialData.type 
+    : "committee";
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: initialData?.name || "",
-      type: (initialData?.type as WorkbodyType) || "committee",
+      type: initialType,
       createdDate: initialData?.createdDate ? new Date(initialData.createdDate) : new Date(),
       endDate: initialData?.endDate ? new Date(initialData.endDate) : undefined,
       termsOfReference: initialData?.termsOfReference || "",
@@ -95,7 +103,7 @@ export function CreateWorkbodyForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        <Tabs defaultValue={workbodyType === "working-group" ? "working-group" : "committee"} className="w-full">
+        <Tabs defaultValue={workbodyType} className="w-full">
           <TabsList className="w-full">
             <TabsTrigger value="committee" className="flex-1" onClick={() => form.setValue("type", "committee")}>
               Committee
