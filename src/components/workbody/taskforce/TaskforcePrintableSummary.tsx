@@ -10,7 +10,7 @@ export const TaskforcePrintableSummary = ({ form }: TaskforcePrintableSummaryPro
   const values = form.getValues();
 
   return (
-    <div className="p-6 space-y-8 text-black print:text-black">
+    <div className="p-6 space-y-8 text-black print:text-black print:bg-white bg-white">
       {/* Title Section */}
       <div className="text-center border-b pb-4 mb-8">
         <h1 className="text-2xl font-bold">Task Force Formation Request Form</h1>
@@ -156,7 +156,6 @@ export const TaskforcePrintableSummary = ({ form }: TaskforcePrintableSummaryPro
       {/* Deliverables Section */}
       <div className="space-y-4">
         <h2 className="text-xl font-bold border-b pb-2">5. Deliverables</h2>
-        
         <div>
           <p className="font-semibold">Deliverables:</p>
           {values.deliverables && values.deliverables.length > 0 ? (
@@ -186,7 +185,6 @@ export const TaskforcePrintableSummary = ({ form }: TaskforcePrintableSummaryPro
             <p>No deliverables specified</p>
           )}
         </div>
-
         <div>
           <p className="font-semibold">Milestones:</p>
           {values.milestones && values.milestones.length > 0 ? (
@@ -217,7 +215,6 @@ export const TaskforcePrintableSummary = ({ form }: TaskforcePrintableSummaryPro
       {/* Signatures Section */}
       <div className="space-y-6 mt-8 page-break-before">
         <h2 className="text-xl font-bold border-b pb-2">6. Signatures</h2>
-        
         <div className="space-y-4">
           <div>
             <h3 className="font-medium text-lg">Proposed by:</h3>
@@ -236,7 +233,6 @@ export const TaskforcePrintableSummary = ({ form }: TaskforcePrintableSummaryPro
               <p>{values.proposerSignature || "___________________"}</p>
             </div>
           </div>
-          
           <div className="mt-8">
             <h3 className="font-medium text-lg">Reviewed and Recommended by:</h3>
             <div className="grid grid-cols-2 gap-4 mt-2">
@@ -254,7 +250,6 @@ export const TaskforcePrintableSummary = ({ form }: TaskforcePrintableSummaryPro
               <p>{values.reviewerSignature || "___________________"}</p>
             </div>
           </div>
-          
           <div className="mt-8">
             <h3 className="font-medium text-lg">Approved by:</h3>
             <div className="grid grid-cols-2 gap-4 mt-2">
@@ -275,7 +270,20 @@ export const TaskforcePrintableSummary = ({ form }: TaskforcePrintableSummaryPro
         </div>
       </div>
 
-      {/* Print styling */}
+      {/* Review Details Section (print matches preview, all info shown, always last) */}
+      <div className="space-y-4 mt-8 page-break-before">
+        <h2 className="text-xl font-bold border-b pb-2">7. Review Details</h2>
+        <div>
+          <p>This section contains a complete summary of the task force data submitted above, ready for print or review.</p>
+        </div>
+        {/* Optionally: Insert the exact same summary or a condensed version as above */}
+        {/* For full information, we can re-use all the key sections above or just display "See above for details." */}
+        {/* If you want a human-readable dump of all values, you can add: */}
+        <pre className="text-xs bg-gray-100 p-2 rounded whitespace-pre-wrap overflow-x-auto">
+          {JSON.stringify(values, null, 2)}
+        </pre>
+      </div>
+
       <style>
         {`
         @media print {

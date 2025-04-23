@@ -28,7 +28,6 @@ export function TaskforceForm({ onSubmit, onCancel, initialData }: TaskforceForm
 
   const handleSubmit = (data: TaskforceFormValues) => {
     try {
-      // Calculate end date based on duration in months
       const endDate = new Date(data.createdDate);
       endDate.setMonth(endDate.getMonth() + data.durationMonths);
       data.endDate = endDate;
@@ -43,7 +42,6 @@ export function TaskforceForm({ onSubmit, onCancel, initialData }: TaskforceForm
     }
   };
 
-  // New helper to handle the new review tab navigation
   const navigateToNextTab = (currentTab: string) => {
     switch(currentTab) {
       case "overview":
@@ -59,10 +57,10 @@ export function TaskforceForm({ onSubmit, onCancel, initialData }: TaskforceForm
         setActiveTab("deliverables");
         break;
       case "deliverables":
-        setActiveTab("review");
-        break;
-      case "review":
         setActiveTab("signatures");
+        break;
+      case "signatures":
+        setActiveTab("review");
         break;
       default:
         break;
@@ -83,18 +81,17 @@ export function TaskforceForm({ onSubmit, onCancel, initialData }: TaskforceForm
       case "deliverables":
         setActiveTab("procedures");
         break;
-      case "review":
+      case "signatures":
         setActiveTab("deliverables");
         break;
-      case "signatures":
-        setActiveTab("review");
+      case "review":
+        setActiveTab("signatures");
         break;
       default:
         break;
     }
   };
 
-  // Print handler for the review section
   const handlePrint = () => {
     window.print();
   };
@@ -109,8 +106,8 @@ export function TaskforceForm({ onSubmit, onCancel, initialData }: TaskforceForm
             <TabsTrigger value="composition">Composition</TabsTrigger>
             <TabsTrigger value="procedures">Procedures</TabsTrigger>
             <TabsTrigger value="deliverables">Deliverables</TabsTrigger>
-            <TabsTrigger value="review">Review Details</TabsTrigger>
             <TabsTrigger value="signatures">Signatures</TabsTrigger>
+            <TabsTrigger value="review">Review Details</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6 pt-4">
@@ -186,9 +183,23 @@ export function TaskforceForm({ onSubmit, onCancel, initialData }: TaskforceForm
             />
           </TabsContent>
 
-          <TabsContent value="review" className="space-y-6 pt-4">
+          {/* Signatures BEFORE Review */}
+          <TabsContent value="signatures" className="space-y-6 pt-4">
+            <div className="rounded-lg border p-6">
+              <SignaturesSection form={form} />
+            </div>
+            <TaskforceNavigation
+              activeTab={activeTab}
+              onPrevious={() => navigateToPreviousTab(activeTab)}
+              onNext={() => navigateToNextTab(activeTab)}
+              onCancel={onCancel}
+              isLastTab={false}
+            />
+          </TabsContent>
+
+          {/* Review/Print always LAST, shows EVERYTHING */}
+          <TabsContent value="review" className="space-y-6 pt-4 bg-white print:bg-white">
             <div className="rounded-lg border p-6 bg-white print:bg-white">
-              {/* Print Preview with exact printout */}
               <TaskforcePrintableSummary form={form} />
             </div>
             <div className="flex flex-col md:flex-row gap-2 md:gap-4 justify-end">
@@ -198,24 +209,11 @@ export function TaskforceForm({ onSubmit, onCancel, initialData }: TaskforceForm
               <TaskforceNavigation
                 activeTab={activeTab}
                 onPrevious={() => navigateToPreviousTab(activeTab)}
-                onNext={() => navigateToNextTab(activeTab)}
+                onNext={() => {}}
                 onCancel={onCancel}
-                // Not first or last tab
+                isLastTab={true}
               />
             </div>
-          </TabsContent>
-
-          <TabsContent value="signatures" className="space-y-6 pt-4">
-            <div className="rounded-lg border p-6">
-              <SignaturesSection form={form} />
-            </div>
-            <TaskforceNavigation
-              activeTab={activeTab}
-              onPrevious={() => navigateToPreviousTab(activeTab)}
-              onNext={() => form.handleSubmit(handleSubmit)()}
-              onCancel={onCancel}
-              isLastTab={true}
-            />
           </TabsContent>
         </Tabs>
       </form>
