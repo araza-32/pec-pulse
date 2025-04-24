@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useWorkbodies } from "@/hooks/useWorkbodies";
@@ -17,7 +16,6 @@ export const useMinutesUpload = () => {
   const [agendaItems, setAgendaItems] = useState<string>("");
   const [actionsAgreed, setActionsAgreed] = useState<string>("");
 
-  // Mock user role - in real app this would come from auth context
   const [userRole] = useState<"admin" | "coordination" | "secretary">(
     (window as any).MOCK_USER_ROLE || "admin"
   );
@@ -28,7 +26,6 @@ export const useMinutesUpload = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate form fields
     if (!selectedWorkbodyType) {
       toast({
         title: "Select Workbody Type",
@@ -65,7 +62,6 @@ export const useMinutesUpload = () => {
     setIsUploading(true);
 
     try {
-      // 1. Upload the PDF file to Supabase Storage
       const fileExt = selectedFile.name.split('.').pop();
       const fileName = `${Date.now()}-${selectedWorkbody}`;
       const filePath = `minutes/${fileName}.${fileExt}`;
@@ -81,16 +77,13 @@ export const useMinutesUpload = () => {
         throw new Error(`Error uploading file: ${uploadError.message}`);
       }
       
-      // Get public URL for the uploaded file
       const { data: { publicUrl } } = supabase.storage
         .from('workbody-documents')
         .getPublicUrl(filePath);
 
-      // 2. Extract the agenda items and actions from textarea into arrays
       const agendaItemsArray = agendaItems.split('\n').filter(item => item.trim() !== '');
       const actionsAgreedArray = actionsAgreed.split('\n').filter(item => item.trim() !== '');
       
-      // 3. Store meeting details in the database
       const { data: minutesData, error: dbError } = await supabase
         .from('meeting_minutes')
         .insert({
@@ -109,7 +102,6 @@ export const useMinutesUpload = () => {
         throw new Error(`Error saving meeting data: ${dbError.message}`);
       }
 
-      // 4. Update the workbody statistics
       const workbody = workbodies.find(wb => wb.id === selectedWorkbody);
       if (workbody) {
         const now = new Date();
@@ -127,20 +119,17 @@ export const useMinutesUpload = () => {
           .eq('id', selectedWorkbody);
       }
 
-      // Success notification
       toast({
         title: "Upload successful",
         description: "Meeting minutes have been uploaded successfully.",
       });
       
-      // Reset form and navigate to view the uploaded minutes
       setSelectedFile(null);
       setMeetingDate("");
       setMeetingLocation("");
       setAgendaItems("");
       setActionsAgreed("");
       
-      // Navigate to the minutes viewer
       navigate(`/minutes/${minutesData.id}`);
       
     } catch (error: any) {

@@ -9,6 +9,50 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      meeting_minutes: {
+        Row: {
+          actions_agreed: string[]
+          agenda_items: string[]
+          date: string
+          file_url: string
+          id: string
+          location: string
+          uploaded_at: string
+          uploaded_by: string | null
+          workbody_id: string | null
+        }
+        Insert: {
+          actions_agreed?: string[]
+          agenda_items?: string[]
+          date: string
+          file_url: string
+          id?: string
+          location: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+          workbody_id?: string | null
+        }
+        Update: {
+          actions_agreed?: string[]
+          agenda_items?: string[]
+          date?: string
+          file_url?: string
+          id?: string
+          location?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+          workbody_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_minutes_workbody_id_fkey"
+            columns: ["workbody_id"]
+            isOneToOne: false
+            referencedRelation: "workbodies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string | null

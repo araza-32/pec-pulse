@@ -34,16 +34,30 @@ export default function MinutesViewer() {
         setIsLoading(true);
         const { data, error } = await supabase
           .from('meeting_minutes')
-          .select('*, workbodies(name)')
+          .select(`
+            *,
+            workbodies:workbody_id (
+              name
+            )
+          `)
           .eq('id', id)
           .single();
           
         if (error) throw error;
+
+        const minutesData: MinutesData = {
+          id: data.id,
+          workbody_id: data.workbody_id,
+          workbodyName: data.workbodies?.name,
+          date: data.date,
+          location: data.location,
+          agenda_items: data.agenda_items,
+          actions_agreed: data.actions_agreed,
+          file_url: data.file_url,
+          uploaded_at: data.uploaded_at
+        };
         
-        setMinutes({
-          ...data,
-          workbodyName: data.workbodies?.name
-        });
+        setMinutes(minutesData);
       } catch (error: any) {
         console.error("Error fetching minutes:", error);
         toast({

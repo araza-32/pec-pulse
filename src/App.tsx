@@ -5,7 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
-import { AppRoutes } from "./routes";
+import Router from "./routes";
 
 const queryClient = new QueryClient();
 
@@ -17,7 +17,7 @@ const App = () => {
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <AppRoutes />
+            <Router />
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>
