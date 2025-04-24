@@ -34,40 +34,10 @@ import { useToast } from "@/hooks/use-toast";
 import { ScheduledMeeting } from "@/types";
 import { workbodies } from "@/data/mockData";
 
-// Mock scheduled meetings
-const initialMeetings: ScheduledMeeting[] = [
-  {
-    id: "meeting-1",
-    workbodyId: "committee-1",
-    workbodyName: "Education Committee",
-    date: "2025-05-10",
-    time: "10:00",
-    location: "PEC Headquarters, Islamabad",
-    agendaItems: [
-      "Review of Accreditation Process",
-      "Curriculum Standardization",
-      "New Engineering Programs Approval",
-    ],
-  },
-  {
-    id: "meeting-2",
-    workbodyId: "workgroup-1",
-    workbodyName: "Digital Transformation Working Group",
-    date: "2025-04-22",
-    time: "14:30",
-    location: "Virtual Meeting",
-    agendaItems: [
-      "Online Portal Progress Update",
-      "Mobile App Development Status",
-      "Digital Verification System Implementation",
-    ],
-  },
-];
-
 export default function MeetingCalendar() {
   const { toast } = useToast();
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [meetings, setMeetings] = useState<ScheduledMeeting[]>(initialMeetings);
+  const [meetings, setMeetings] = useState<ScheduledMeeting[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [selectedMeeting, setSelectedMeeting] = useState<ScheduledMeeting | null>(null);

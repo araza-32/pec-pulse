@@ -1,8 +1,6 @@
-
 import { useState, useMemo } from "react";
 import { useWorkbodies } from "@/hooks/useWorkbodies";
 import { OverviewStats } from "@/components/dashboard/OverviewStats";
-import { UpcomingMeetings } from "@/components/dashboard/UpcomingMeetings";
 import { WorkbodyDistribution } from "@/components/dashboard/WorkbodyDistribution";
 import { ActionCompletionProgress } from "@/components/dashboard/ActionCompletionProgress";
 import { ExpiringTaskForceAlert } from "@/components/workbody/ExpiringTaskForceAlert"; 
@@ -41,40 +39,6 @@ export default function Dashboard() {
       )
       .sort((a, b) => new Date(a.endDate!).getTime() - new Date(b.endDate!).getTime());
   }, [workbodies]);
-
-  const initialMeetings = [
-    {
-      id: "meeting-1",
-      workbodyId: "committee-1",
-      workbodyName: "Education Committee",
-      date: "2025-05-10",
-      time: "10:00",
-      location: "PEC Headquarters, Islamabad",
-      agendaItems: [
-        "Review of Accreditation Process",
-        "Curriculum Standardization",
-        "New Engineering Programs Approval",
-      ],
-    },
-    {
-      id: "meeting-2",
-      workbodyId: "workgroup-1",
-      workbodyName: "Digital Transformation Working Group",
-      date: "2025-04-22",
-      time: "14:30",
-      location: "Virtual Meeting",
-      agendaItems: [
-        "Online Portal Progress Update",
-        "Mobile App Development Status",
-        "Digital Verification System Implementation",
-      ],
-    },
-  ];
-  
-  const upcomingMeetings = initialMeetings?.filter(meeting => {
-    const meetingDate = new Date(meeting.date);
-    return meetingDate >= today && meetingDate <= thirtyDaysFromNow;
-  }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   const stats = {
     totalWorkbodies: filteredWorkbodies.length,
@@ -165,11 +129,10 @@ export default function Dashboard() {
         totalWorkbodies: stats.totalWorkbodies,
         meetingsThisYear: stats.meetingsThisYear,
         completionRate: stats.completionRate,
-        upcomingMeetingsCount: upcomingMeetings?.length || 0
+        upcomingMeetingsCount: 0
       }} />
 
       <div className="grid gap-4 md:grid-cols-2">
-        <UpcomingMeetings meetings={upcomingMeetings || []} />
         <WorkbodyDistribution data={{
           committees: stats.committees,
           workingGroups: stats.workingGroups,

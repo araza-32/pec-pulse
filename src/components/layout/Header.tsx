@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { 
   LogOut, 
@@ -36,15 +35,7 @@ export function Header({ toggleSidebar, user, onLogout }: HeaderProps) {
           <span className="sr-only">Toggle sidebar</span>
         </Button>
         <div className="flex items-center gap-2">
-          <img 
-            src="/lovable-uploads/26062e6e-e7ef-45d9-895b-79ac41a220c7.png" 
-            alt="PEC Logo" 
-            className="h-10 w-auto" 
-          />
-          <h1 className="hidden text-xl font-semibold md:block">
-            PEC Pulse
-          </h1>
-          <h1 className="text-xl font-semibold md:hidden">
+          <h1 className="text-xl font-semibold">
             PEC Pulse
           </h1>
         </div>
