@@ -1,6 +1,7 @@
 
 import { Layout } from "./components/layout/Layout";
 import Index from "./pages/Index";
+import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import ChairmanDashboard from "./pages/ChairmanDashboard";
 import WorkbodyManagement from "./pages/WorkbodyManagement";
@@ -10,9 +11,22 @@ import MinutesViewer from "./pages/MinutesViewer";
 import MeetingCalendar from "./pages/MeetingCalendar";
 import Reports from "./pages/Reports";
 import NotFound from "./pages/NotFound";
-import { useAuthHandlers } from "./hooks/useAuthHandlers";
+import { useAuth } from "./contexts/AuthContext";
+import { Navigate } from "react-router-dom";
 
-export const router = [
+// Protected route component
+const ProtectedRoute = ({ children }) => {
+  const { session } = useAuth();
+  
+  if (!session) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  return children;
+};
+
+// Define public routes without authentication
+export const publicRoutes = [
   {
     path: "/",
     element: (
@@ -22,69 +36,60 @@ export const router = [
     ),
   },
   {
+    path: "/login",
+    element: <Login />,
+  }
+];
+
+// Define protected routes that require authentication
+export const protectedRoutes = [
+  {
     path: "/dashboard",
-    element: (
-      <Layout user={null} onLogout={() => {}}>
-        <Dashboard />
-      </Layout>
-    ),
+    element: <Dashboard />,
   },
   {
     path: "/chairman-dashboard",
-    element: (
-      <Layout user={null} onLogout={() => {}}>
-        <ChairmanDashboard />
-      </Layout>
-    ),
+    element: <ChairmanDashboard />,
   },
   {
     path: "/workbodies",
-    element: (
-      <Layout user={null} onLogout={() => {}}>
-        <WorkbodyManagement />
-      </Layout>
-    ),
+    element: <WorkbodyManagement />,
   },
   {
     path: "/workbodies/:id",
-    element: (
-      <Layout user={null} onLogout={() => {}}>
-        <WorkbodyDetail />
-      </Layout>
-    ),
+    element: <WorkbodyDetail />,
   },
   {
     path: "/minutes/upload",
-    element: (
-      <Layout user={null} onLogout={() => {}}>
-        <UploadMinutes />
-      </Layout>
-    ),
+    element: <UploadMinutes />,
   },
   {
     path: "/minutes/:id",
-    element: (
-      <Layout user={null} onLogout={() => {}}>
-        <MinutesViewer />
-      </Layout>
-    ),
+    element: <MinutesViewer />,
   },
   {
     path: "/calendar",
-    element: (
-      <Layout user={null} onLogout={() => {}}>
-        <MeetingCalendar />
-      </Layout>
-    ),
+    element: <MeetingCalendar />,
   },
   {
     path: "/reports",
-    element: (
-      <Layout user={null} onLogout={() => {}}>
-        <Reports />
-      </Layout>
-    ),
+    element: <Reports />,
   },
+];
+
+// For use in the App component
+export const router = [
+  ...publicRoutes,
+  ...protectedRoutes.map(route => ({
+    ...route,
+    element: (
+      <ProtectedRoute>
+        <Layout user={{}} onLogout={() => {}}>
+          {route.element}
+        </Layout>
+      </ProtectedRoute>
+    )
+  })),
   {
     path: "*",
     element: (

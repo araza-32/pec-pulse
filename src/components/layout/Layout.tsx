@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Header } from "./Header";
 import { Sidebar } from "./Sidebar";
 import { User } from "@/types";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface LayoutProps {
   user: User | null;
@@ -12,6 +13,23 @@ interface LayoutProps {
 
 export function Layout({ user, onLogout, children }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { session, signOut } = useAuth();
+  
+  // Use authentication data from context if available
+  const currentUser = session?.user ? {
+    name: session.user.email || 'User',
+    role: session.user.role || 'user'
+  } : user;
+  
+  const handleLogout = () => {
+    if (signOut) {
+      signOut();
+    }
+    if (onLogout) {
+      onLogout();
+    }
+    setSidebarOpen(false);
+  };
   
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
   const closeSidebar = () => setSidebarOpen(false);
@@ -20,17 +38,17 @@ export function Layout({ user, onLogout, children }: LayoutProps) {
     <div className="flex min-h-screen flex-col">
       <Header 
         toggleSidebar={toggleSidebar} 
-        user={user} 
-        onLogout={onLogout} 
+        user={currentUser} 
+        onLogout={handleLogout} 
       />
       
       <div className="flex flex-1">
-        {user && (
+        {currentUser && (
           <Sidebar 
             isOpen={sidebarOpen} 
             onClose={closeSidebar} 
-            userRole={user.role}
-            userWorkbodyId={user.workbodyId}
+            userRole={currentUser.role}
+            userWorkbodyId={currentUser.workbodyId}
           />
         )}
         

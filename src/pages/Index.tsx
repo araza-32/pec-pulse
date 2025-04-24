@@ -1,10 +1,8 @@
 
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 const Index = () => {
-  const navigate = useNavigate();
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50">
       <div className="text-center max-w-2xl mx-auto px-4">
@@ -17,12 +15,13 @@ const Index = () => {
         <p className="text-xl text-gray-600 mb-8">
           Pakistan Engineering Council's Workbody Management System
         </p>
-        <Button 
-          onClick={() => navigate('/login')}
-          className="bg-pec-green hover:bg-pec-green-600"
-        >
-          Login to Access Dashboard
-        </Button>
+        <Link to="/login">
+          <Button 
+            className="bg-pec-green hover:bg-pec-green-600"
+          >
+            Login to Access Dashboard
+          </Button>
+        </Link>
       </div>
     </div>
   );
