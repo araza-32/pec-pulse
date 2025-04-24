@@ -3,8 +3,7 @@ import { useState } from 'react';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { FileText, UserPlus, Pencil, Trash2 } from "lucide-react";
+import { UserPlus, Pencil, Trash2, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { MemberEditor } from "./MemberEditor";
@@ -20,8 +19,8 @@ export function WorkbodyMembers({ workbodyId, members, userRole, onMembersUpdate
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<any>(null);
   const { toast } = useToast();
-  const [hideErrors, setHideErrors] = useState(false);
   
+  // Allow admins and coordination roles to manage members
   const canManageMembers = userRole === 'admin' || userRole === 'coordination';
 
   const handleEditMember = (member: any) => {
@@ -60,13 +59,6 @@ export function WorkbodyMembers({ workbodyId, members, userRole, onMembersUpdate
     }
   };
 
-  const successfulMembers = members.filter(
-    member => !member.name.includes("Error") && 
-              !member.name.includes("Processing") &&
-              !member.role.includes("Error") && 
-              !member.role.includes("error")
-  );
-
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -82,9 +74,9 @@ export function WorkbodyMembers({ workbodyId, members, userRole, onMembersUpdate
         )}
       </CardHeader>
       <CardContent>
-        {successfulMembers.length > 0 ? (
+        {members.length > 0 ? (
           <div className="space-y-4">
-            {successfulMembers.map((member) => (
+            {members.map((member) => (
               <div
                 key={member.id}
                 className="flex items-center justify-between rounded-lg border p-4"
@@ -105,6 +97,9 @@ export function WorkbodyMembers({ workbodyId, members, userRole, onMembersUpdate
                     <p className="text-sm text-muted-foreground">{member.role}</p>
                     {member.email && (
                       <p className="text-sm text-muted-foreground">{member.email}</p>
+                    )}
+                    {member.phone && (
+                      <p className="text-sm text-muted-foreground">{member.phone}</p>
                     )}
                   </div>
                 </div>

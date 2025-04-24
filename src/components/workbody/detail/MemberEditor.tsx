@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,6 +29,16 @@ export function MemberEditor({ isOpen, onClose, member, workbodyId, onSave }: Me
   const [phone, setPhone] = useState(member?.phone || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+
+  // Reset form when member changes or dialog opens/closes
+  useEffect(() => {
+    if (isOpen) {
+      setName(member?.name || '');
+      setRole(member?.role || 'Member');
+      setEmail(member?.email || '');
+      setPhone(member?.phone || '');
+    }
+  }, [member, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

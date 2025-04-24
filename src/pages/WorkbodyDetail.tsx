@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useWorkbodies } from "@/hooks/useWorkbodies";
@@ -12,6 +11,7 @@ import { WorkbodyHeader } from "@/components/workbody/detail/WorkbodyHeader";
 import { WorkbodyStats } from "@/components/workbody/detail/WorkbodyStats";
 import { WorkbodyMembers } from "@/components/workbody/detail/WorkbodyMembers";
 import { WorkbodyMeetings } from "@/components/workbody/detail/WorkbodyMeetings";
+import { useAuth } from "@/contexts/AuthContext";
 import type { MeetingMinutes } from "@/types";
 
 export default function WorkbodyDetail() {
@@ -20,6 +20,9 @@ export default function WorkbodyDetail() {
   const [activeTab, setActiveTab] = useState("overview");
   const [minutes, setMinutes] = useState<MeetingMinutes[]>([]);
   const [isLoadingMinutes, setIsLoadingMinutes] = useState(false);
+  const { session } = useAuth();
+  
+  const userRole = session?.role || 'user';
 
   const { workbodies, isLoading, refetch } = useWorkbodies();
   const workbody = workbodies.find((w) => w.id === id);
@@ -166,6 +169,7 @@ export default function WorkbodyDetail() {
           <WorkbodyMembers
             workbodyId={workbody.id}
             members={workbody.members}
+            userRole={userRole}
             onMembersUpdate={refetch}
           />
         </TabsContent>
