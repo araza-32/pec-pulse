@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileSpreadsheet, FileText, Download, Donut } from "lucide-react";
+import { FileSpreadsheet, FileText, Download } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -38,25 +38,40 @@ const downloadFile = (content: string, filename: string, type: string) => {
 };
 
 export default function Reports() {
-  const [reportType, setReportType] = useState("all");
-  const [reportFormat, setReportFormat] = useState("pdf");
-  const [selectedWorkbodyType, setSelectedWorkbodyType] = useState("all");
+  const [activeTab, setActiveTab] = useState("generate");
+  const [workbodyType, setWorkbodyType] = useState("");
   const [selectedWorkbody, setSelectedWorkbody] = useState("");
+  const [reportType, setReportType] = useState("");
+  const [reportFormat, setReportFormat] = useState("");
+  const [reportHistory, setReportHistory] = useState<Array<{
+    id: string;
+    name: string;
+    type: string;
+    format: string;
+    date: Date;
+    workbodyType: string;
+    workbodyName?: string;
+  }>>([]);
+  
   const { workbodies = [], isLoading } = useWorkbodies();
   const { toast } = useToast();
   
-  // Sort workbodies alphabetically
-  const sortedWorkbodies = useMemo(() => {
-    return [...workbodies].sort((a, b) => a.name.localeCompare(b.name));
-  }, [workbodies]);
-  
-  // Filter workbodies by type
+  // Filter workbodies by selected type
   const filteredWorkbodies = useMemo(() => {
-    if (selectedWorkbodyType === "all") return sortedWorkbodies;
-    return sortedWorkbodies.filter(wb => wb.type === selectedWorkbodyType);
-  }, [sortedWorkbodies, selectedWorkbodyType]);
+    if (!workbodyType) return [];
+    return workbodies.filter(wb => wb.type === workbodyType);
+  }, [workbodies, workbodyType]);
 
   const handleGenerateReport = () => {
+    if (!workbodyType || !reportType || !reportFormat) {
+      toast({
+        title: "Missing Information",
+        description: "Please select all required options to generate the report.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     let reportData = [];
     let filename = "";
     let content = "";
@@ -66,10 +81,8 @@ export default function Reports() {
     if (selectedWorkbody) {
       const workbody = workbodies.find(wb => wb.id === selectedWorkbody);
       if (workbody) targetWorkbodies = [workbody];
-    } else if (selectedWorkbodyType !== "all") {
-      targetWorkbodies = workbodies.filter(wb => wb.type === selectedWorkbodyType);
     } else {
-      targetWorkbodies = workbodies;
+      targetWorkbodies = workbodies.filter(wb => wb.type === workbodyType);
     }
     
     if (targetWorkbodies.length === 0) {
@@ -155,13 +168,26 @@ export default function Reports() {
         });
         return;
     }
+
+    // Add to report history
+    const newReport = {
+      id: crypto.randomUUID(),
+      name: `${reportType}-report-${new Date().toISOString().split('T')[0]}`,
+      type: reportType,
+      format: reportFormat,
+      date: new Date(),
+      workbodyType,
+      workbodyName: selectedWorkbody ? workbodies.find(wb => wb.id === selectedWorkbody)?.name : undefined
+    };
+    
+    setReportHistory(prev => [newReport, ...prev]);
     
     toast({
       title: "Report Generated",
-      description: `Report has been downloaded as ${filename}.${reportFormat}`,
+      description: `Report has been downloaded as ${newReport.name}.${reportFormat}`,
     });
   };
-  
+
   return (
     <div className="space-y-6">
       <div>
@@ -174,7 +200,7 @@ export default function Reports() {
       <Tabs defaultValue="generate" className="space-y-4">
         <TabsList>
           <TabsTrigger value="generate">Generate Reports</TabsTrigger>
-          <TabsTrigger value="saved">Saved Reports</TabsTrigger>
+          <TabsTrigger value="history">Report History</TabsTrigger>
         </TabsList>
         
         <TabsContent value="generate" className="space-y-4">
@@ -185,45 +211,17 @@ export default function Reports() {
             <CardContent className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="report-type">Report Type</Label>
-                  <Select defaultValue={reportType} onValueChange={setReportType}>
-                    <SelectTrigger id="report-type">
-                      <SelectValue placeholder="Select report type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Workbody Data</SelectItem>
-                      <SelectItem value="meetings">Meetings Summary</SelectItem>
-                      <SelectItem value="actions">Action Status</SelectItem>
-                      <SelectItem value="composition">Workbody Composition</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="report-format">Report Format</Label>
-                  <Select defaultValue={reportFormat} onValueChange={setReportFormat}>
-                    <SelectTrigger id="report-format">
-                      <SelectValue placeholder="Select format" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pdf">PDF Document</SelectItem>
-                      <SelectItem value="excel">Excel Spreadsheet</SelectItem>
-                      <SelectItem value="csv">CSV File</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="workbody-type">Workbody Type</Label>
-                  <Select defaultValue={selectedWorkbodyType} onValueChange={(value) => {
-                    setSelectedWorkbodyType(value);
-                    setSelectedWorkbody(""); // Reset selected workbody
+                  <Label htmlFor="workbody-type">1. Select Workbody Type</Label>
+                  <Select value={workbodyType} onValueChange={(value) => {
+                    setWorkbodyType(value);
+                    setSelectedWorkbody("");
+                    setReportType("");
+                    setReportFormat("");
                   }}>
                     <SelectTrigger id="workbody-type">
                       <SelectValue placeholder="Select workbody type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Types</SelectItem>
                       <SelectItem value="committee">Committees</SelectItem>
                       <SelectItem value="working-group">Working Groups</SelectItem>
                       <SelectItem value="task-force">Task Forces</SelectItem>
@@ -231,32 +229,64 @@ export default function Reports() {
                   </Select>
                 </div>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="specific-workbody">Specific Workbody (Optional)</Label>
-                  <Select value={selectedWorkbody} onValueChange={setSelectedWorkbody}>
-                    <SelectTrigger id="specific-workbody">
-                      <SelectValue placeholder="Select a workbody" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all-workbodies">All Workbodies</SelectItem>
-                      {filteredWorkbodies.map(wb => (
-                        <SelectItem key={wb.id} value={wb.id}>
-                          {wb.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {workbodyType && (
+                  <div className="space-y-2">
+                    <Label htmlFor="specific-workbody">2. Select Specific Workbody (Optional)</Label>
+                    <Select value={selectedWorkbody} onValueChange={setSelectedWorkbody}>
+                      <SelectTrigger id="specific-workbody">
+                        <SelectValue placeholder="Select a workbody" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">All {workbodyType === 'working-group' ? 'Working Groups' : `${workbodyType}s`}</SelectItem>
+                        {filteredWorkbodies.map(wb => (
+                          <SelectItem key={wb.id} value={wb.id}>
+                            {wb.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                
+                {workbodyType && (
+                  <div className="space-y-2">
+                    <Label htmlFor="report-type">3. Select Report Type</Label>
+                    <Select value={reportType} onValueChange={setReportType}>
+                      <SelectTrigger id="report-type">
+                        <SelectValue placeholder="Select report type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Workbody Data</SelectItem>
+                        <SelectItem value="meetings">Meetings Summary</SelectItem>
+                        <SelectItem value="actions">Action Status</SelectItem>
+                        <SelectItem value="composition">Workbody Composition</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                
+                {reportType && (
+                  <div className="space-y-2">
+                    <Label htmlFor="report-format">4. Select Format</Label>
+                    <Select value={reportFormat} onValueChange={setReportFormat}>
+                      <SelectTrigger id="report-format">
+                        <SelectValue placeholder="Select format" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pdf">PDF Document</SelectItem>
+                        <SelectItem value="excel">Excel Spreadsheet</SelectItem>
+                        <SelectItem value="csv">CSV File</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </div>
               
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" className="gap-2">
-                  <FileText className="h-4 w-4" />
-                  Preview
-                </Button>
+              <div className="flex justify-end">
                 <Button 
                   className="gap-2 bg-pec-green hover:bg-pec-green-600"
                   onClick={handleGenerateReport}
+                  disabled={!workbodyType || !reportType || !reportFormat}
                 >
                   <Download className="h-4 w-4" />
                   Generate Report
@@ -264,154 +294,48 @@ export default function Reports() {
               </div>
             </CardContent>
           </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Reports</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="flex flex-col items-center space-y-2 text-center">
-                      <FileText className="h-8 w-8 text-pec-green" />
-                      <h3 className="font-medium">Meeting Summary</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Summary of all meetings held this year
-                      </p>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="mt-2"
-                        onClick={() => {
-                          setReportType("meetings");
-                          setReportFormat("excel");
-                          setSelectedWorkbodyType("all");
-                          setSelectedWorkbody("");
-                          handleGenerateReport();
-                        }}
-                      >
-                        Download Excel
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="flex flex-col items-center space-y-2 text-center">
-                      <FileSpreadsheet className="h-8 w-8 text-pec-gold" />
-                      <h3 className="font-medium">Action Status</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Status of all actions agreed upon
-                      </p>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="mt-2"
-                        onClick={() => {
-                          setReportType("actions");
-                          setReportFormat("excel");
-                          setSelectedWorkbodyType("all");
-                          setSelectedWorkbody("");
-                          handleGenerateReport();
-                        }}
-                      >
-                        Download Excel
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="flex flex-col items-center space-y-2 text-center">
-                      <Donut className="h-8 w-8 text-blue-500" />
-                      <h3 className="font-medium">Workbody Composition</h3>
-                      <p className="text-sm text-muted-foreground">
-                        List of all workbodies and their members
-                      </p>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="mt-2"
-                        onClick={() => {
-                          setReportType("composition");
-                          setReportFormat("excel");
-                          setSelectedWorkbodyType("all");
-                          setSelectedWorkbody("");
-                          handleGenerateReport();
-                        }}
-                      >
-                        Download Excel
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </CardContent>
-          </Card>
         </TabsContent>
         
-        <TabsContent value="saved" className="space-y-4">
+        <TabsContent value="history" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Previously Generated Reports</CardTitle>
+              <CardTitle>Report History</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <Card>
-                  <CardContent className="flex items-center justify-between p-4">
-                    <div className="flex items-center gap-4">
-                      <FileText className="h-8 w-8 text-muted-foreground" />
-                      <div>
-                        <h3 className="font-medium">Quarterly Summary Report</h3>
-                        <p className="text-sm text-muted-foreground">Generated on Apr 12, 2024</p>
-                      </div>
-                    </div>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => {
-                        setReportType("all");
-                        setReportFormat("excel");
-                        setSelectedWorkbodyType("all");
-                        setSelectedWorkbody("");
-                        handleGenerateReport();
-                      }}
-                    >
-                      <Download className="mr-2 h-4 w-4" />
-                      Download
-                    </Button>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardContent className="flex items-center justify-between p-4">
-                    <div className="flex items-center gap-4">
-                      <FileSpreadsheet className="h-8 w-8 text-muted-foreground" />
-                      <div>
-                        <h3 className="font-medium">Action Items Status Report</h3>
-                        <p className="text-sm text-muted-foreground">Generated on Apr 10, 2024</p>
-                      </div>
-                    </div>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => {
-                        setReportType("actions");
-                        setReportFormat("excel");
-                        setSelectedWorkbodyType("all");
-                        setSelectedWorkbody("");
-                        handleGenerateReport();
-                      }}
-                    >
-                      <Download className="mr-2 h-4 w-4" />
-                      Download
-                    </Button>
-                  </CardContent>
-                </Card>
-              </div>
+              {reportHistory.length > 0 ? (
+                <div className="space-y-4">
+                  {reportHistory.map((report) => (
+                    <Card key={report.id}>
+                      <CardContent className="flex items-center justify-between p-4">
+                        <div className="flex items-center gap-4">
+                          <FileText className="h-8 w-8 text-muted-foreground" />
+                          <div>
+                            <h3 className="font-medium">
+                              {report.workbodyName || `All ${report.workbodyType}s`} - {report.type} Report
+                            </h3>
+                            <p className="text-sm text-muted-foreground">
+                              Generated on {report.date.toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleGenerateReport()}
+                          className="gap-2"
+                        >
+                          <Download className="h-4 w-4" />
+                          Download Again
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-center text-muted-foreground py-8">
+                  No reports have been generated yet
+                </p>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
