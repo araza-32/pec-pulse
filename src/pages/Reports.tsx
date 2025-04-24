@@ -12,7 +12,7 @@ import { generateCSV, downloadFile, generateReportData } from "@/utils/reportGen
 
 export default function Reports() {
   const [workbodyType, setWorkbodyType] = useState("");
-  const [selectedWorkbody, setSelectedWorkbody] = useState("");
+  const [selectedWorkbody, setSelectedWorkbody] = useState(""); // This is fine since we check it later
   const [reportType, setReportType] = useState("");
   const [reportFormat, setReportFormat] = useState("");
   const [reportHistory, setReportHistory] = useState<Array<{
@@ -39,7 +39,7 @@ export default function Reports() {
     }
 
     let targetWorkbodies = [];
-    if (selectedWorkbody) {
+    if (selectedWorkbody && selectedWorkbody !== "all-workbodies") {
       const workbody = workbodies.find(wb => wb.id === selectedWorkbody);
       if (workbody) targetWorkbodies = [workbody];
     } else {
@@ -89,7 +89,9 @@ export default function Reports() {
       format: reportFormat,
       date: new Date(),
       workbodyType,
-      workbodyName: selectedWorkbody ? workbodies.find(wb => wb.id === selectedWorkbody)?.name : undefined
+      workbodyName: selectedWorkbody && selectedWorkbody !== "all-workbodies" 
+        ? workbodies.find(wb => wb.id === selectedWorkbody)?.name 
+        : undefined
     };
     
     setReportHistory(prev => [newReport, ...prev]);
@@ -165,4 +167,3 @@ export default function Reports() {
     </div>
   );
 }
-

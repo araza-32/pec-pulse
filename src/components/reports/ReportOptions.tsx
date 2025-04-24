@@ -58,7 +58,7 @@ export const ReportOptions = ({
               <SelectValue placeholder="Select a workbody" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All {workbodyType === 'working-group' ? 'Working Groups' : `${workbodyType}s`}</SelectItem>
+              <SelectItem value="all-workbodies">All {workbodyType === 'working-group' ? 'Working Groups' : `${workbodyType}s`}</SelectItem>
               {filteredWorkbodies.map(wb => (
                 <SelectItem key={wb.id} value={wb.id}>
                   {wb.name}
@@ -104,4 +104,3 @@ export const ReportOptions = ({
     </div>
   );
 };
-

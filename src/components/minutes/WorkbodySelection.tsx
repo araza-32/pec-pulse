@@ -54,7 +54,7 @@ export function WorkbodySelection({
             <SelectValue placeholder="Select type..." />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="select-placeholder" disabled>Select type...</SelectItem>
+            <SelectItem value="placeholder-type" disabled>Select type...</SelectItem>
             {WORKBODY_TYPES.map(wbt => (
               <SelectItem key={wbt.value} value={wbt.value}>
                 {wbt.label}
@@ -74,7 +74,7 @@ export function WorkbodySelection({
             <SelectValue placeholder="Select workbody..." />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="select-placeholder" disabled>Select workbody...</SelectItem>
+            <SelectItem value="placeholder-wb" disabled>Select workbody...</SelectItem>
             {filteredWorkbodies.map(wb => (
               <SelectItem key={wb.id} value={wb.id}>
                 {wb.name}
