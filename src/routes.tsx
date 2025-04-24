@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router-dom";
+
 import { Layout } from "./components/layout/Layout";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
@@ -10,21 +10,87 @@ import MinutesViewer from "./pages/MinutesViewer";
 import MeetingCalendar from "./pages/MeetingCalendar";
 import Reports from "./pages/Reports";
 import NotFound from "./pages/NotFound";
+import { useAuthHandlers } from "./hooks/useAuthHandlers";
 
-export default createBrowserRouter([
+export const router = [
   {
-    element: <Layout />,
-    children: [
-      { path: "/", element: <Index /> },
-      { path: "/dashboard", element: <Dashboard /> },
-      { path: "/chairman-dashboard", element: <ChairmanDashboard /> },
-      { path: "/workbodies", element: <WorkbodyManagement /> },
-      { path: "/workbodies/:id", element: <WorkbodyDetail /> },
-      { path: "/minutes/upload", element: <UploadMinutes /> },
-      { path: "/minutes/:id", element: <MinutesViewer /> },
-      { path: "/calendar", element: <MeetingCalendar /> },
-      { path: "/reports", element: <Reports /> },
-      { path: "*", element: <NotFound /> },
-    ],
+    path: "/",
+    element: (
+      <Layout user={null} onLogout={() => {}}>
+        <Index />
+      </Layout>
+    ),
   },
-]);
+  {
+    path: "/dashboard",
+    element: (
+      <Layout user={null} onLogout={() => {}}>
+        <Dashboard />
+      </Layout>
+    ),
+  },
+  {
+    path: "/chairman-dashboard",
+    element: (
+      <Layout user={null} onLogout={() => {}}>
+        <ChairmanDashboard />
+      </Layout>
+    ),
+  },
+  {
+    path: "/workbodies",
+    element: (
+      <Layout user={null} onLogout={() => {}}>
+        <WorkbodyManagement />
+      </Layout>
+    ),
+  },
+  {
+    path: "/workbodies/:id",
+    element: (
+      <Layout user={null} onLogout={() => {}}>
+        <WorkbodyDetail />
+      </Layout>
+    ),
+  },
+  {
+    path: "/minutes/upload",
+    element: (
+      <Layout user={null} onLogout={() => {}}>
+        <UploadMinutes />
+      </Layout>
+    ),
+  },
+  {
+    path: "/minutes/:id",
+    element: (
+      <Layout user={null} onLogout={() => {}}>
+        <MinutesViewer />
+      </Layout>
+    ),
+  },
+  {
+    path: "/calendar",
+    element: (
+      <Layout user={null} onLogout={() => {}}>
+        <MeetingCalendar />
+      </Layout>
+    ),
+  },
+  {
+    path: "/reports",
+    element: (
+      <Layout user={null} onLogout={() => {}}>
+        <Reports />
+      </Layout>
+    ),
+  },
+  {
+    path: "*",
+    element: (
+      <Layout user={null} onLogout={() => {}}>
+        <NotFound />
+      </Layout>
+    ),
+  },
+];

@@ -3,9 +3,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
-import Router from "./routes";
+import { router } from "./routes";
 
 const queryClient = new QueryClient();
 
@@ -17,7 +17,15 @@ const App = () => {
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <Router />
+            <Routes>
+              {router.map((route) => (
+                <Route
+                  key={route.path}
+                  path={route.path}
+                  element={route.element}
+                />
+              ))}
+            </Routes>
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>

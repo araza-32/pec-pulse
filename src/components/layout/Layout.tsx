@@ -1,6 +1,5 @@
 
 import { useState } from "react";
-import { Outlet } from "react-router-dom";
 import { Header } from "./Header";
 import { Sidebar } from "./Sidebar";
 import { User } from "@/types";
@@ -8,9 +7,10 @@ import { User } from "@/types";
 interface LayoutProps {
   user: User | null;
   onLogout: () => void;
+  children: React.ReactNode;
 }
 
-export function Layout({ user, onLogout }: LayoutProps) {
+export function Layout({ user, onLogout, children }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
@@ -39,7 +39,7 @@ export function Layout({ user, onLogout }: LayoutProps) {
           onClick={closeSidebar}
         >
           <div className="container py-6">
-            <Outlet />
+            {children}
           </div>
         </main>
       </div>
