@@ -19,19 +19,23 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { meetingMinutes } from "@/data/mockData";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { useWorkbodies } from "@/hooks/useWorkbodies";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { ManualMemberAddition } from "@/components/workbody/ManualMemberAddition";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { MeetingMinutes } from "@/types";
+import { Link } from "react-router-dom";
 
 export default function WorkbodyDetail() {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("overview");
   const [showManualAddition, setShowManualAddition] = useState(false);
+  const [minutes, setMinutes] = useState<MeetingMinutes[]>([]);
+  const [isLoadingMinutes, setIsLoadingMinutes] = useState(false);
   
   // Use the useWorkbodies hook to fetch workbody data
   const { workbodies, isLoading, refetch } = useWorkbodies();
@@ -39,8 +43,54 @@ export default function WorkbodyDetail() {
   // Find the workbody with the matching ID
   const workbody = workbodies.find((w) => w.id === id);
   
-  // Get meeting minutes for this workbody (still using mock data for now)
-  const minutes = meetingMinutes.filter((m) => m.workbodyId === id);
+  // Fetch meeting minutes for this workbody
+  useEffect(() => {
+    const fetchMinutes = async () => {
+      if (!id) return;
+      
+      setIsLoadingMinutes(true);
+      try {
+        const { data, error } = await supabase
+          .from('meeting_minutes')
+          .select('*')
+          .eq('workbody_id', id);
+        
+        if (error) {
+          console.error("Error fetching meeting minutes:", error);
+          throw error;
+        }
+        
+        if (data) {
+          console.log("Meeting minutes fetched:", data);
+          const formattedMinutes = data.map(item => ({
+            id: item.id,
+            workbodyId: item.workbody_id,
+            date: item.date,
+            location: item.location,
+            agendaItems: item.agenda_items,
+            actionsAgreed: item.actions_agreed,
+            documentUrl: item.file_url,
+            uploadedAt: item.uploaded_at,
+            uploadedBy: item.uploaded_by || ""
+          }));
+          setMinutes(formattedMinutes);
+        }
+      } catch (error) {
+        console.error("Failed to fetch meeting minutes", error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch meeting minutes",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoadingMinutes(false);
+      }
+    };
+    
+    if (id) {
+      fetchMinutes();
+    }
+  }, [id, toast]);
 
   // State to track if we should hide error alerts
   const [hideErrors, setHideErrors] = useState(false);
@@ -140,6 +190,14 @@ export default function WorkbodyDetail() {
     });
   };
 
+  // Sort minutes by date in descending order
+  const sortedMinutes = [...minutes].sort((a, b) => 
+    new Date(b.date).getTime() - new Date(a.date).getTime()
+  );
+
+  // Get the latest meeting from sorted minutes
+  const latestMeeting = sortedMinutes.length > 0 ? sortedMinutes[0] : null;
+
   return (
     <div className="space-y-6">
       <div>
@@ -227,69 +285,66 @@ export default function WorkbodyDetail() {
             </CardContent>
           </Card>
 
-          {minutes.length > 0 && (
+          {latestMeeting && (
             <Card>
               <CardHeader>
                 <CardTitle>Latest Meeting</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {minutes
-                  .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                  .slice(0, 1)
-                  .map((meeting) => (
-                    <div key={meeting.id} className="space-y-4">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span>
-                          {new Date(meeting.date).toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })}
-                        </span>
-                      </div>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span>
+                      {new Date(latestMeeting.date).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
+                    </span>
+                  </div>
 
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-muted-foreground" />
-                        <span>{meeting.location}</span>
-                      </div>
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    <span>{latestMeeting.location}</span>
+                  </div>
 
-                      <Separator />
+                  <Separator />
 
-                      <div>
-                        <h4 className="mb-2 font-medium">Agenda Items</h4>
-                        <ul className="space-y-1">
-                          {meeting.agendaItems.map((item, index) => (
-                            <li key={index} className="flex items-start gap-2 text-sm">
-                              <span className="mt-0.5 h-1.5 w-1.5 rounded-full bg-pec-green" />
-                              {item}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
+                  <div>
+                    <h4 className="mb-2 font-medium">Agenda Items</h4>
+                    <ul className="space-y-1">
+                      {latestMeeting.agendaItems.map((item, index) => (
+                        <li key={index} className="flex items-start gap-2 text-sm">
+                          <span className="mt-0.5 h-1.5 w-1.5 rounded-full bg-pec-green" />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
 
-                      <Separator />
+                  <Separator />
 
-                      <div>
-                        <h4 className="mb-2 font-medium">Actions Agreed</h4>
-                        <ul className="space-y-1">
-                          {meeting.actionsAgreed.map((action, index) => (
-                            <li key={index} className="flex items-start gap-2 text-sm">
-                              <span className="mt-0.5 h-1.5 w-1.5 rounded-full bg-pec-gold" />
-                              {action}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
+                  <div>
+                    <h4 className="mb-2 font-medium">Actions Agreed</h4>
+                    <ul className="space-y-1">
+                      {latestMeeting.actionsAgreed.map((action, index) => (
+                        <li key={index} className="flex items-start gap-2 text-sm">
+                          <span className="mt-0.5 h-1.5 w-1.5 rounded-full bg-pec-gold" />
+                          {action}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
 
-                      <div className="flex justify-end">
-                        <Button variant="outline" size="sm">
-                          <FileText className="mr-2 h-4 w-4" />
-                          View Full Minutes
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+                  <div className="flex justify-end">
+                    <Link to={`/minutes/${latestMeeting.id}`}>
+                      <Button variant="outline" size="sm">
+                        <FileText className="mr-2 h-4 w-4" />
+                        View Full Minutes
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           )}
@@ -301,33 +356,39 @@ export default function WorkbodyDetail() {
               <CardTitle>Meeting Minutes</CardTitle>
             </CardHeader>
             <CardContent>
-              {minutes.length > 0 ? (
+              {isLoadingMinutes ? (
                 <div className="space-y-4">
-                  {minutes
-                    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                    .map((meeting) => (
-                      <Card key={meeting.id}>
-                        <CardContent className="p-4">
-                          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-                            <div>
-                              <h3 className="font-semibold">
-                                Meeting on{" "}
-                                {new Date(meeting.date).toLocaleDateString("en-US", {
-                                  year: "numeric",
-                                  month: "long",
-                                  day: "numeric",
-                                })}
-                              </h3>
-                              <p className="text-sm text-muted-foreground">{meeting.location}</p>
-                            </div>
+                  {[1, 2, 3].map((i) => (
+                    <Skeleton key={i} className="h-16 w-full" />
+                  ))}
+                </div>
+              ) : minutes.length > 0 ? (
+                <div className="space-y-4">
+                  {sortedMinutes.map((meeting) => (
+                    <Card key={meeting.id}>
+                      <CardContent className="p-4">
+                        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+                          <div>
+                            <h3 className="font-semibold">
+                              Meeting on{" "}
+                              {new Date(meeting.date).toLocaleDateString("en-US", {
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                              })}
+                            </h3>
+                            <p className="text-sm text-muted-foreground">{meeting.location}</p>
+                          </div>
+                          <Link to={`/minutes/${meeting.id}`}>
                             <Button variant="outline" size="sm">
                               <FileText className="mr-2 h-4 w-4" />
                               View Minutes
                             </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                          </Link>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
               ) : (
                 <p>No meeting minutes available</p>
