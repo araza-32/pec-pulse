@@ -13,6 +13,7 @@ import Reports from "./pages/Reports";
 import NotFound from "./pages/NotFound";
 import { useAuth } from "./contexts/AuthContext";
 import { Navigate } from "react-router-dom";
+import { User } from "./types";
 
 // Protected route component
 const ProtectedRoute = ({ children }) => {
@@ -60,6 +61,7 @@ export const protectedRoutes = [
     element: <WorkbodyDetail />,
   },
   {
+    // Added path for minutes/upload to match the sidebar nav link
     path: "/minutes/upload",
     element: <UploadMinutes />,
   },
@@ -75,6 +77,11 @@ export const protectedRoutes = [
     path: "/reports",
     element: <Reports />,
   },
+  // Added an additional route for the upload path mentioned in the sidebar
+  {
+    path: "/upload",
+    element: <UploadMinutes />,
+  },
 ];
 
 // For use in the App component
@@ -84,7 +91,16 @@ export const router = [
     ...route,
     element: (
       <ProtectedRoute>
-        <Layout user={{}} onLogout={() => {}}>
+        <Layout 
+          user={{
+            id: "user-id",
+            name: "User",
+            email: "user@example.com",
+            role: "admin",
+            workbodyId: undefined
+          }} 
+          onLogout={() => {}}
+        >
           {route.element}
         </Layout>
       </ProtectedRoute>

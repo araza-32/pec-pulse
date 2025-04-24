@@ -18,7 +18,8 @@ export function Layout({ user, onLogout, children }: LayoutProps) {
   // Use authentication data from context if available
   const currentUser = session?.user ? {
     name: session.user.email || 'User',
-    role: session.user.role || 'user'
+    role: session.user.role || 'user',
+    workbodyId: session.user.workbodyId
   } : user;
   
   const handleLogout = () => {

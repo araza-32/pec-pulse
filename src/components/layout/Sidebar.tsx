@@ -25,7 +25,7 @@ import { useWorkbodies } from "@/hooks/useWorkbodies";
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
-  userRole: 'admin' | 'secretary' | 'chairman';
+  userRole: string;
   userWorkbodyId?: string;
 }
 
@@ -115,7 +115,7 @@ export function Sidebar({
 }
 
 interface NavItemsProps {
-  userRole: 'admin' | 'secretary' | 'chairman';
+  userRole: string;
   showAdminOptions: boolean;
   isCoordinationUser: boolean;
 }
@@ -157,7 +157,7 @@ function SidebarNavItems({ userRole, showAdminOptions, isCoordinationUser }: Nav
           </NavLink>
           
           <NavLink
-            to="/manage-workbodies"
+            to="/workbodies"
             className={({ isActive }) =>
               cn(
                 "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
@@ -190,7 +190,7 @@ function SidebarNavItems({ userRole, showAdminOptions, isCoordinationUser }: Nav
       
       {(userRole === 'secretary' || showAdminOptions) && (
         <NavLink
-          to="/upload"
+          to="/minutes/upload"
           className={({ isActive }) =>
             cn(
               "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
@@ -228,7 +228,7 @@ function SidebarNavItems({ userRole, showAdminOptions, isCoordinationUser }: Nav
 interface WorkbodySectionProps {
   isLoading: boolean;
   showAdminOptions: boolean;
-  userRole: 'admin' | 'secretary' | 'chairman';
+  userRole: string;
   isCoordinationUser: boolean;
   filteredWorkbodies: any[];
   committees: any[];
@@ -294,7 +294,7 @@ function WorkbodySection({
           {filteredWorkbodies.map(workbody => (
             <NavLink
               key={workbody.id}
-              to={`/workbody/${workbody.id}`}
+              to={`/workbodies/${workbody.id}`}
               className={({ isActive }) =>
                 cn(
                   "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
