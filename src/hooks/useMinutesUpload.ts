@@ -2,13 +2,20 @@
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useWorkbodies } from "@/hooks/useWorkbodies";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 export const useMinutesUpload = () => {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [isUploading, setIsUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedWorkbodyType, setSelectedWorkbodyType] = useState<string>("");
   const [selectedWorkbody, setSelectedWorkbody] = useState<string>("");
+  const [meetingDate, setMeetingDate] = useState<string>("");
+  const [meetingLocation, setMeetingLocation] = useState<string>("");
+  const [agendaItems, setAgendaItems] = useState<string>("");
+  const [actionsAgreed, setActionsAgreed] = useState<string>("");
 
   // Mock user role - in real app this would come from auth context
   const [userRole] = useState<"admin" | "coordination" | "secretary">(
@@ -16,10 +23,12 @@ export const useMinutesUpload = () => {
   );
   const userWorkbodyId = (window as any).MOCK_USER_WORKBODY_ID || null;
 
-  const { workbodies = [], isLoading } = useWorkbodies();
+  const { workbodies = [], isLoading, refetch } = useWorkbodies();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate form fields
     if (!selectedWorkbodyType) {
       toast({
         title: "Select Workbody Type",
@@ -36,15 +45,114 @@ export const useMinutesUpload = () => {
       });
       return;
     }
+    if (!meetingDate) {
+      toast({
+        title: "Meeting Date Required",
+        description: "Please provide the date when the meeting was held.",
+        variant: "destructive"
+      });
+      return;
+    }
+    if (!selectedFile) {
+      toast({
+        title: "Minutes File Required",
+        description: "Please upload the minutes file in PDF format.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsUploading(true);
-    setTimeout(() => {
-      setIsUploading(false);
-      setSelectedFile(null);
+
+    try {
+      // 1. Upload the PDF file to Supabase Storage
+      const fileExt = selectedFile.name.split('.').pop();
+      const fileName = `${Date.now()}-${selectedWorkbody}`;
+      const filePath = `minutes/${fileName}.${fileExt}`;
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('workbody-documents')
+        .upload(filePath, selectedFile, {
+          cacheControl: '3600',
+          upsert: false
+        });
+        
+      if (uploadError) {
+        throw new Error(`Error uploading file: ${uploadError.message}`);
+      }
+      
+      // Get public URL for the uploaded file
+      const { data: { publicUrl } } = supabase.storage
+        .from('workbody-documents')
+        .getPublicUrl(filePath);
+
+      // 2. Extract the agenda items and actions from textarea into arrays
+      const agendaItemsArray = agendaItems.split('\n').filter(item => item.trim() !== '');
+      const actionsAgreedArray = actionsAgreed.split('\n').filter(item => item.trim() !== '');
+      
+      // 3. Store meeting details in the database
+      const { data: minutesData, error: dbError } = await supabase
+        .from('meeting_minutes')
+        .insert({
+          workbody_id: selectedWorkbody,
+          date: meetingDate,
+          location: meetingLocation,
+          agenda_items: agendaItemsArray,
+          actions_agreed: actionsAgreedArray,
+          file_url: publicUrl,
+          uploaded_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+        
+      if (dbError) {
+        throw new Error(`Error saving meeting data: ${dbError.message}`);
+      }
+
+      // 4. Update the workbody statistics
+      const workbody = workbodies.find(wb => wb.id === selectedWorkbody);
+      if (workbody) {
+        const now = new Date();
+        const thisYear = now.getFullYear();
+        const meetingDateObj = new Date(meetingDate);
+        const isMeetingThisYear = meetingDateObj.getFullYear() === thisYear;
+        
+        await supabase
+          .from('workbodies')
+          .update({
+            total_meetings: workbody.totalMeetings + 1,
+            meetings_this_year: isMeetingThisYear ? workbody.meetingsThisYear + 1 : workbody.meetingsThisYear,
+            actions_agreed: workbody.actionsAgreed + actionsAgreedArray.length
+          })
+          .eq('id', selectedWorkbody);
+      }
+
+      // Success notification
       toast({
         title: "Upload successful",
         description: "Meeting minutes have been uploaded successfully.",
       });
-    }, 2000);
+      
+      // Reset form and navigate to view the uploaded minutes
+      setSelectedFile(null);
+      setMeetingDate("");
+      setMeetingLocation("");
+      setAgendaItems("");
+      setActionsAgreed("");
+      
+      // Navigate to the minutes viewer
+      navigate(`/minutes/${minutesData.id}`);
+      
+    } catch (error: any) {
+      console.error("Upload error:", error);
+      toast({
+        title: "Upload failed",
+        description: error.message || "There was a problem uploading the minutes.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -58,6 +166,14 @@ export const useMinutesUpload = () => {
     selectedFile,
     selectedWorkbodyType,
     selectedWorkbody,
+    meetingDate,
+    setMeetingDate,
+    meetingLocation,
+    setMeetingLocation,
+    agendaItems,
+    setAgendaItems,
+    actionsAgreed,
+    setActionsAgreed,
     userRole,
     workbodies,
     isLoading,

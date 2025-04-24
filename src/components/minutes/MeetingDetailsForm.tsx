@@ -9,23 +9,51 @@ interface MeetingDetailsFormProps {
   selectedFile: File | null;
   isUploading: boolean;
   onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  meetingDate: string;
+  setMeetingDate: (value: string) => void;
+  meetingLocation: string;
+  setMeetingLocation: (value: string) => void;
+  agendaItems: string;
+  setAgendaItems: (value: string) => void;
+  actionsAgreed: string;
+  setActionsAgreed: (value: string) => void;
 }
 
 export function MeetingDetailsForm({
   selectedFile,
   isUploading,
-  onFileChange
+  onFileChange,
+  meetingDate,
+  setMeetingDate,
+  meetingLocation,
+  setMeetingLocation,
+  agendaItems,
+  setAgendaItems,
+  actionsAgreed,
+  setActionsAgreed
 }: MeetingDetailsFormProps) {
   return (
     <>
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="meeting-date">Meeting Date</Label>
-          <Input id="meeting-date" type="date" required />
+          <Input 
+            id="meeting-date" 
+            type="date" 
+            required 
+            value={meetingDate}
+            onChange={(e) => setMeetingDate(e.target.value)}
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="meeting-location">Meeting Location</Label>
-          <Input id="meeting-location" placeholder="e.g., PEC Headquarters, Islamabad" required />
+          <Input 
+            id="meeting-location" 
+            placeholder="e.g., PEC Headquarters, Islamabad" 
+            required
+            value={meetingLocation}
+            onChange={(e) => setMeetingLocation(e.target.value)} 
+          />
         </div>
       </div>
 
@@ -36,6 +64,8 @@ export function MeetingDetailsForm({
           placeholder="List the agenda items discussed in the meeting"
           rows={3}
           required
+          value={agendaItems}
+          onChange={(e) => setAgendaItems(e.target.value)}
         />
       </div>
 
@@ -46,6 +76,8 @@ export function MeetingDetailsForm({
           placeholder="List the actions agreed upon in the meeting"
           rows={4}
           required
+          value={actionsAgreed}
+          onChange={(e) => setActionsAgreed(e.target.value)}
         />
       </div>
 

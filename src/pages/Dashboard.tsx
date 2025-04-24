@@ -1,10 +1,11 @@
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useWorkbodies } from "@/hooks/useWorkbodies";
 import { OverviewStats } from "@/components/dashboard/OverviewStats";
 import { UpcomingMeetings } from "@/components/dashboard/UpcomingMeetings";
 import { WorkbodyDistribution } from "@/components/dashboard/WorkbodyDistribution";
 import { ActionCompletionProgress } from "@/components/dashboard/ActionCompletionProgress";
+import { ExpiringTaskForceAlert } from "@/components/workbody/ExpiringTaskForceAlert"; 
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -19,6 +20,27 @@ export default function Dashboard() {
   const filteredWorkbodies = shouldShowAllWorkbodies
     ? workbodies
     : workbodies.filter(w => w.id === user.workbodyId);
+
+  // Sort workbodies alphabetically
+  const sortedFilteredWorkbodies = [...filteredWorkbodies].sort((a, b) => 
+    a.name.localeCompare(b.name)
+  );
+    
+  // Get task forces that are expiring within the next 30 days
+  const today = new Date();
+  const thirtyDaysFromNow = new Date();
+  thirtyDaysFromNow.setDate(today.getDate() + 30);
+  
+  const expiringTaskForces = useMemo(() => {
+    return workbodies
+      .filter(wb => 
+        wb.type === 'task-force' && 
+        wb.endDate && 
+        new Date(wb.endDate) >= today && 
+        new Date(wb.endDate) <= thirtyDaysFromNow
+      )
+      .sort((a, b) => new Date(a.endDate!).getTime() - new Date(b.endDate!).getTime());
+  }, [workbodies]);
 
   const initialMeetings = [
     {
@@ -48,10 +70,6 @@ export default function Dashboard() {
       ],
     },
   ];
-  
-  const today = new Date();
-  const thirtyDaysFromNow = new Date();
-  thirtyDaysFromNow.setDate(today.getDate() + 30);
   
   const upcomingMeetings = initialMeetings?.filter(meeting => {
     const meetingDate = new Date(meeting.date);
@@ -95,7 +113,7 @@ export default function Dashboard() {
   }
 
   if (user?.role === 'secretary' && !isCoordinationUser) {
-    const workbody = filteredWorkbodies[0];
+    const workbody = sortedFilteredWorkbodies[0];
     if (!workbody) {
       return (
         <div className="space-y-6">
@@ -113,6 +131,11 @@ export default function Dashboard() {
             Workbody Overview and Statistics
           </p>
         </div>
+        
+        {expiringTaskForces.length > 0 && (
+          <ExpiringTaskForceAlert expiringTaskForces={expiringTaskForces} />
+        )}
+        
         <OverviewStats stats={{
           totalWorkbodies: workbody.totalMeetings,
           meetingsThisYear: workbody.meetingsThisYear,
@@ -134,6 +157,10 @@ export default function Dashboard() {
         </p>
       </div>
 
+      {expiringTaskForces.length > 0 && (
+        <ExpiringTaskForceAlert expiringTaskForces={expiringTaskForces} />
+      )}
+
       <OverviewStats stats={{
         totalWorkbodies: stats.totalWorkbodies,
         meetingsThisYear: stats.meetingsThisYear,
@@ -150,7 +177,7 @@ export default function Dashboard() {
         }} />
       </div>
 
-      <ActionCompletionProgress workbodies={filteredWorkbodies} />
+      <ActionCompletionProgress workbodies={sortedFilteredWorkbodies} />
     </div>
   );
 }

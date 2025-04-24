@@ -11,6 +11,14 @@ export default function UploadMinutes() {
     selectedFile,
     selectedWorkbodyType,
     selectedWorkbody,
+    meetingDate,
+    setMeetingDate,
+    meetingLocation,
+    setMeetingLocation,
+    agendaItems,
+    setAgendaItems,
+    actionsAgreed,
+    setActionsAgreed,
     userRole,
     workbodies,
     isLoading,
@@ -21,12 +29,16 @@ export default function UploadMinutes() {
     setSelectedWorkbody
   } = useMinutesUpload();
 
-  // Filtering logic based on user role
+  // Filtering logic based on user role and sorting alphabetically
   const availableWorkbodies = useMemo(() => {
+    let filteredWorkbodies = workbodies;
+    
     if (userRole === "secretary") {
-      return workbodies.filter(wb => wb.id === userWorkbodyId);
+      filteredWorkbodies = workbodies.filter(wb => wb.id === userWorkbodyId);
     }
-    return workbodies;
+    
+    // Sort alphabetically by name
+    return filteredWorkbodies.sort((a, b) => a.name.localeCompare(b.name));
   }, [workbodies, userRole, userWorkbodyId]);
 
   return (
@@ -55,6 +67,14 @@ export default function UploadMinutes() {
               selectedFile={selectedFile}
               isUploading={isUploading}
               onFileChange={handleFileChange}
+              meetingDate={meetingDate}
+              setMeetingDate={setMeetingDate}
+              meetingLocation={meetingLocation}
+              setMeetingLocation={setMeetingLocation}
+              agendaItems={agendaItems}
+              setAgendaItems={setAgendaItems}
+              actionsAgreed={actionsAgreed}
+              setActionsAgreed={setActionsAgreed}
             />
           </form>
         </CardContent>
