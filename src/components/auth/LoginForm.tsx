@@ -8,7 +8,11 @@ import { useToast } from "@/components/ui/use-toast";
 import { useAuthHandlers } from "@/hooks/useAuthHandlers";
 import { useNavigate } from "react-router-dom";
 
-export function LoginForm({ onLogin }: { onLogin: ((session: any) => void) | null }) {
+interface LoginFormProps {
+  onLogin: (email: string, password: string) => Promise<void>;
+}
+
+export function LoginForm({ onLogin }: LoginFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -17,31 +21,21 @@ export function LoginForm({ onLogin }: { onLogin: ((session: any) => void) | nul
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  const handleSuccessfulLogin = (session: any) => {
-    if (onLogin) {
-      onLogin(session);
-    } else {
-      navigate('/dashboard');
-    }
-  };
-  
-  const { 
-    handleUserLogin, 
-    handleAdminLogin, 
-    handleCoordinationLogin 
-  } = useAuthHandlers({ 
-    onLogin: handleSuccessfulLogin, 
-    toast, 
-    setError 
-  });
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setIsLoading(true);
     
     try {
-      await handleUserLogin(email, password);
+      await onLogin(email, password);
+      toast({
+        title: "Login Successful",
+        description: `Welcome ${email}`,
+      });
+      navigate('/dashboard');
+    } catch (err) {
+      console.error("Login error:", err);
+      setError("Failed to login. Please check your credentials.");
     } finally {
       setIsLoading(false);
     }
@@ -50,7 +44,15 @@ export function LoginForm({ onLogin }: { onLogin: ((session: any) => void) | nul
   const handleAdminClick = async () => {
     setIsAdminLoading(true);
     try {
-      await handleAdminLogin();
+      await onLogin("admin@pec.org.pk", "Coord@pec!@#123");
+      toast({
+        title: "Admin Login Successful",
+        description: "You are now logged in as admin with full access.",
+      });
+      navigate('/dashboard');
+    } catch (err) {
+      console.error('Admin login error:', err);
+      setError('Failed to login as admin');
     } finally {
       setIsAdminLoading(false);
     }
@@ -59,7 +61,15 @@ export function LoginForm({ onLogin }: { onLogin: ((session: any) => void) | nul
   const handleCoordinationClick = async () => {
     setIsAdminLoading(true);
     try {
-      await handleCoordinationLogin();
+      await onLogin("coordination@pec.org.pk", "Coord@123!@#@");
+      toast({
+        title: "Coordination Login Successful",
+        description: "You are now logged in as coordination with full access.",
+      });
+      navigate('/dashboard');
+    } catch (err) {
+      console.error('Coordination login error:', err);
+      setError('Failed to login as coordination');
     } finally {
       setIsAdminLoading(false);
     }

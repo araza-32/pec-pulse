@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 
 // Define the User type with specific role types
 type UserRole = 'admin' | 'secretary' | 'chairman';
@@ -29,6 +29,33 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Check for existing session on mount
+  useEffect(() => {
+    const checkExistingSession = () => {
+      const isAuthenticated = localStorage.getItem('isAuthenticated');
+      if (isAuthenticated === 'true') {
+        const userId = localStorage.getItem('userId');
+        const userRole = localStorage.getItem('userRole') as UserRole;
+        const workbodyId = localStorage.getItem('workbodyId') || undefined;
+        
+        // Reconstruct user from localStorage
+        if (userId && userRole) {
+          setUser({
+            id: userId,
+            name: userRole === 'admin' ? 'Admin User' : 
+                 userRole === 'secretary' ? 'Secretary User' : 'Chairman User',
+            email: userRole === 'admin' ? 'admin@pec.org.pk' : 
+                  userRole === 'secretary' ? 'secretary@pec.org.pk' : 'chairman@pec.org.pk',
+            role: userRole,
+            workbodyId
+          });
+        }
+      }
+    };
+    
+    checkExistingSession();
+  }, []);
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);

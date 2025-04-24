@@ -11,8 +11,15 @@ export default function Login() {
     return <Navigate to="/dashboard" replace />;
   }
 
-  // Use login function from context or fallback
-  const handleLogin = login;
+  // Use login function from context
+  const handleLogin = async (email: string, password: string) => {
+    try {
+      await login(email, password);
+    } catch (error) {
+      console.error("Login error:", error);
+      throw error;
+    }
+  };
 
   return <LoginForm onLogin={handleLogin} />;
 }
