@@ -16,7 +16,7 @@ import { Navigate } from "react-router-dom";
 import { User } from "./types";
 
 // Protected route component
-const ProtectedRoute = ({ children }) => {
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { session } = useAuth();
   
   if (!session) {

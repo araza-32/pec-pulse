@@ -4,17 +4,15 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 
 export default function Login() {
-  const { session, signIn } = useAuth();
+  const { session, login } = useAuth();
 
   // Redirect to dashboard if already logged in
   if (session) {
     return <Navigate to="/dashboard" replace />;
   }
 
-  // Use signIn function from context or fallback to a function that does nothing
-  const handleLogin = signIn || ((user) => {
-    console.warn("No signIn function available in auth context");
-  });
+  // Use login function from context or fallback
+  const handleLogin = login;
 
   return <LoginForm onLogin={handleLogin} />;
 }

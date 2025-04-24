@@ -13,18 +13,18 @@ interface LayoutProps {
 
 export function Layout({ user, onLogout, children }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { session, signOut } = useAuth();
+  const { session, logout } = useAuth();
   
   // Use authentication data from context if available
-  const currentUser = session?.user ? {
-    name: session.user.email || 'User',
-    role: session.user.role || 'user',
-    workbodyId: session.user.workbodyId
+  const currentUser = session ? {
+    name: session.name || 'User',
+    role: session.role || 'user',
+    workbodyId: session.workbodyId
   } : user;
   
   const handleLogout = () => {
-    if (signOut) {
-      signOut();
+    if (logout) {
+      logout();
     }
     if (onLogout) {
       onLogout();

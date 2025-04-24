@@ -9,6 +9,7 @@ interface User {
   name: string;
   email: string;
   role: UserRole;
+  workbodyId?: string;
 }
 
 interface AuthContextType {
@@ -17,6 +18,10 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
+  // Add these properties to match what's being used in other components
+  session: User | null;
+  signIn: (email: string, password: string) => Promise<void>;
+  signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -35,11 +40,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       let role: UserRole = 'admin';
       let id = '1';
       let name = 'Admin User';
+      let workbodyId: string | undefined = undefined;
       
       if (email.includes('secretary')) {
         role = 'secretary';
         id = '2';
         name = 'Secretary User';
+        workbodyId = 'wb-1'; // Mock workbody ID for secretary
       } else if (email.includes('chairman')) {
         role = 'chairman';
         id = '3';
@@ -47,16 +54,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       
       // Set the user with the proper typed role
-      setUser({
+      const userData = {
         id,
         name,
         email,
-        role
-      });
+        role,
+        workbodyId
+      };
+      
+      setUser(userData);
       
       localStorage.setItem('isAuthenticated', 'true');
       localStorage.setItem('userRole', role);
       localStorage.setItem('userId', id);
+      if (workbodyId) {
+        localStorage.setItem('workbodyId', workbodyId);
+      }
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -74,6 +87,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.removeItem('isAuthenticated');
       localStorage.removeItem('userRole');
       localStorage.removeItem('userId');
+      localStorage.removeItem('workbodyId');
     } catch (error) {
       console.error('Logout error:', error);
       throw error;
@@ -89,7 +103,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         isLoading,
         login,
         logout,
-        isAuthenticated: !!user
+        isAuthenticated: !!user,
+        // Map existing functions to the new property names
+        session: user,
+        signIn: login,
+        signOut: logout
       }}
     >
       {children}
