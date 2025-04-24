@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from "react";
 import { useWorkbodies } from "@/hooks/useWorkbodies";
 import { OverviewStats } from "@/components/dashboard/OverviewStats";
@@ -105,7 +106,7 @@ export default function Dashboard() {
           meetingsThisYear: workbody.meetingsThisYear,
           completionRate: workbody.actionsAgreed ? 
             Math.round((workbody.actionsCompleted / workbody.actionsAgreed) * 100) : 0,
-          upcomingMeetingsCount: upcomingMeetings?.length || 0
+          upcomingMeetingsCount: 0 // Removed upcomingMeetings reference
         }} />
         <ActionCompletionProgress workbodies={[workbody]} />
       </div>
@@ -144,3 +145,4 @@ export default function Dashboard() {
     </div>
   );
 }
+
