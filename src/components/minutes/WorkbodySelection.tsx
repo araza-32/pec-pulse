@@ -1,5 +1,13 @@
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const WORKBODY_TYPES = [
   { value: "committee", label: "Committee" },
@@ -34,40 +42,46 @@ export function WorkbodySelection({
     <div className="grid gap-4 md:grid-cols-2">
       <div className="space-y-2">
         <Label htmlFor="workbody-type-select">Select Workbody Type</Label>
-        <select
-          id="workbody-type-select"
-          className="w-full border rounded px-3 py-2 text-sm"
+        <Select
           value={selectedWorkbodyType}
-          onChange={e => {
-            onWorkbodyTypeChange(e.target.value);
+          onValueChange={(value) => {
+            onWorkbodyTypeChange(value);
             onWorkbodyChange(""); // Reset workbody if type changes
           }}
-          required
           disabled={isLoading || disabled}
         >
-          <option value="">Select type...</option>
-          {WORKBODY_TYPES.map(wbt => (
-            <option key={wbt.value} value={wbt.value}>
-              {wbt.label}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger id="workbody-type-select">
+            <SelectValue placeholder="Select type..." />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="select-placeholder" disabled>Select type...</SelectItem>
+            {WORKBODY_TYPES.map(wbt => (
+              <SelectItem key={wbt.value} value={wbt.value}>
+                {wbt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       <div className="space-y-2">
         <Label htmlFor="workbody-select">Select Workbody</Label>
-        <select
-          id="workbody-select"
-          className="w-full border rounded px-3 py-2 text-sm"
+        <Select
           value={selectedWorkbody}
-          onChange={e => onWorkbodyChange(e.target.value)}
-          required
-          disabled={!selectedWorkbodyType || filteredWorkbodies.length === 0}
+          onValueChange={onWorkbodyChange}
+          disabled={!selectedWorkbodyType || filteredWorkbodies.length === 0 || isLoading || disabled}
         >
-          <option value="">Select...</option>
-          {filteredWorkbodies.map(wb => (
-            <option key={wb.id} value={wb.id}>{wb.name}</option>
-          ))}
-        </select>
+          <SelectTrigger id="workbody-select">
+            <SelectValue placeholder="Select workbody..." />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="select-placeholder" disabled>Select workbody...</SelectItem>
+            {filteredWorkbodies.map(wb => (
+              <SelectItem key={wb.id} value={wb.id}>
+                {wb.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
     </div>
   );

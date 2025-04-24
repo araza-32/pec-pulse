@@ -1,135 +1,108 @@
 
-import { createContext, useContext, useEffect, useState } from "react";
-import { User } from "@/types";
-import { supabase } from "@/integrations/supabase/client";
+import React, { createContext, useContext, useState, ReactNode } from 'react';
+
+// Define the User type with specific role types
+type UserRole = 'admin' | 'secretary' | 'chairman';
+
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+}
 
 interface AuthContextType {
-  session: any;
   user: User | null;
   isLoading: boolean;
-  isAuthChecked: boolean;
-  signIn: (userData: any) => void;
-  signOut: () => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  isAuthenticated: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [session, setSession] = useState<any>(null);
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAuthChecked, setIsAuthChecked] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    console.log("AuthProvider: Initializing auth");
-    
-    // Set up auth state listener first
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, currentSession) => {
-        console.log("Auth state changed:", event, currentSession?.user?.email);
-        setSession(currentSession);
-        
-        if (currentSession) {
-          handleProfileFetch(currentSession);
-        } else {
-          setUser(null);
-          localStorage.removeItem('user');
-          setIsLoading(false);
-        }
-        
-        // Mark auth as checked regardless of the result
-        setIsAuthChecked(true);
-      }
-    );
-
-    // Then check initial session
-    supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
-      console.log("Initial session check:", initialSession?.user?.email);
-      
-      if (initialSession) {
-        setSession(initialSession);
-        handleProfileFetch(initialSession);
-      } else {
-        setIsLoading(false);
-        setIsAuthChecked(true);
-      }
-    });
-    
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  const handleProfileFetch = async (currentSession: any) => {
+  const login = async (email: string, password: string) => {
+    setIsLoading(true);
     try {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', currentSession.user.id)
-        .maybeSingle();
-
-      const userRole = profile?.role === 'admin' || profile?.role === 'secretary' || profile?.role === 'chairman' 
-        ? profile.role as 'admin' | 'secretary' | 'chairman'
-        : 'member' as 'admin' | 'secretary' | 'chairman';
-
-      const userObj = {
-        id: currentSession.user.id,
-        name: currentSession.user.email?.split('@')[0] || 'User',
-        email: currentSession.user.email || '',
-        role: userRole,
-      };
+      // Mock login - in a real app, this would be an API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      setUser(userObj);
-      localStorage.setItem('user', JSON.stringify(userObj));
-    } catch (e) {
-      console.error("Error fetching user profile:", e);
+      // Mock user data based on email
+      let role: UserRole = 'admin';
+      let id = '1';
+      let name = 'Admin User';
+      
+      if (email.includes('secretary')) {
+        role = 'secretary';
+        id = '2';
+        name = 'Secretary User';
+      } else if (email.includes('chairman')) {
+        role = 'chairman';
+        id = '3';
+        name = 'Chairman User';
+      }
+      
+      // Set the user with the proper typed role
+      setUser({
+        id,
+        name,
+        email,
+        role
+      });
+      
+      localStorage.setItem('isAuthenticated', 'true');
+      localStorage.setItem('userRole', role);
+      localStorage.setItem('userId', id);
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
     } finally {
       setIsLoading(false);
-      setIsAuthChecked(true);
     }
   };
 
-  // Add the missing signIn function
-  const signIn = (userData: any) => {
-    setSession(userData);
-    if (userData?.user) {
-      const { user: authUser } = userData;
-      const userObj = {
-        id: authUser.id,
-        name: authUser.email?.split('@')[0] || 'User',
-        email: authUser.email || '',
-        role: 'admin', // Default role until profile is fetched
-      };
-      setUser(userObj);
-      localStorage.setItem('user', JSON.stringify(userObj));
-      handleProfileFetch(userData);
-    }
-  };
-
-  const signOut = async () => {
+  const logout = async () => {
+    setIsLoading(true);
     try {
-      console.log("Signing out user...");
-      await supabase.auth.signOut();
-      setSession(null);
+      // Mock logout - in a real app, this would be an API call
+      await new Promise(resolve => setTimeout(resolve, 500));
       setUser(null);
-      localStorage.removeItem('user');
-      console.log("User signed out successfully");
+      localStorage.removeItem('isAuthenticated');
+      localStorage.removeItem('userRole');
+      localStorage.removeItem('userId');
     } catch (error) {
-      console.error("Error signing out:", error);
+      console.error('Logout error:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <AuthContext.Provider value={{ session, user, isLoading, isAuthChecked, signIn, signOut }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isLoading,
+        login,
+        logout,
+        isAuthenticated: !!user
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
-}
+};
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
+  
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
+  
   return context;
 };

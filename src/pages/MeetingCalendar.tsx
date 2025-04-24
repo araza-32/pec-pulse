@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import {
   Calendar as CalendarIcon,
@@ -30,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 import { ScheduledMeeting } from "@/types";
 import { workbodies } from "@/data/mockData";
@@ -91,7 +90,6 @@ export default function MeetingCalendar() {
     1
   ).getDay();
 
-  // Generate calendar grid
   const calendarDays = [];
   for (let i = 0; i < firstDayOfMonth; i++) {
     calendarDays.push({ day: 0, isCurrentMonth: false });
@@ -100,7 +98,6 @@ export default function MeetingCalendar() {
     calendarDays.push({ day: i, isCurrentMonth: true });
   }
 
-  // Group meetings by date
   const meetingsByDate: { [key: string]: ScheduledMeeting[] } = {};
   meetings.forEach((meeting) => {
     if (!meetingsByDate[meeting.date]) {
@@ -270,7 +267,6 @@ export default function MeetingCalendar() {
         })}
       </div>
 
-      {/* Add Meeting Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -280,8 +276,7 @@ export default function MeetingCalendar() {
             <div className="space-y-2">
               <Label htmlFor="workbodyId">Workbody</Label>
               <Select
-                name="workbodyId"
-                value={newMeeting.workbodyId}
+                value={newMeeting.workbodyId || "select-workbody"}
                 onValueChange={(value) => handleInputChange({
                   target: { name: "workbodyId", value }
                 } as any)}
@@ -290,6 +285,7 @@ export default function MeetingCalendar() {
                   <SelectValue placeholder="Select a workbody" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="select-workbody" disabled>Select a workbody</SelectItem>
                   {workbodies.map((wb) => (
                     <SelectItem key={wb.id} value={wb.id}>
                       {wb.name}
@@ -366,7 +362,6 @@ export default function MeetingCalendar() {
         </DialogContent>
       </Dialog>
 
-      {/* View Meeting Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>

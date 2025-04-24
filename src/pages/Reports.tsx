@@ -238,7 +238,7 @@ export default function Reports() {
                       <SelectValue placeholder="Select a workbody" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Workbodies</SelectItem>
+                      <SelectItem value="all-workbodies">All Workbodies</SelectItem>
                       {filteredWorkbodies.map(wb => (
                         <SelectItem key={wb.id} value={wb.id}>
                           {wb.name}

@@ -80,7 +80,7 @@ export const OperatingProceduresSection = ({ form }: OperatingProceduresSectionP
                   render={({ field }) => (
                     <FormItem>
                       <FormControl>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} defaultValue={field.value || "physical"}>
                           <SelectTrigger>
                             <SelectValue placeholder="Select mode" />
                           </SelectTrigger>
