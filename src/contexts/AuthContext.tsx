@@ -8,6 +8,7 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthChecked: boolean;
+  signIn: (userData: any) => void;
   signOut: () => Promise<void>;
 }
 
@@ -88,6 +89,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Add the missing signIn function
+  const signIn = (userData: any) => {
+    setSession(userData);
+    if (userData?.user) {
+      const { user: authUser } = userData;
+      const userObj = {
+        id: authUser.id,
+        name: authUser.email?.split('@')[0] || 'User',
+        email: authUser.email || '',
+        role: 'admin', // Default role until profile is fetched
+      };
+      setUser(userObj);
+      localStorage.setItem('user', JSON.stringify(userObj));
+      handleProfileFetch(userData);
+    }
+  };
+
   const signOut = async () => {
     try {
       console.log("Signing out user...");
@@ -102,7 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ session, user, isLoading, isAuthChecked, signOut }}>
+    <AuthContext.Provider value={{ session, user, isLoading, isAuthChecked, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FileSpreadsheet, FileText, Download, Donut } from "lucide-react";
@@ -15,7 +14,6 @@ const generateCSV = (data: any[], headers: string[]) => {
   const dataRows = data.map(row => 
     headers.map(header => {
       const value = row[header];
-      // Handle values that contain commas or quotes
       if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
         return `"${value.replace(/"/g, '""')}"`;
       }
@@ -59,23 +57,18 @@ export default function Reports() {
   }, [sortedWorkbodies, selectedWorkbodyType]);
 
   const handleGenerateReport = () => {
-    // Get data based on selected filters
     let reportData = [];
     let filename = "";
     let content = "";
     
-    // Get workbodies based on filters
     let targetWorkbodies = [];
     
     if (selectedWorkbody) {
-      // Single workbody report
       const workbody = workbodies.find(wb => wb.id === selectedWorkbody);
       if (workbody) targetWorkbodies = [workbody];
     } else if (selectedWorkbodyType !== "all") {
-      // Report for specific workbody type
       targetWorkbodies = workbodies.filter(wb => wb.type === selectedWorkbodyType);
     } else {
-      // All workbodies
       targetWorkbodies = workbodies;
     }
     
@@ -88,10 +81,8 @@ export default function Reports() {
       return;
     }
     
-    // Format for report
     switch (reportType) {
       case "all":
-        // General workbody information
         reportData = targetWorkbodies.map(wb => ({
           Name: wb.name,
           Type: wb.type,
@@ -107,7 +98,6 @@ export default function Reports() {
         break;
         
       case "meetings":
-        // Meetings summary
         reportData = targetWorkbodies.map(wb => ({
           'Workbody': wb.name,
           'Type': wb.type,
@@ -118,7 +108,6 @@ export default function Reports() {
         break;
         
       case "actions":
-        // Actions status
         reportData = targetWorkbodies.map(wb => ({
           'Workbody': wb.name,
           'Type': wb.type,
@@ -130,7 +119,6 @@ export default function Reports() {
         break;
         
       case "composition":
-        // Workbody composition
         reportData = targetWorkbodies.flatMap(wb => 
           wb.members?.map(member => ({
             'Workbody': wb.name,
@@ -146,11 +134,9 @@ export default function Reports() {
         break;
     }
     
-    // Generate report based on format
     switch (reportFormat) {
       case "excel":
       case "csv":
-        // Generate CSV for both Excel and CSV formats
         if (reportData.length > 0) {
           const headers = Object.keys(reportData[0]);
           content = generateCSV(reportData, headers);
@@ -163,7 +149,6 @@ export default function Reports() {
         break;
         
       case "pdf":
-        // For PDF, just show a toast that PDF generation is a mock
         toast({
           title: "PDF Export",
           description: "PDF generation is mocked in this demo. In a real application, this would generate a PDF document.",
@@ -255,7 +240,9 @@ export default function Reports() {
                     <SelectContent>
                       <SelectItem value="">All Workbodies</SelectItem>
                       {filteredWorkbodies.map(wb => (
-                        <SelectItem key={wb.id} value={wb.id}>{wb.name}</SelectItem>
+                        <SelectItem key={wb.id} value={wb.id}>
+                          {wb.name}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
