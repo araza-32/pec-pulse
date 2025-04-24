@@ -1,6 +1,8 @@
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
+import { useWorkbodies } from "@/hooks/useWorkbodies";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import {
   Calendar,
   Download,
@@ -20,12 +22,6 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { StatCard } from "@/components/dashboard/StatCard";
-import { useWorkbodies } from "@/hooks/useWorkbodies";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { ManualMemberAddition } from "@/components/workbody/ManualMemberAddition";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { MeetingMinutes } from "@/types";
 import { Link } from "react-router-dom";
 
@@ -36,14 +32,13 @@ export default function WorkbodyDetail() {
   const [showManualAddition, setShowManualAddition] = useState(false);
   const [minutes, setMinutes] = useState<MeetingMinutes[]>([]);
   const [isLoadingMinutes, setIsLoadingMinutes] = useState(false);
-  
-  // Use the useWorkbodies hook to fetch workbody data
+  const [editMemberIndex, setEditMemberIndex] = useState<number | null>(null);
+  const [successfulMembers, setSuccessfulMembers] = useState([]);
+
   const { workbodies, isLoading, refetch } = useWorkbodies();
-  
-  // Find the workbody with the matching ID
+
   const workbody = workbodies.find((w) => w.id === id);
-  
-  // Fetch meeting minutes for this workbody
+
   useEffect(() => {
     const fetchMinutes = async () => {
       if (!id) return;
@@ -92,15 +87,21 @@ export default function WorkbodyDetail() {
     }
   }, [id, toast]);
 
-  // State to track if we should hide error alerts
-  const [hideErrors, setHideErrors] = useState(false);
+  useEffect(() => {
+    if (workbody?.members) {
+      setSuccessfulMembers(workbody.members.filter(
+        member => !member.name.includes("Error") && 
+                !member.name.includes("Processing") &&
+                !member.role.includes("Error") && 
+                !member.role.includes("error")
+      ));
+    }
+  }, [workbody?.members]);
 
-  // Reset hideErrors when workbody changes or is refetched
   useEffect(() => {
     setHideErrors(false);
   }, [id, workbody?.members]);
 
-  // Show loading state
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -126,7 +127,6 @@ export default function WorkbodyDetail() {
     );
   }
 
-  // If workbody not found show error state
   if (!workbody) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4 py-12">
@@ -141,36 +141,23 @@ export default function WorkbodyDetail() {
     );
   }
 
-  // Calculate completion percentage
   const completionPercentage = 
     workbody.actionsAgreed > 0
       ? Math.round((workbody.actionsCompleted / workbody.actionsAgreed) * 100)
       : 0;
 
-  // Get the latest successfully extracted members (non-error members)
-  const successfulMembers = workbody.members?.filter(
-    member => !member.name.includes("Error") && 
-              !member.name.includes("Processing") &&
-              !member.role.includes("Error") && 
-              !member.role.includes("error")
-  ) || [];
-
-  // Check if there are image extraction issues specifically
   const hasImageExtractionIssues = workbody.members?.some(
     member => member.name.includes("Image Content") || 
              (member.role && member.role.includes("image") || 
               member.role.includes("Image"))
   );
 
-  // Check if all members have errors
   const allMembersHaveErrors = workbody.members && 
                               workbody.members.length > 0 && 
                               successfulMembers.length === 0;
 
-  // Check if there are no members
   const hasNoMembers = !workbody.members || workbody.members.length === 0;
 
-  // Handle manual member addition
   const handleMembersAdded = () => {
     setShowManualAddition(false);
     setHideErrors(true);
@@ -181,7 +168,6 @@ export default function WorkbodyDetail() {
     refetch();
   };
 
-  // Handle clearing error alerts
   const handleDismissErrors = () => {
     setHideErrors(true);
     toast({
@@ -190,12 +176,64 @@ export default function WorkbodyDetail() {
     });
   };
 
-  // Sort minutes by date in descending order
+  const handleRemoveMember = async (memberId: string) => {
+    try {
+      const { error } = await supabase
+        .from('workbody_members')
+        .delete()
+        .eq('id', memberId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Member removed",
+        description: "The member has been removed from the workbody."
+      });
+
+      refetch();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to remove member",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleUpdateMember = async (member: any) => {
+    try {
+      const { error } = await supabase
+        .from('workbody_members')
+        .update({
+          name: member.name,
+          role: member.role,
+          email: member.email,
+          phone: member.phone
+        })
+        .eq('id', member.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Member updated",
+        description: "The member's details have been updated."
+      });
+
+      setEditMemberIndex(null);
+      refetch();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update member",
+        variant: "destructive"
+      });
+    }
+  };
+
   const sortedMinutes = [...minutes].sort((a, b) => 
     new Date(b.date).getTime() - new Date(a.date).getTime()
   );
 
-  // Get the latest meeting from sorted minutes
   const latestMeeting = sortedMinutes.length > 0 ? sortedMinutes[0] : null;
 
   return (
