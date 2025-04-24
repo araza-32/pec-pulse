@@ -29,7 +29,7 @@ export const useMinutesUpload = () => {
     if (!selectedWorkbodyType) {
       toast({
         title: "Select Workbody Type",
-        description: "Please select the type of workbody (Committee, Working Group, or Task Force).",
+        description: "Please select the type of workbody.",
         variant: "destructive"
       });
       return;
@@ -73,9 +73,7 @@ export const useMinutesUpload = () => {
           upsert: false
         });
         
-      if (uploadError) {
-        throw new Error(`Error uploading file: ${uploadError.message}`);
-      }
+      if (uploadError) throw uploadError;
       
       const { data: { publicUrl } } = supabase.storage
         .from('workbody-documents')
@@ -84,7 +82,7 @@ export const useMinutesUpload = () => {
       const agendaItemsArray = agendaItems.split('\n').filter(item => item.trim() !== '');
       const actionsAgreedArray = actionsAgreed.split('\n').filter(item => item.trim() !== '');
       
-      const { data: minutesData, error: dbError } = await supabase
+      await supabase
         .from('meeting_minutes')
         .insert({
           workbody_id: selectedWorkbody,
@@ -94,13 +92,7 @@ export const useMinutesUpload = () => {
           actions_agreed: actionsAgreedArray,
           file_url: publicUrl,
           uploaded_at: new Date().toISOString()
-        })
-        .select()
-        .single();
-        
-      if (dbError) {
-        throw new Error(`Error saving meeting data: ${dbError.message}`);
-      }
+        });
 
       const workbody = workbodies.find(wb => wb.id === selectedWorkbody);
       if (workbody) {
@@ -120,22 +112,23 @@ export const useMinutesUpload = () => {
       }
 
       toast({
-        title: "Upload successful",
-        description: "Meeting minutes have been uploaded successfully.",
+        title: "Minutes Uploaded Successfully",
+        description: "The meeting minutes have been uploaded and saved.",
       });
-      
-      setSelectedFile(null);
+
+      // Reset form
+      setSelectedWorkbodyType("");
+      setSelectedWorkbody("");
       setMeetingDate("");
       setMeetingLocation("");
       setAgendaItems("");
       setActionsAgreed("");
-      
-      navigate(`/minutes/${minutesData.id}`);
+      setSelectedFile(null);
       
     } catch (error: any) {
       console.error("Upload error:", error);
       toast({
-        title: "Upload failed",
+        title: "Upload Failed",
         description: error.message || "There was a problem uploading the minutes.",
         variant: "destructive"
       });
