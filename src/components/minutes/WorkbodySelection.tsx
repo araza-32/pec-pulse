@@ -34,8 +34,11 @@ export function WorkbodySelection({
   isLoading,
   disabled
 }: WorkbodySelectionProps) {
+  // Filter workbodies by type and sort them alphabetically by name
   const filteredWorkbodies = selectedWorkbodyType
-    ? availableWorkbodies.filter(wb => wb.type === selectedWorkbodyType)
+    ? availableWorkbodies
+        .filter(wb => wb.type === selectedWorkbodyType)
+        .sort((a, b) => a.name.localeCompare(b.name))
     : [];
 
   return (

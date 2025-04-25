@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { format, addMonths, subMonths } from "date-fns";
+import { format, addMonths, subMonths, parseISO } from "date-fns";
 import { useWorkbodies } from "@/hooks/useWorkbodies";
 import { useScheduledMeetings } from "@/hooks/useScheduledMeetings";
 import { ScheduledMeeting } from "@/types";
@@ -36,14 +36,6 @@ export default function MeetingCalendar() {
   for (let i = 1; i <= daysInMonth; i++) {
     calendarDays.push({ day: i, isCurrentMonth: true });
   }
-
-  const meetingsByDate: { [key: string]: ScheduledMeeting[] } = {};
-  meetings.forEach((meeting) => {
-    if (!meetingsByDate[meeting.date]) {
-      meetingsByDate[meeting.date] = [];
-    }
-    meetingsByDate[meeting.date].push(meeting);
-  });
 
   const handleAddMeeting = async (meetingData: Omit<ScheduledMeeting, 'id'>) => {
     await addMeeting(meetingData);
@@ -86,7 +78,7 @@ export default function MeetingCalendar() {
             key={i}
             day={day}
             currentDate={currentDate}
-            meetings={day.isCurrentMonth ? getMeetingsForDate(day.day, meetingsByDate) : []}
+            meetings={day.isCurrentMonth ? getMeetingsForDay(day.day, currentDate, meetings) : []}
             onViewMeeting={viewMeeting}
           />
         ))}
@@ -112,10 +104,11 @@ export default function MeetingCalendar() {
   );
 }
 
-function getMeetingsForDate(day: number, meetingsByDate: { [key: string]: ScheduledMeeting[] }): ScheduledMeeting[] {
-  const dateStr = format(
-    new Date(),
-    `yyyy-MM-${day.toString().padStart(2, '0')}`
-  );
-  return meetingsByDate[dateStr] || [];
+// Updated function to correctly match meetings with calendar dates
+function getMeetingsForDay(day: number, currentDate: Date, meetings: ScheduledMeeting[]): ScheduledMeeting[] {
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth() + 1; // JavaScript months are 0-indexed
+  const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+  
+  return meetings.filter(meeting => meeting.date === dateStr);
 }

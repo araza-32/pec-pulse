@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,6 +29,7 @@ export function AddMeetingDialog({
   const [selectedWorkbodyId, setSelectedWorkbodyId] = useState('');
   const [notificationFile, setNotificationFile] = useState<File | null>(null);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [newMeeting, setNewMeeting] = useState({
     date: new Date().toISOString().split('T')[0],
     time: "10:00",
@@ -82,6 +83,8 @@ export function AddMeetingDialog({
     }
 
     try {
+      setIsSubmitting(true);
+      
       await onAddMeeting({
         workbodyId: selectedWorkbodyId,
         workbodyName: selectedWorkbody.name,
@@ -90,6 +93,11 @@ export function AddMeetingDialog({
         location: newMeeting.location,
         agendaItems: newMeeting.agendaItems.split('\n').filter(item => item.trim() !== ''),
         notificationFile: notificationFile ? notificationFile.name : undefined
+      });
+
+      toast({
+        title: "Success",
+        description: "Meeting scheduled successfully.",
       });
 
       // Reset form
@@ -105,11 +113,14 @@ export function AddMeetingDialog({
       setFormErrors({});
       onClose();
     } catch (error: any) {
+      console.error("Failed to schedule meeting:", error);
       toast({
         title: "Error",
         description: "Failed to schedule the meeting. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -118,6 +129,9 @@ export function AddMeetingDialog({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Schedule a Meeting</DialogTitle>
+          <DialogDescription>
+            Fill in the details to schedule a new workbody meeting.
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <WorkbodySelection
@@ -203,10 +217,13 @@ export function AddMeetingDialog({
               type="button"
               variant="outline"
               onClick={onClose}
+              disabled={isSubmitting}
             >
               Cancel
             </Button>
-            <Button type="submit">Schedule Meeting</Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Scheduling..." : "Schedule Meeting"}
+            </Button>
           </div>
         </form>
       </DialogContent>
