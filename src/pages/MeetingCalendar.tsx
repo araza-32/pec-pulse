@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import {
   Calendar as CalendarIcon,
@@ -30,7 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-
+import { WorkbodySelection } from "@/components/minutes/WorkbodySelection";
 import { ScheduledMeeting } from "@/types";
 import { workbodies } from "@/data/mockData";
 
@@ -41,13 +42,20 @@ export default function MeetingCalendar() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [selectedMeeting, setSelectedMeeting] = useState<ScheduledMeeting | null>(null);
+  
+  // State for workbody selection
+  const [selectedWorkbodyType, setSelectedWorkbodyType] = useState('');
+  const [selectedWorkbodyId, setSelectedWorkbodyId] = useState('');
+  
   const [newMeeting, setNewMeeting] = useState({
-    workbodyId: "",
     date: format(new Date(), "yyyy-MM-dd"),
     time: "10:00",
     location: "",
     agendaItems: "",
   });
+
+  const [notificationFile, setNotificationFile] = useState<File | null>(null);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   const daysInMonth = new Date(
     currentDate.getFullYear(),
@@ -94,25 +102,93 @@ export default function MeetingCalendar() {
     return meetingsByDate[dateStr] || [];
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setNewMeeting({ ...newMeeting, [name]: value });
+    
+    // Clear error for this field if it exists
+    if (formErrors[name]) {
+      setFormErrors({ ...formErrors, [name]: '' });
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setNotificationFile(e.target.files[0]);
+      
+      // Clear file error if it exists
+      if (formErrors.notificationFile) {
+        setFormErrors({ ...formErrors, notificationFile: '' });
+      }
+    }
+  };
+
+  const validateForm = () => {
+    const errors: Record<string, string> = {};
+    
+    if (!selectedWorkbodyType) {
+      errors.workbodyType = 'Workbody type is required';
+    }
+    
+    if (!selectedWorkbodyId) {
+      errors.workbodyId = 'Workbody is required';
+    }
+    
+    if (!newMeeting.date) {
+      errors.date = 'Date is required';
+    }
+    
+    if (!newMeeting.time) {
+      errors.time = 'Time is required';
+    }
+    
+    if (!newMeeting.location.trim()) {
+      errors.location = 'Location is required';
+    }
+    
+    if (!newMeeting.agendaItems.trim()) {
+      errors.agendaItems = 'At least one agenda item is required';
+    }
+    
+    if (!notificationFile) {
+      errors.notificationFile = 'Meeting notification is required';
+    }
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleAddMeeting = (e: React.FormEvent) => {
     e.preventDefault();
     
-    const selectedWorkbody = workbodies.find(wb => wb.id === newMeeting.workbodyId);
-    if (!selectedWorkbody) return;
+    if (!validateForm()) {
+      toast({
+        title: "Form Validation Failed",
+        description: "Please fill all required fields.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const selectedWorkbody = workbodies.find(wb => wb.id === selectedWorkbodyId);
+    if (!selectedWorkbody) {
+      toast({
+        title: "Invalid Workbody",
+        description: "Please select a valid workbody.",
+        variant: "destructive"
+      });
+      return;
+    }
     
     const newMeetingRecord: ScheduledMeeting = {
       id: `meeting-${Date.now()}`,
-      workbodyId: newMeeting.workbodyId,
+      workbodyId: selectedWorkbodyId,
       workbodyName: selectedWorkbody.name,
       date: newMeeting.date,
       time: newMeeting.time,
       location: newMeeting.location,
       agendaItems: newMeeting.agendaItems.split('\n').filter(item => item.trim() !== ''),
+      notificationFile: notificationFile ? notificationFile.name : undefined
     };
     
     setMeetings([...meetings, newMeetingRecord]);
@@ -123,6 +199,18 @@ export default function MeetingCalendar() {
         "MMMM dd, yyyy"
       )} at ${newMeeting.time}.`,
     });
+    
+    // Reset form
+    setSelectedWorkbodyType('');
+    setSelectedWorkbodyId('');
+    setNewMeeting({
+      date: format(new Date(), "yyyy-MM-dd"),
+      time: "10:00",
+      location: "",
+      agendaItems: "",
+    });
+    setNotificationFile(null);
+    setFormErrors({});
     setIsAddDialogOpen(false);
   };
 
@@ -243,64 +331,71 @@ export default function MeetingCalendar() {
             <DialogTitle>Schedule a Meeting</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleAddMeeting} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="workbodyId">Workbody</Label>
-              <Select
-                value={newMeeting.workbodyId || "select-workbody"}
-                onValueChange={(value) => handleInputChange({
-                  target: { name: "workbodyId", value }
-                } as any)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a workbody" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="select-workbody" disabled>Select a workbody</SelectItem>
-                  {workbodies.map((wb) => (
-                    <SelectItem key={wb.id} value={wb.id}>
-                      {wb.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <WorkbodySelection
+              selectedWorkbodyType={selectedWorkbodyType}
+              selectedWorkbody={selectedWorkbodyId}
+              onWorkbodyTypeChange={setSelectedWorkbodyType}
+              onWorkbodyChange={setSelectedWorkbodyId}
+              availableWorkbodies={workbodies}
+              isLoading={false}
+            />
+            
+            {formErrors.workbodyType && (
+              <p className="text-sm font-medium text-destructive mt-1">{formErrors.workbodyType}</p>
+            )}
+            
+            {formErrors.workbodyId && (
+              <p className="text-sm font-medium text-destructive mt-1">{formErrors.workbodyId}</p>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="date">Date</Label>
+                <Label htmlFor="date">Date <span className="text-destructive">*</span></Label>
                 <Input
                   id="date"
                   name="date"
                   type="date"
                   value={newMeeting.date}
                   onChange={handleInputChange}
+                  required
                 />
+                {formErrors.date && (
+                  <p className="text-sm font-medium text-destructive mt-1">{formErrors.date}</p>
+                )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="time">Time</Label>
+                <Label htmlFor="time">Time <span className="text-destructive">*</span></Label>
                 <Input
                   id="time"
                   name="time"
                   type="time"
                   value={newMeeting.time}
                   onChange={handleInputChange}
+                  required
                 />
+                {formErrors.time && (
+                  <p className="text-sm font-medium text-destructive mt-1">{formErrors.time}</p>
+                )}
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="location">Location</Label>
+              <Label htmlFor="location">Location <span className="text-destructive">*</span></Label>
               <Input
                 id="location"
                 name="location"
                 placeholder="Meeting location"
                 value={newMeeting.location}
                 onChange={handleInputChange}
+                required
               />
+              {formErrors.location && (
+                <p className="text-sm font-medium text-destructive mt-1">{formErrors.location}</p>
+              )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="agendaItems">Agenda Items</Label>
+              <Label htmlFor="agendaItems">Agenda Items (one per line) <span className="text-destructive">*</span></Label>
               <Textarea
                 id="agendaItems"
                 name="agendaItems"
@@ -308,14 +403,26 @@ export default function MeetingCalendar() {
                 rows={4}
                 value={newMeeting.agendaItems}
                 onChange={handleInputChange}
+                required
               />
+              {formErrors.agendaItems && (
+                <p className="text-sm font-medium text-destructive mt-1">{formErrors.agendaItems}</p>
+              )}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="notificationFile">
-                Upload Meeting Notification (Optional)
+                Upload Meeting Notification <span className="text-destructive">*</span>
               </Label>
-              <Input id="notificationFile" type="file" />
+              <Input 
+                id="notificationFile" 
+                type="file" 
+                onChange={handleFileChange}
+                required
+              />
+              {formErrors.notificationFile && (
+                <p className="text-sm font-medium text-destructive mt-1">{formErrors.notificationFile}</p>
+              )}
             </div>
 
             <div className="flex justify-end space-x-4 pt-4">
@@ -376,6 +483,16 @@ export default function MeetingCalendar() {
                         ))}
                       </ul>
                     </div>
+                    
+                    {selectedMeeting.notificationFile && (
+                      <div className="pt-2">
+                        <h4 className="text-sm font-medium mb-2 flex items-center">
+                          <FileText className="mr-1 h-4 w-4" />
+                          Attached Notification
+                        </h4>
+                        <p className="text-sm text-muted-foreground">{selectedMeeting.notificationFile}</p>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>

@@ -1,5 +1,5 @@
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useWorkbodies } from "@/hooks/useWorkbodies";
 import { OverviewStats } from "@/components/dashboard/OverviewStats";
 import { WorkbodyDistribution } from "@/components/dashboard/WorkbodyDistribution";
@@ -7,12 +7,36 @@ import { ActionCompletionProgress } from "@/components/dashboard/ActionCompletio
 import { ExpiringTaskForceAlert } from "@/components/workbody/ExpiringTaskForceAlert"; 
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "@/hooks/use-toast";
 
 export default function Dashboard() {
-  const { workbodies, isLoading } = useWorkbodies();
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const { workbodies, isLoading, refetch } = useWorkbodies();
+  const { session } = useAuth();
+  
+  useEffect(() => {
+    // Refetch data when component mounts to ensure fresh data
+    refetch().catch(error => {
+      console.error("Failed to fetch workbodies data:", error);
+      toast({
+        title: "Data refresh failed",
+        description: "Unable to load the latest workbody data.",
+        variant: "destructive",
+      });
+    });
+    
+    // Set up interval to periodically refresh data
+    const intervalId = setInterval(() => {
+      refetch().catch(error => {
+        console.error("Auto-refresh failed:", error);
+      });
+    }, 300000); // Refresh every 5 minutes
+    
+    return () => clearInterval(intervalId);
+  }, [refetch]);
   
   // Show all workbodies for admin and coordination users
+  const user = session || JSON.parse(localStorage.getItem('user') || '{}');
   const isCoordinationUser = user?.email?.includes('coordination');
   const shouldShowAllWorkbodies = user?.role === 'admin' || isCoordinationUser;
   
@@ -50,7 +74,7 @@ export default function Dashboard() {
     meetingsThisYear: filteredWorkbodies.reduce((sum, w) => sum + w.meetingsThisYear, 0),
     completionRate: filteredWorkbodies.length ? Math.round(
       (filteredWorkbodies.reduce((sum, w) => sum + w.actionsCompleted, 0) / 
-       filteredWorkbodies.reduce((sum, w) => sum + w.actionsAgreed, 0)) * 100
+       Math.max(1, filteredWorkbodies.reduce((sum, w) => sum + w.actionsAgreed, 0))) * 100
     ) : 0
   };
 
@@ -106,7 +130,7 @@ export default function Dashboard() {
           meetingsThisYear: workbody.meetingsThisYear,
           completionRate: workbody.actionsAgreed ? 
             Math.round((workbody.actionsCompleted / workbody.actionsAgreed) * 100) : 0,
-          upcomingMeetingsCount: 0 // Removed upcomingMeetings reference
+          upcomingMeetingsCount: 0
         }} />
         <ActionCompletionProgress workbodies={[workbody]} />
       </div>
@@ -145,4 +169,3 @@ export default function Dashboard() {
     </div>
   );
 }
-

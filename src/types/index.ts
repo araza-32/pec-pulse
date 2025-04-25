@@ -1,4 +1,3 @@
-
 export type WorkbodyType = 'committee' | 'working-group' | 'task-force';
 
 export interface User {
@@ -54,7 +53,7 @@ export interface ScheduledMeeting {
   time: string;
   location: string;
   agendaItems: string[];
-  notificationUrl?: string;
+  notificationFile?: string;
 }
 
 export interface DashboardStat {
