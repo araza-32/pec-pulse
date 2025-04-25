@@ -7,6 +7,7 @@ import { useScheduledMeetings } from "@/hooks/useScheduledMeetings";
 import { format, parseISO } from "date-fns";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScheduledMeeting } from "@/types"; // Add this import
 
 export const UpcomingMeetings = () => {
   const navigate = useNavigate();
