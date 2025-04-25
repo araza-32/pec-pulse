@@ -71,6 +71,50 @@ export type Database = {
         }
         Relationships: []
       }
+      scheduled_meetings: {
+        Row: {
+          agenda_items: string[]
+          created_at: string
+          date: string
+          id: string
+          location: string
+          notification_file: string | null
+          time: string
+          workbody_id: string
+          workbody_name: string
+        }
+        Insert: {
+          agenda_items?: string[]
+          created_at?: string
+          date: string
+          id?: string
+          location: string
+          notification_file?: string | null
+          time: string
+          workbody_id: string
+          workbody_name: string
+        }
+        Update: {
+          agenda_items?: string[]
+          created_at?: string
+          date?: string
+          id?: string
+          location?: string
+          notification_file?: string | null
+          time?: string
+          workbody_id?: string
+          workbody_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_meetings_workbody_id_fkey"
+            columns: ["workbody_id"]
+            isOneToOne: false
+            referencedRelation: "workbodies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workbodies: {
         Row: {
           actions_agreed: number | null

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import {
   Calendar as CalendarIcon,
@@ -26,11 +27,12 @@ import { useToast } from "@/hooks/use-toast";
 import { WorkbodySelection } from "@/components/minutes/WorkbodySelection";
 import { ScheduledMeeting } from "@/types";
 import { useWorkbodies } from "@/hooks/useWorkbodies";
+import { useScheduledMeetings } from "@/hooks/useScheduledMeetings";
 
 export default function MeetingCalendar() {
   const { toast } = useToast();
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [meetings, setMeetings] = useState<ScheduledMeeting[]>([]);
+  const { meetings, isLoading: isLoadingMeetings, addMeeting } = useScheduledMeetings();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [selectedMeeting, setSelectedMeeting] = useState<ScheduledMeeting | null>(null);
@@ -179,8 +181,7 @@ export default function MeetingCalendar() {
         console.log("Uploading notification file:", notificationFile);
       }
     
-      const newMeetingRecord: ScheduledMeeting = {
-        id: `meeting-${Date.now()}`,
+      const newMeetingRecord: Omit<ScheduledMeeting, 'id'> = {
         workbodyId: selectedWorkbodyId,
         workbodyName: selectedWorkbody.name,
         date: newMeeting.date,
@@ -190,7 +191,8 @@ export default function MeetingCalendar() {
         notificationFile: notificationFile ? notificationFile.name : undefined
       };
     
-      setMeetings([...meetings, newMeetingRecord]);
+      await addMeeting(newMeetingRecord);
+      
       toast({
         title: "Meeting Scheduled",
         description: `Meeting for ${selectedWorkbody.name} has been scheduled for ${format(
