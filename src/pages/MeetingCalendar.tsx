@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import {
   Calendar as CalendarIcon,
@@ -23,17 +22,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { WorkbodySelection } from "@/components/minutes/WorkbodySelection";
 import { ScheduledMeeting } from "@/types";
-import { workbodies } from "@/data/mockData";
+import { useWorkbodies } from "@/hooks/useWorkbodies";
 
 export default function MeetingCalendar() {
   const { toast } = useToast();
@@ -42,7 +34,8 @@ export default function MeetingCalendar() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [selectedMeeting, setSelectedMeeting] = useState<ScheduledMeeting | null>(null);
-  
+  const { workbodies, isLoading: isLoadingWorkbodies } = useWorkbodies();
+
   // State for workbody selection
   const [selectedWorkbodyType, setSelectedWorkbodyType] = useState('');
   const [selectedWorkbodyId, setSelectedWorkbodyId] = useState('');
@@ -116,7 +109,6 @@ export default function MeetingCalendar() {
     if (e.target.files && e.target.files.length > 0) {
       setNotificationFile(e.target.files[0]);
       
-      // Clear file error if it exists
       if (formErrors.notificationFile) {
         setFormErrors({ ...formErrors, notificationFile: '' });
       }
@@ -158,7 +150,7 @@ export default function MeetingCalendar() {
     return Object.keys(errors).length === 0;
   };
 
-  const handleAddMeeting = (e: React.FormEvent) => {
+  const handleAddMeeting = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateForm()) {
@@ -179,39 +171,54 @@ export default function MeetingCalendar() {
       });
       return;
     }
+
+    try {
+      // Upload notification file to Supabase Storage
+      if (notificationFile) {
+        // TODO: Add Supabase storage upload logic here
+        console.log("Uploading notification file:", notificationFile);
+      }
     
-    const newMeetingRecord: ScheduledMeeting = {
-      id: `meeting-${Date.now()}`,
-      workbodyId: selectedWorkbodyId,
-      workbodyName: selectedWorkbody.name,
-      date: newMeeting.date,
-      time: newMeeting.time,
-      location: newMeeting.location,
-      agendaItems: newMeeting.agendaItems.split('\n').filter(item => item.trim() !== ''),
-      notificationFile: notificationFile ? notificationFile.name : undefined
-    };
+      const newMeetingRecord: ScheduledMeeting = {
+        id: `meeting-${Date.now()}`,
+        workbodyId: selectedWorkbodyId,
+        workbodyName: selectedWorkbody.name,
+        date: newMeeting.date,
+        time: newMeeting.time,
+        location: newMeeting.location,
+        agendaItems: newMeeting.agendaItems.split('\n').filter(item => item.trim() !== ''),
+        notificationFile: notificationFile ? notificationFile.name : undefined
+      };
     
-    setMeetings([...meetings, newMeetingRecord]);
-    toast({
-      title: "Meeting Scheduled",
-      description: `Meeting for ${selectedWorkbody.name} has been scheduled for ${format(
-        parseISO(newMeeting.date),
-        "MMMM dd, yyyy"
-      )} at ${newMeeting.time}.`,
-    });
+      setMeetings([...meetings, newMeetingRecord]);
+      toast({
+        title: "Meeting Scheduled",
+        description: `Meeting for ${selectedWorkbody.name} has been scheduled for ${format(
+          parseISO(newMeeting.date),
+          "MMMM dd, yyyy"
+        )} at ${newMeeting.time}.`,
+      });
     
-    // Reset form
-    setSelectedWorkbodyType('');
-    setSelectedWorkbodyId('');
-    setNewMeeting({
-      date: format(new Date(), "yyyy-MM-dd"),
-      time: "10:00",
-      location: "",
-      agendaItems: "",
-    });
-    setNotificationFile(null);
-    setFormErrors({});
-    setIsAddDialogOpen(false);
+      // Reset form
+      setSelectedWorkbodyType('');
+      setSelectedWorkbodyId('');
+      setNewMeeting({
+        date: format(new Date(), "yyyy-MM-dd"),
+        time: "10:00",
+        location: "",
+        agendaItems: "",
+      });
+      setNotificationFile(null);
+      setFormErrors({});
+      setIsAddDialogOpen(false);
+    } catch (error) {
+      console.error("Error scheduling meeting:", error);
+      toast({
+        title: "Error",
+        description: "Failed to schedule the meeting. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const viewMeeting = (meeting: ScheduledMeeting) => {
@@ -337,7 +344,7 @@ export default function MeetingCalendar() {
               onWorkbodyTypeChange={setSelectedWorkbodyType}
               onWorkbodyChange={setSelectedWorkbodyId}
               availableWorkbodies={workbodies}
-              isLoading={false}
+              isLoading={isLoadingWorkbodies}
             />
             
             {formErrors.workbodyType && (
