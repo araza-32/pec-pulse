@@ -101,6 +101,16 @@ export function ViewMeetingDialog({
                         Attached Notification
                       </h4>
                       <p className="text-sm text-muted-foreground">{meeting.notificationFile}</p>
+                      {meeting.notificationFilePath && (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="mt-2"
+                          onClick={() => window.open(meeting.notificationFilePath, '_blank')}
+                        >
+                          View Notification
+                        </Button>
+                      )}
                     </div>
                   )}
                 </div>
