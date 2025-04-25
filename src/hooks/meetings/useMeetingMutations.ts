@@ -23,7 +23,8 @@ export const useMeetingMutations = (meetings: ScheduledMeeting[], setMeetings: R
           time: newMeeting.time,
           location: newMeeting.location,
           agenda_items: newMeeting.agendaItems,
-          notification_file: newMeeting.notificationFile
+          notification_file: newMeeting.notificationFile,
+          notification_file_name: newMeeting.notificationFile
         })
         .select()
         .single();

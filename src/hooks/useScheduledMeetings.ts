@@ -1,10 +1,11 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { ScheduledMeeting } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { useMeetingMutations } from './meetings/useMeetingMutations';
 import { useMeetingSubscription } from './meetings/useMeetingSubscription';
+import { format, addWeeks } from 'date-fns';
 
 export const useScheduledMeetings = () => {
   const [meetings, setMeetings] = useState<ScheduledMeeting[]>([]);
@@ -15,10 +16,15 @@ export const useScheduledMeetings = () => {
   const fetchMeetings = async () => {
     setIsLoading(true);
     try {
+      const today = new Date();
+      const twoWeeksFromNow = addWeeks(today, 2);
+      
       const { data, error } = await supabase
         .from('scheduled_meetings')
         .select('*')
-        .order('created_at', { ascending: false });
+        .gte('date', format(today, 'yyyy-MM-dd'))
+        .lte('date', format(twoWeeksFromNow, 'yyyy-MM-dd'))
+        .order('date', { ascending: true });
 
       if (error) throw error;
 
@@ -30,7 +36,8 @@ export const useScheduledMeetings = () => {
         time: meeting.time,
         location: meeting.location,
         agendaItems: meeting.agenda_items,
-        notificationFile: meeting.notification_file
+        notificationFile: meeting.notification_file_name,
+        notificationFilePath: meeting.notification_file_path
       }));
 
       setMeetings(formattedMeetings);
@@ -45,6 +52,10 @@ export const useScheduledMeetings = () => {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchMeetings();
+  }, []);
 
   useMeetingSubscription(fetchMeetings);
 

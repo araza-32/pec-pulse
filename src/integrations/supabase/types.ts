@@ -79,6 +79,8 @@ export type Database = {
           id: string
           location: string
           notification_file: string | null
+          notification_file_name: string | null
+          notification_file_path: string | null
           time: string
           workbody_id: string
           workbody_name: string
@@ -90,6 +92,8 @@ export type Database = {
           id?: string
           location: string
           notification_file?: string | null
+          notification_file_name?: string | null
+          notification_file_path?: string | null
           time: string
           workbody_id: string
           workbody_name: string
@@ -101,6 +105,8 @@ export type Database = {
           id?: string
           location?: string
           notification_file?: string | null
+          notification_file_name?: string | null
+          notification_file_path?: string | null
           time?: string
           workbody_id?: string
           workbody_name?: string
