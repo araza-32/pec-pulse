@@ -9,9 +9,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
+import { UpcomingMeetings } from "@/components/dashboard/UpcomingMeetings";
+import { useScheduledMeetings } from "@/hooks/useScheduledMeetings";
 
 export default function Dashboard() {
   const { workbodies, isLoading, refetch } = useWorkbodies();
+  const { meetings, isLoading: isLoadingMeetings } = useScheduledMeetings();
   const { session } = useAuth();
   
   useEffect(() => {
@@ -64,6 +67,9 @@ export default function Dashboard() {
       )
       .sort((a, b) => new Date(a.endDate!).getTime() - new Date(b.endDate!).getTime());
   }, [workbodies]);
+
+  // Get upcoming meetings count for the stats display
+  const upcomingMeetingsCount = meetings ? meetings.length : 0;
 
   const stats = {
     totalWorkbodies: filteredWorkbodies.length,
@@ -130,9 +136,13 @@ export default function Dashboard() {
           meetingsThisYear: workbody.meetingsThisYear,
           completionRate: workbody.actionsAgreed ? 
             Math.round((workbody.actionsCompleted / workbody.actionsAgreed) * 100) : 0,
-          upcomingMeetingsCount: 0
+          upcomingMeetingsCount: upcomingMeetingsCount
         }} />
-        <ActionCompletionProgress workbodies={[workbody]} />
+        
+        <div className="grid gap-6 md:grid-cols-2">
+          <UpcomingMeetings />
+          <ActionCompletionProgress workbodies={[workbody]} />
+        </div>
       </div>
     );
   }
@@ -154,10 +164,11 @@ export default function Dashboard() {
         totalWorkbodies: stats.totalWorkbodies,
         meetingsThisYear: stats.meetingsThisYear,
         completionRate: stats.completionRate,
-        upcomingMeetingsCount: 0
+        upcomingMeetingsCount: upcomingMeetingsCount
       }} />
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-2">
+        <UpcomingMeetings />
         <WorkbodyDistribution data={{
           committees: stats.committees,
           workingGroups: stats.workingGroups,

@@ -19,14 +19,20 @@ export const useScheduledMeetings = () => {
       const today = new Date();
       const twoWeeksFromNow = addWeeks(today, 2);
       
+      // Clear console for debugging
+      console.log("Fetching meetings from", format(today, 'yyyy-MM-dd'), "to", format(twoWeeksFromNow, 'yyyy-MM-dd'));
+      
       const { data, error } = await supabase
         .from('scheduled_meetings')
         .select('*')
         .gte('date', format(today, 'yyyy-MM-dd'))
         .lte('date', format(twoWeeksFromNow, 'yyyy-MM-dd'))
-        .order('date', { ascending: true });
+        .order('date', { ascending: true })
+        .order('time', { ascending: true });
 
       if (error) throw error;
+
+      console.log("Meetings fetched:", data ? data.length : 0, data);
 
       const formattedMeetings = data.map(meeting => ({
         id: meeting.id,
@@ -57,6 +63,7 @@ export const useScheduledMeetings = () => {
     fetchMeetings();
   }, []);
 
+  // Subscribe to changes in the scheduled_meetings table
   useMeetingSubscription(fetchMeetings);
 
   return { 
