@@ -2,32 +2,25 @@
 import { useState } from "react";
 import { Header } from "./Header";
 import { Sidebar } from "./Sidebar";
-import { User } from "@/types";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface LayoutProps {
-  user: User | null;
-  onLogout: () => void;
   children: React.ReactNode;
 }
 
-export function Layout({ user, onLogout, children }: LayoutProps) {
+export function Layout({ children }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { session, logout } = useAuth();
   
-  // Use authentication data from context if available
   const currentUser = session ? {
     name: session.name || 'User',
     role: session.role || 'user',
     workbodyId: session.workbodyId
-  } : user;
+  } : null;
   
   const handleLogout = () => {
     if (logout) {
       logout();
-    }
-    if (onLogout) {
-      onLogout();
     }
     setSidebarOpen(false);
   };
@@ -36,7 +29,7 @@ export function Layout({ user, onLogout, children }: LayoutProps) {
   const closeSidebar = () => setSidebarOpen(false);
   
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-gray-50">
       <Header 
         toggleSidebar={toggleSidebar} 
         user={currentUser} 
@@ -60,6 +53,10 @@ export function Layout({ user, onLogout, children }: LayoutProps) {
           <div className="container py-6">
             {children}
           </div>
+          
+          <footer className="border-t bg-white py-4 text-center text-sm text-gray-600">
+            © 2025 Pakistan Engineering Council. All rights reserved.
+          </footer>
         </main>
       </div>
     </div>

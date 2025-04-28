@@ -1,12 +1,12 @@
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
-import { useAuthHandlers } from "@/hooks/useAuthHandlers";
 import { useNavigate } from "react-router-dom";
+import { Mail, Lock } from "lucide-react";
 
 interface LoginFormProps {
   onLogin: (email: string, password: string) => Promise<void>;
@@ -30,7 +30,7 @@ export function LoginForm({ onLogin }: LoginFormProps) {
       await onLogin(email, password);
       toast({
         title: "Login Successful",
-        description: `Welcome ${email}`,
+        description: `Welcome back!`,
       });
       navigate('/dashboard');
     } catch (err) {
@@ -76,97 +76,125 @@ export function LoginForm({ onLogin }: LoginFormProps) {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-2 text-center">
-          <div className="flex justify-center">
-            <img 
-              src="/lovable-uploads/26062e6e-e7ef-45d9-895b-79ac41a220c7.png" 
-              alt="PEC Logo"
-              className="h-24 w-auto mb-2" 
-            />
-          </div>
-          <CardTitle className="text-2xl">PEC Workbodies Portal</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Enter your credentials to sign in
-          </p>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="email@pec.org.pk"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-white to-gray-100">
+      <div className="w-full max-w-md px-4">
+        <Card className="w-full shadow-lg border-0">
+          <CardHeader className="space-y-4 text-center pb-6">
+            <div className="flex justify-center">
+              <img 
+                src="/lovable-uploads/26062e6e-e7ef-45d9-895b-79ac41a220c7.png" 
+                alt="PEC Logo"
+                className="h-24 w-auto mb-2" 
               />
             </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
-                <Button type="button" variant="link" size="sm" className="h-auto p-0">
-                  Forgot password?
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Welcome to PEC Pulse Portal</h1>
+              <p className="text-sm text-gray-600 mt-2">
+                Managing Committees, Working Groups, and Taskforces efficiently
+              </p>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="name@pec.org.pk"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pl-10"
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Password</Label>
+                  <Button 
+                    type="button" 
+                    variant="link" 
+                    size="sm" 
+                    className="px-0 font-normal text-pec-green hover:text-pec-green-600"
+                  >
+                    Forgot password?
+                  </Button>
+                </div>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-10"
+                    required
+                  />
+                </div>
+              </div>
+              
+              {error && (
+                <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">
+                  {error}
+                </div>
+              )}
+              
+              <Button 
+                type="submit" 
+                className="w-full bg-pec-green hover:bg-pec-green-600 transition-colors duration-300"
+                disabled={isLoading}
+              >
+                {isLoading ? "Signing in..." : "Sign in"}
+              </Button>
+
+              <p className="text-center text-sm text-gray-600">
+                Trouble logging in? <a href="mailto:support@pec.org.pk" className="text-pec-green hover:text-pec-green-600">Contact PEC IT Support</a>
+              </p>
+              
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t"></span>
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-white px-2 text-gray-500">
+                    Development Options
+                  </span>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleAdminClick}
+                  disabled={isAdminLoading}
+                  className="transition-all duration-300"
+                >
+                  Login as Admin
+                </Button>
+                
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCoordinationClick}
+                  disabled={isAdminLoading}
+                  className="transition-all duration-300"
+                >
+                  Login as Coordination
                 </Button>
               </div>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-            
-            {error && (
-              <div className="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-600">
-                {error}
-              </div>
-            )}
-            
-            <Button 
-              type="submit" 
-              className="w-full bg-pec-green hover:bg-pec-green-600" 
-              disabled={isLoading}
-            >
-              {isLoading ? "Signing in..." : "Sign in"}
-            </Button>
-            
-            <div className="relative mt-4">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-muted-foreground">
-                  Development Options
-                </span>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleAdminClick}
-                disabled={isAdminLoading}
-              >
-                {isAdminLoading ? "Signing in..." : "Login as Admin"}
-              </Button>
-              
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleCoordinationClick}
-                disabled={isAdminLoading}
-              >
-                Login as Coordination
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+            </form>
+          </CardContent>
+        </Card>
+
+        <footer className="text-center mt-8 text-sm text-gray-600">
+          © 2025 Pakistan Engineering Council. All rights reserved.
+        </footer>
+      </div>
     </div>
   );
 }
