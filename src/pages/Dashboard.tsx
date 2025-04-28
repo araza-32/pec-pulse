@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useEffect } from "react";
 import { useWorkbodies } from "@/hooks/useWorkbodies";
 import { OverviewStats } from "@/components/dashboard/OverviewStats";
@@ -26,7 +25,6 @@ export default function Dashboard() {
   const itemsPerPage = 10;
   
   useEffect(() => {
-    // Welcome message for first-time users
     const isFirstVisit = !localStorage.getItem('dashboardVisited');
     
     if (isFirstVisit) {
@@ -37,7 +35,6 @@ export default function Dashboard() {
       localStorage.setItem('dashboardVisited', 'true');
     }
     
-    // Refetch data when component mounts to ensure fresh data
     refetch().catch(error => {
       console.error("Failed to fetch workbodies data:", error);
       toast({
@@ -47,17 +44,15 @@ export default function Dashboard() {
       });
     });
     
-    // Set up interval to periodically refresh data
     const intervalId = setInterval(() => {
       refetch().catch(error => {
         console.error("Auto-refresh failed:", error);
       });
-    }, 300000); // Refresh every 5 minutes
+    }, 300000);
     
     return () => clearInterval(intervalId);
   }, [refetch]);
   
-  // Show all workbodies for admin and coordination users
   const user = session || JSON.parse(localStorage.getItem('user') || '{}');
   const isCoordinationUser = user?.email?.includes('coordination');
   const shouldShowAllWorkbodies = user?.role === 'admin' || isCoordinationUser;
@@ -66,12 +61,10 @@ export default function Dashboard() {
     ? workbodies
     : workbodies.filter(w => w.id === user.workbodyId);
 
-  // Sort workbodies alphabetically
   const sortedFilteredWorkbodies = [...filteredWorkbodies].sort((a, b) => 
     a.name.localeCompare(b.name)
   );
   
-  // Pagination
   const paginatedWorkbodies = sortedFilteredWorkbodies.slice(
     (currentPage - 1) * itemsPerPage, 
     currentPage * itemsPerPage
@@ -79,7 +72,6 @@ export default function Dashboard() {
   
   const totalPages = Math.ceil(sortedFilteredWorkbodies.length / itemsPerPage);
     
-  // Get task forces that are expiring within the next 30 days
   const today = new Date();
   const thirtyDaysFromNow = new Date();
   thirtyDaysFromNow.setDate(today.getDate() + 30);
@@ -95,10 +87,8 @@ export default function Dashboard() {
       .sort((a, b) => new Date(a.endDate!).getTime() - new Date(b.endDate!).getTime());
   }, [workbodies]);
 
-  // Get upcoming meetings count for the stats display
   const upcomingMeetingsCount = meetings ? meetings.length : 0;
 
-  // Calculate additional statistics
   const workbodiesWithMostMembers = useMemo(() => {
     return [...sortedFilteredWorkbodies]
       .sort((a, b) => b.members.length - a.members.length)
@@ -332,31 +322,16 @@ export default function Dashboard() {
           
           {totalPages > 1 && (
             <div className="flex justify-center mt-4">
-              <Pagination>
-                <button 
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                  className={`px-3 py-1 rounded ${currentPage === 1 ? 'text-gray-400' : 'text-pec-green hover:bg-pec-green/10'}`}
-                >
-                  Previous
-                </button>
-                <span className="px-4 py-1">
-                  Page {currentPage} of {totalPages}
-                </span>
-                <button 
-                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages}
-                  className={`px-3 py-1 rounded ${currentPage === totalPages ? 'text-gray-400' : 'text-pec-green hover:bg-pec-green/10'}`}
-                >
-                  Next
-                </button>
-              </Pagination>
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Detail Dialogs */}
       <Dialog open={activeDialog === 'totalWorkbodies'} onOpenChange={() => setActiveDialog(null)}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
