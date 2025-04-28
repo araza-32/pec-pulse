@@ -118,6 +118,10 @@ export default function Dashboard() {
     setActiveDialog(dialogType);
   };
 
+  const handleWorkbodyClick = (workbodyId: string) => {
+    window.location.href = `/workbodies/${workbodyId}`;
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -232,7 +236,11 @@ export default function Dashboard() {
                 </TableHeader>
                 <TableBody>
                   {workbodiesWithMostMembers.map(workbody => (
-                    <TableRow key={workbody.id}>
+                    <TableRow 
+                      key={workbody.id} 
+                      className="cursor-pointer hover:bg-gray-50"
+                      onClick={() => handleWorkbodyClick(workbody.id)}
+                    >
                       <TableCell className="font-medium">{workbody.name}</TableCell>
                       <TableCell>{formatWorkbodyType(workbody.type)}</TableCell>
                       <TableCell className="text-right">{workbody.members.length}</TableCell>
@@ -260,7 +268,11 @@ export default function Dashboard() {
                 </TableHeader>
                 <TableBody>
                   {workbodiesWithMostMeetings.map(workbody => (
-                    <TableRow key={workbody.id}>
+                    <TableRow 
+                      key={workbody.id} 
+                      className="cursor-pointer hover:bg-gray-50"
+                      onClick={() => handleWorkbodyClick(workbody.id)}
+                    >
                       <TableCell className="font-medium">{workbody.name}</TableCell>
                       <TableCell>{formatWorkbodyType(workbody.type)}</TableCell>
                       <TableCell className="text-right">{workbody.totalMeetings}</TableCell>

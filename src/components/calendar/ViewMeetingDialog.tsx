@@ -16,6 +16,7 @@ interface ViewMeetingDialogProps {
   onDelete?: (id: string) => Promise<void>;
   workbodies?: Workbody[];
   isLoadingWorkbodies?: boolean;
+  userRole?: string;
 }
 
 export function ViewMeetingDialog({ 
@@ -26,8 +27,10 @@ export function ViewMeetingDialog({
   onDelete,
   workbodies = [],
   isLoadingWorkbodies = false,
+  userRole = 'member'
 }: ViewMeetingDialogProps) {
   const [isEditMode, setIsEditMode] = useState(false);
+  const canEditMeeting = userRole === 'admin' || userRole === 'coordination';
 
   if (!meeting) return null;
 
@@ -42,7 +45,7 @@ export function ViewMeetingDialog({
           <DialogHeader>
             <DialogTitle className="flex items-center justify-between">
               <span>Meeting Details</span>
-              {onUpdate && onDelete && (
+              {onUpdate && onDelete && canEditMeeting && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -129,7 +132,7 @@ export function ViewMeetingDialog({
         </DialogContent>
       </Dialog>
 
-      {onUpdate && onDelete && (
+      {onUpdate && onDelete && canEditMeeting && (
         <EditMeetingDialog
           meeting={meeting}
           isOpen={isEditMode}

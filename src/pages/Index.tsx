@@ -12,21 +12,23 @@ const Index = () => {
           className="h-28 mx-auto mb-4" 
         />
         <h1 className="text-4xl font-bold text-pec-green">Welcome to PEC Pulse</h1>
-        <div className="space-y-2">
+        <div className="space-y-1">
           <p className="text-xl text-gray-600">
             Pakistan Engineering Council's Workbody Management System
           </p>
-          <p className="text-gray-500 mb-8">
+          <p className="text-gray-500">
             Managing Committees, Working Groups, and Taskforces efficiently
           </p>
         </div>
-        <Link to="/login">
-          <Button 
-            className="bg-pec-green hover:bg-pec-green-600 transition-colors duration-300 text-base px-6 py-2 h-auto rounded-lg"
-          >
-            Login to Access Dashboard
-          </Button>
-        </Link>
+        <div className="mt-12">
+          <Link to="/login">
+            <Button 
+              className="bg-pec-green hover:bg-pec-green-600 transition-colors duration-300 text-base px-6 py-2 h-auto rounded-lg"
+            >
+              Login to Access Dashboard
+            </Button>
+          </Link>
+        </div>
       </div>
     </div>
   );

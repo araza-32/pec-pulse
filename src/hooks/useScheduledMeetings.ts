@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { ScheduledMeeting } from '@/types';
@@ -12,15 +11,11 @@ export const useScheduledMeetings = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   
-  // Creating a memoized fetchMeetings function for the subscription to use
   const fetchMeetings = useCallback(async () => {
     setIsLoading(true);
     try {
       const today = new Date();
       const twoWeeksFromNow = addWeeks(today, 2);
-      
-      // Clear console for debugging
-      console.log("Fetching meetings from", format(today, 'yyyy-MM-dd'), "to", format(twoWeeksFromNow, 'yyyy-MM-dd'));
       
       const { data, error } = await supabase
         .from('scheduled_meetings')
@@ -32,9 +27,19 @@ export const useScheduledMeetings = () => {
 
       if (error) throw error;
 
-      console.log("Meetings fetched:", data ? data.length : 0, data);
+      const uniqueMeetings = data.reduce((acc: any[], meeting) => {
+        const exists = acc.some(m => 
+          m.workbody_id === meeting.workbody_id && 
+          m.date === meeting.date && 
+          m.time === meeting.time
+        );
+        if (!exists) {
+          acc.push(meeting);
+        }
+        return acc;
+      }, []);
 
-      const formattedMeetings = data.map(meeting => ({
+      const formattedMeetings = uniqueMeetings.map(meeting => ({
         id: meeting.id,
         workbodyId: meeting.workbody_id,
         workbodyName: meeting.workbody_name,
@@ -65,7 +70,6 @@ export const useScheduledMeetings = () => {
     fetchMeetings();
   }, [fetchMeetings]);
 
-  // Subscribe to changes in the scheduled_meetings table
   useMeetingSubscription(fetchMeetings);
 
   return { 
