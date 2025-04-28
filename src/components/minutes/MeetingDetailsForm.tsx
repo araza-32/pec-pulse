@@ -4,6 +4,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { FileUp, Check } from "lucide-react";
+import { AttendanceTracker } from "./AttendanceTracker";
+import { ActionItemsTracker } from "./ActionItemsTracker";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AttendanceRecord, ActionItem, WorkbodyMember } from "@/types";
 
 interface MeetingDetailsFormProps {
   selectedFile: File | null;
@@ -17,6 +21,10 @@ interface MeetingDetailsFormProps {
   setAgendaItems: (value: string) => void;
   actionsAgreed: string;
   setActionsAgreed: (value: string) => void;
+  workbodyId: string | null;
+  workbodyMembers: WorkbodyMember[];
+  onAttendanceChange?: (attendance: AttendanceRecord[]) => void;
+  onActionItemsChange?: (actionItems: ActionItem[]) => void;
 }
 
 export function MeetingDetailsForm({
@@ -30,80 +38,113 @@ export function MeetingDetailsForm({
   agendaItems,
   setAgendaItems,
   actionsAgreed,
-  setActionsAgreed
+  setActionsAgreed,
+  workbodyId,
+  workbodyMembers,
+  onAttendanceChange = () => {},
+  onActionItemsChange = () => {},
 }: MeetingDetailsFormProps) {
+  
+  const agendaItemsArray = agendaItems.split('\n').filter(item => item.trim() !== '');
+  const actionsAgreedArray = actionsAgreed.split('\n').filter(item => item.trim() !== '');
+  
   return (
-    <>
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="meeting-date">Meeting Date</Label>
-          <Input 
-            id="meeting-date" 
-            type="date" 
-            required 
-            value={meetingDate}
-            onChange={(e) => setMeetingDate(e.target.value)}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="meeting-location">Meeting Location</Label>
-          <Input 
-            id="meeting-location" 
-            placeholder="e.g., PEC Headquarters, Islamabad" 
-            required
-            value={meetingLocation}
-            onChange={(e) => setMeetingLocation(e.target.value)} 
-          />
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="agenda-items">Agenda Items (one per line)</Label>
-        <Textarea
-          id="agenda-items"
-          placeholder="List the agenda items discussed in the meeting"
-          rows={3}
-          required
-          value={agendaItems}
-          onChange={(e) => setAgendaItems(e.target.value)}
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="actions-agreed">Actions Agreed (one per line)</Label>
-        <Textarea
-          id="actions-agreed"
-          placeholder="List the actions agreed upon in the meeting"
-          rows={4}
-          required
-          value={actionsAgreed}
-          onChange={(e) => setActionsAgreed(e.target.value)}
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="minutes-file">Upload Minutes PDF</Label>
-        <div className="mt-1 flex items-center gap-4">
-          <Input
-            id="minutes-file"
-            type="file"
-            accept=".pdf"
-            onChange={onFileChange}
-            required
-          />
-          {selectedFile && (
-            <div className="flex items-center rounded-md bg-muted p-2 text-sm">
-              <Check className="mr-2 h-4 w-4 text-pec-green" />
-              {selectedFile.name}
+    <Tabs defaultValue="basic">
+      <TabsList className="grid grid-cols-3 mb-4">
+        <TabsTrigger value="basic">Basic Details</TabsTrigger>
+        <TabsTrigger value="attendance">Attendance</TabsTrigger>
+        <TabsTrigger value="actions">Action Items</TabsTrigger>
+      </TabsList>
+      
+      <TabsContent value="basic">
+        <div className="space-y-6">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="meeting-date">Meeting Date</Label>
+              <Input 
+                id="meeting-date" 
+                type="date" 
+                required 
+                value={meetingDate}
+                onChange={(e) => setMeetingDate(e.target.value)}
+              />
             </div>
-          )}
-        </div>
-        <p className="text-xs text-muted-foreground">
-          Upload the official minutes in PDF format (max 10MB)
-        </p>
-      </div>
+            <div className="space-y-2">
+              <Label htmlFor="meeting-location">Meeting Location</Label>
+              <Input 
+                id="meeting-location" 
+                placeholder="e.g., PEC Headquarters, Islamabad" 
+                required
+                value={meetingLocation}
+                onChange={(e) => setMeetingLocation(e.target.value)} 
+              />
+            </div>
+          </div>
 
-      <div className="flex justify-end">
+          <div className="space-y-2">
+            <Label htmlFor="agenda-items">Agenda Items (one per line)</Label>
+            <Textarea
+              id="agenda-items"
+              placeholder="List the agenda items discussed in the meeting"
+              rows={3}
+              required
+              value={agendaItems}
+              onChange={(e) => setAgendaItems(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="actions-agreed">Actions Agreed (one per line)</Label>
+            <Textarea
+              id="actions-agreed"
+              placeholder="List the actions agreed upon in the meeting"
+              rows={4}
+              required
+              value={actionsAgreed}
+              onChange={(e) => setActionsAgreed(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="minutes-file">Upload Minutes PDF</Label>
+            <div className="mt-1 flex items-center gap-4">
+              <Input
+                id="minutes-file"
+                type="file"
+                accept=".pdf"
+                onChange={onFileChange}
+                required
+              />
+              {selectedFile && (
+                <div className="flex items-center rounded-md bg-muted p-2 text-sm">
+                  <Check className="mr-2 h-4 w-4 text-pec-green" />
+                  {selectedFile.name}
+                </div>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Upload the official minutes in PDF format (max 10MB)
+            </p>
+          </div>
+        </div>
+      </TabsContent>
+      
+      <TabsContent value="attendance">
+        <AttendanceTracker
+          workbodyId={workbodyId}
+          members={workbodyMembers}
+          onChange={onAttendanceChange}
+        />
+      </TabsContent>
+      
+      <TabsContent value="actions">
+        <ActionItemsTracker
+          actionsAgreed={actionsAgreedArray}
+          onChange={onActionItemsChange}
+        />
+      </TabsContent>
+      
+      <div className="flex justify-end mt-6">
         <Button
           type="submit"
           className="bg-pec-green hover:bg-pec-green-600"
@@ -119,6 +160,6 @@ export function MeetingDetailsForm({
           )}
         </Button>
       </div>
-    </>
+    </Tabs>
   );
 }

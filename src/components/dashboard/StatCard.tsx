@@ -1,31 +1,32 @@
 
+import { ReactNode } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
 import { LucideIcon } from "lucide-react";
 
 interface StatCardProps {
   title: string;
   value: string | number;
   icon: LucideIcon;
-  colorClass?: string;
+  colorClass: string;
+  onClick?: () => void;
+  clickable?: boolean;
 }
 
-export function StatCard({
-  title,
-  value,
-  icon: Icon,
-  colorClass = "bg-blue-500",
-}: StatCardProps) {
+export function StatCard({ title, value, icon: Icon, colorClass, onClick, clickable = false }: StatCardProps) {
+  const cardClasses = clickable 
+    ? "transition-all hover:shadow-lg cursor-pointer transform hover:scale-105" 
+    : "";
+
   return (
-    <Card>
+    <Card className={cardClasses} onClick={onClick}>
       <CardContent className="p-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-start justify-between">
           <div>
-            <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <p className="text-3xl font-bold">{value}</p>
+            <p className="text-sm text-muted-foreground">{title}</p>
+            <p className="text-2xl font-bold">{value}</p>
           </div>
-          <div className={cn("rounded-md p-2 text-white", colorClass)}>
-            <Icon className="h-6 w-6" />
+          <div className={`${colorClass} p-2 rounded-lg`}>
+            <Icon className="text-white h-5 w-5" />
           </div>
         </div>
       </CardContent>

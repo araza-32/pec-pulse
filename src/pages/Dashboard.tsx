@@ -5,17 +5,22 @@ import { OverviewStats } from "@/components/dashboard/OverviewStats";
 import { WorkbodyDistribution } from "@/components/dashboard/WorkbodyDistribution";
 import { ActionCompletionProgress } from "@/components/dashboard/ActionCompletionProgress";
 import { ExpiringTaskForceAlert } from "@/components/workbody/ExpiringTaskForceAlert"; 
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { UpcomingMeetings } from "@/components/dashboard/UpcomingMeetings";
 import { useScheduledMeetings } from "@/hooks/useScheduledMeetings";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
+import { WorkbodyType, Workbody } from "@/types";
 
 export default function Dashboard() {
   const { workbodies, isLoading, refetch } = useWorkbodies();
   const { meetings, isLoading: isLoadingMeetings } = useScheduledMeetings();
   const { session } = useAuth();
+  const [activeDialog, setActiveDialog] = useState<string | null>(null);
   
   useEffect(() => {
     // Refetch data when component mounts to ensure fresh data
@@ -71,6 +76,19 @@ export default function Dashboard() {
   // Get upcoming meetings count for the stats display
   const upcomingMeetingsCount = meetings ? meetings.length : 0;
 
+  // Calculate additional statistics
+  const workbodiesWithMostMembers = useMemo(() => {
+    return [...sortedFilteredWorkbodies]
+      .sort((a, b) => b.members.length - a.members.length)
+      .slice(0, 5);
+  }, [sortedFilteredWorkbodies]);
+
+  const workbodiesWithMostMeetings = useMemo(() => {
+    return [...sortedFilteredWorkbodies]
+      .sort((a, b) => b.totalMeetings - a.totalMeetings)
+      .slice(0, 5);
+  }, [sortedFilteredWorkbodies]);
+
   const stats = {
     totalWorkbodies: filteredWorkbodies.length,
     committees: filteredWorkbodies.filter(w => w.type === 'committee').length,
@@ -82,6 +100,10 @@ export default function Dashboard() {
       (filteredWorkbodies.reduce((sum, w) => sum + w.actionsCompleted, 0) / 
        Math.max(1, filteredWorkbodies.reduce((sum, w) => sum + w.actionsAgreed, 0))) * 100
     ) : 0
+  };
+
+  const handleShowDialog = (dialogType: string) => {
+    setActiveDialog(dialogType);
   };
 
   if (isLoading) {
@@ -137,7 +159,9 @@ export default function Dashboard() {
           completionRate: workbody.actionsAgreed ? 
             Math.round((workbody.actionsCompleted / workbody.actionsAgreed) * 100) : 0,
           upcomingMeetingsCount: upcomingMeetingsCount
-        }} />
+        }} 
+        onStatClick={handleShowDialog}
+        />
         
         <div className="grid gap-6 md:grid-cols-2">
           <UpcomingMeetings />
@@ -160,12 +184,15 @@ export default function Dashboard() {
         <ExpiringTaskForceAlert expiringTaskForces={expiringTaskForces} />
       )}
 
-      <OverviewStats stats={{
-        totalWorkbodies: stats.totalWorkbodies,
-        meetingsThisYear: stats.meetingsThisYear,
-        completionRate: stats.completionRate,
-        upcomingMeetingsCount: upcomingMeetingsCount
-      }} />
+      <OverviewStats 
+        stats={{
+          totalWorkbodies: stats.totalWorkbodies,
+          meetingsThisYear: stats.meetingsThisYear,
+          completionRate: stats.completionRate,
+          upcomingMeetingsCount: upcomingMeetingsCount
+        }}
+        onStatClick={handleShowDialog}
+      />
 
       <div className="grid gap-6 md:grid-cols-2">
         <UpcomingMeetings />
@@ -176,7 +203,152 @@ export default function Dashboard() {
         }} />
       </div>
 
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Workbodies with Most Members</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Workbody Name</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead className="text-right">Members</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {workbodiesWithMostMembers.map(workbody => (
+                  <TableRow key={workbody.id}>
+                    <TableCell className="font-medium">{workbody.name}</TableCell>
+                    <TableCell>{formatWorkbodyType(workbody.type)}</TableCell>
+                    <TableCell className="text-right">{workbody.members.length}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Workbodies with Most Meetings</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Workbody Name</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead className="text-right">Total Meetings</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {workbodiesWithMostMeetings.map(workbody => (
+                  <TableRow key={workbody.id}>
+                    <TableCell className="font-medium">{workbody.name}</TableCell>
+                    <TableCell>{formatWorkbodyType(workbody.type)}</TableCell>
+                    <TableCell className="text-right">{workbody.totalMeetings}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
+
       <ActionCompletionProgress workbodies={sortedFilteredWorkbodies} />
+
+      {/* Detail Dialogs */}
+      <Dialog open={activeDialog === 'totalWorkbodies'} onOpenChange={() => setActiveDialog(null)}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Workbodies Overview</DialogTitle>
+          </DialogHeader>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Created Date</TableHead>
+                <TableHead className="text-right">Members</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sortedFilteredWorkbodies.map(workbody => (
+                <TableRow key={workbody.id}>
+                  <TableCell className="font-medium">{workbody.name}</TableCell>
+                  <TableCell>{formatWorkbodyType(workbody.type)}</TableCell>
+                  <TableCell>{new Date(workbody.createdDate).toLocaleDateString()}</TableCell>
+                  <TableCell className="text-right">{workbody.members.length}</TableCell>
+                  <TableCell className="text-right">
+                    <Button 
+                      variant="link" 
+                      size="sm"
+                      onClick={() => window.location.href = `/workbodies/${workbody.id}`}
+                    >
+                      View Details
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={activeDialog === 'meetingsThisYear'} onOpenChange={() => setActiveDialog(null)}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Meetings This Year</DialogTitle>
+          </DialogHeader>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Workbody</TableHead>
+                <TableHead className="text-right">Meetings This Year</TableHead>
+                <TableHead className="text-right">Total Meetings</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sortedFilteredWorkbodies
+                .filter(w => w.meetingsThisYear > 0)
+                .sort((a, b) => b.meetingsThisYear - a.meetingsThisYear)
+                .map(workbody => (
+                  <TableRow key={workbody.id}>
+                    <TableCell className="font-medium">{workbody.name}</TableCell>
+                    <TableCell className="text-right">{workbody.meetingsThisYear}</TableCell>
+                    <TableCell className="text-right">{workbody.totalMeetings}</TableCell>
+                    <TableCell className="text-right">
+                      <Button 
+                        variant="link" 
+                        size="sm"
+                        onClick={() => window.location.href = `/workbodies/${workbody.id}`}
+                      >
+                        View Details
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+            </TableBody>
+          </Table>
+        </DialogContent>
+      </Dialog>
     </div>
   );
+}
+
+function formatWorkbodyType(type: WorkbodyType): string {
+  switch(type) {
+    case 'committee':
+      return 'Committee';
+    case 'working-group':
+      return 'Working Group';
+    case 'task-force':
+      return 'Task Force';
+    default:
+      return type;
+  }
 }

@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { ScheduledMeeting } from '@/types';
 import { useToast } from '@/hooks/use-toast';
@@ -11,9 +11,9 @@ export const useScheduledMeetings = () => {
   const [meetings, setMeetings] = useState<ScheduledMeeting[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-  const { addMeeting, updateMeeting, deleteMeeting } = useMeetingMutations(meetings, setMeetings);
-
-  const fetchMeetings = async () => {
+  
+  // Creating a memoized fetchMeetings function for the subscription to use
+  const fetchMeetings = useCallback(async () => {
     setIsLoading(true);
     try {
       const today = new Date();
@@ -57,11 +57,13 @@ export const useScheduledMeetings = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
+  
+  const { addMeeting, updateMeeting, deleteMeeting } = useMeetingMutations(meetings, setMeetings, fetchMeetings);
 
   useEffect(() => {
     fetchMeetings();
-  }, []);
+  }, [fetchMeetings]);
 
   // Subscribe to changes in the scheduled_meetings table
   useMeetingSubscription(fetchMeetings);

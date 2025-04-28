@@ -7,16 +7,17 @@ export const useMeetingSubscription = (onMeetingChange: () => void) => {
     console.log("Setting up real-time subscription for scheduled_meetings");
     
     const channel = supabase
-      .channel('scheduled_meetings_changes')
+      .channel('scheduled_meetings_channel')
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: '*', // Listen for all events (INSERT, UPDATE, DELETE)
           schema: 'public',
           table: 'scheduled_meetings'
         },
         (payload) => {
           console.log("Real-time update received:", payload);
+          // Force a refetch when any change happens
           onMeetingChange();
         }
       )

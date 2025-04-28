@@ -34,6 +34,23 @@ export interface WorkbodyMember {
   hasCV: boolean;
 }
 
+export interface AttendanceRecord {
+  memberId: string;
+  memberName: string;
+  present: boolean;
+  attendanceType?: 'physical' | 'virtual';
+}
+
+export interface ActionItem {
+  id: string;
+  description: string;
+  assignedTo?: string;
+  dueDate?: string;
+  status: 'pending' | 'completed' | 'delayed';
+  completedDate?: string;
+  meetingId: string;
+}
+
 export interface MeetingMinutes {
   id: string;
   workbodyId: string;
@@ -44,6 +61,8 @@ export interface MeetingMinutes {
   documentUrl: string;
   uploadedAt: string;
   uploadedBy: string;
+  attendance?: AttendanceRecord[];
+  actionItems?: ActionItem[];
 }
 
 export interface ScheduledMeeting {
