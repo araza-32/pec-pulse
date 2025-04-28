@@ -1,113 +1,215 @@
 
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ActionItem } from "@/types";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Plus, Trash2 } from "lucide-react";
-import { ActionItem } from "@/types";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface ActionItemsTrackerProps {
   actionsAgreed: string[];
   onChange: (actionItems: ActionItem[]) => void;
+  previousActions?: ActionItem[];
 }
 
-export function ActionItemsTracker({ actionsAgreed, onChange }: ActionItemsTrackerProps) {
+export function ActionItemsTracker({
+  actionsAgreed,
+  onChange,
+  previousActions = []
+}: ActionItemsTrackerProps) {
   const [actionItems, setActionItems] = useState<ActionItem[]>([]);
 
-  // Initialize action items when actionsAgreed changes
   useEffect(() => {
     if (actionsAgreed.length > 0) {
-      const initialItems: ActionItem[] = actionsAgreed.map((description, index) => ({
-        id: `new-${index}`,
-        description,
-        status: 'pending' as const,
-        meetingId: '',  // Will be set once the meeting is created
+      // Initialize action items for each action agreed
+      const initialActionItems = actionsAgreed.map((action, index) => ({
+        action,
+        assignedTo: '',
+        dueDate: '',
+        status: 'pending',
+        progress: 0
       }));
-      setActionItems(initialItems);
-      onChange(initialItems);
+      setActionItems(initialActionItems);
+      onChange(initialActionItems);
     }
   }, [actionsAgreed, onChange]);
 
-  const handleAddActionItem = () => {
-    const newItem: ActionItem = {
-      id: `new-${actionItems.length}`,
-      description: '',
-      status: 'pending',
-      meetingId: '',
-    };
+  useEffect(() => {
+    if (previousActions.length > 0) {
+      // Add previous action items for tracking progress
+      setActionItems(prev => [...prev, ...previousActions]);
+      onChange([...actionItems, ...previousActions]);
+    }
+  }, [previousActions]);
+
+  const handleActionItemChange = (index: number, field: keyof ActionItem, value: string | number) => {
+    const updatedActionItems = [...actionItems];
+    (updatedActionItems[index] as any)[field] = value;
+    setActionItems(updatedActionItems);
+    onChange(updatedActionItems);
+  };
+
+  const handleStatusChange = (index: number, status: string) => {
+    const updatedActionItems = [...actionItems];
+    updatedActionItems[index].status = status as 'pending' | 'in-progress' | 'completed' | 'delayed';
     
-    const updatedItems = [...actionItems, newItem];
-    setActionItems(updatedItems);
-    onChange(updatedItems);
+    // If completed, set progress to 100%
+    if (status === 'completed') {
+      updatedActionItems[index].progress = 100;
+    }
+    
+    setActionItems(updatedActionItems);
+    onChange(updatedActionItems);
   };
 
-  const handleRemoveActionItem = (index: number) => {
-    const updatedItems = actionItems.filter((_, i) => i !== index);
-    setActionItems(updatedItems);
-    onChange(updatedItems);
-  };
-
-  const handleActionItemChange = (index: number, field: keyof ActionItem, value: any) => {
-    const updatedItems = [...actionItems];
-    updatedItems[index] = { ...updatedItems[index], [field]: value };
-    setActionItems(updatedItems);
-    onChange(updatedItems);
-  };
+  if (actionsAgreed.length === 0 && previousActions.length === 0) {
+    return (
+      <div className="text-center p-4 text-muted-foreground">
+        <p>No action items defined. Enter actions agreed in the previous step.</p>
+      </div>
+    );
+  }
 
   return (
-    <Card>
-      <CardContent className="pt-6">
-        <Label className="mb-4 block text-lg font-medium">Action Items Tracking</Label>
-        
-        <ScrollArea className="h-[300px] pr-4">
-          <div className="space-y-4">
-            {actionItems.map((item, index) => (
-              <div key={index} className="flex items-start space-x-3 pb-3 border-b">
-                <div className="flex-grow">
-                  <Input
-                    value={item.description}
-                    onChange={(e) => handleActionItemChange(index, 'description', e.target.value)}
-                    placeholder="Enter action item description"
-                  />
-                  <div className="grid grid-cols-2 gap-2 mt-2">
+    <div className="space-y-6">
+      {previousActions.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">Previous Action Items Progress</h3>
+          
+          {previousActions.map((item, index) => (
+            <Card key={`prev-${index}`} className="mb-4">
+              <CardContent className="pt-4">
+                <div className="grid gap-4">
+                  <div>
+                    <Label className="font-medium">Action</Label>
+                    <p className="mt-1">{item.action}</p>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Assigned To</Label>
+                      <p className="text-sm text-muted-foreground">{item.assignedTo || "Not assigned"}</p>
+                    </div>
+                    <div>
+                      <Label>Due Date</Label>
+                      <p className="text-sm text-muted-foreground">{item.dueDate || "No due date"}</p>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor={`status-${index}`}>Status</Label>
+                    <Select
+                      value={item.status}
+                      onValueChange={(value) => handleActionItemChange(index + actionsAgreed.length, 'status', value)}
+                    >
+                      <SelectTrigger id={`status-${index}`}>
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="in-progress">In Progress</SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
+                        <SelectItem value="delayed">Delayed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label>Progress (%)</Label>
                     <Input
-                      value={item.assignedTo || ''}
-                      onChange={(e) => handleActionItemChange(index, 'assignedTo', e.target.value)}
-                      placeholder="Assigned to"
-                      className="text-sm"
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={item.progress}
+                      onChange={(e) => handleActionItemChange(index + actionsAgreed.length, 'progress', parseInt(e.target.value) || 0)}
                     />
-                    <Input
-                      type="date"
-                      value={item.dueDate || ''}
-                      onChange={(e) => handleActionItemChange(index, 'dueDate', e.target.value)}
-                      placeholder="Due date"
-                      className="text-sm"
+                    <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+                      <div
+                        className="bg-green-600 h-2.5 rounded-full"
+                        style={{ width: `${item.progress}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`completed-${index}`}
+                      checked={item.status === 'completed'}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          handleStatusChange(index + actionsAgreed.length, 'completed');
+                        }
+                      }}
                     />
+                    <Label htmlFor={`completed-${index}`}>Mark as completed</Label>
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-red-500"
-                  onClick={() => handleRemoveActionItem(index)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
-          </div>
-        </ScrollArea>
-        
-        <Button 
-          className="mt-4 w-full"
-          variant="outline"
-          onClick={handleAddActionItem}
-        >
-          <Plus className="h-4 w-4 mr-2" /> Add Action Item
-        </Button>
-      </CardContent>
-    </Card>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {actionsAgreed.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">New Action Items</h3>
+          
+          {actionsAgreed.map((action, index) => (
+            <Card key={index} className="mb-4">
+              <CardContent className="pt-4">
+                <div className="grid gap-4">
+                  <div>
+                    <Label className="font-medium">Action</Label>
+                    <p className="mt-1">{action}</p>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor={`assigned-${index}`}>Assigned To</Label>
+                      <Input
+                        id={`assigned-${index}`}
+                        placeholder="Enter name"
+                        value={actionItems[index]?.assignedTo || ''}
+                        onChange={(e) => handleActionItemChange(index, 'assignedTo', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor={`due-${index}`}>Due Date</Label>
+                      <Input
+                        id={`due-${index}`}
+                        type="date"
+                        value={actionItems[index]?.dueDate || ''}
+                        onChange={(e) => handleActionItemChange(index, 'dueDate', e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor={`status-${index}`}>Status</Label>
+                    <Select
+                      value={actionItems[index]?.status || 'pending'}
+                      onValueChange={(value) => handleStatusChange(index, value)}
+                    >
+                      <SelectTrigger id={`status-${index}`}>
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="in-progress">In Progress</SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
+                        <SelectItem value="delayed">Delayed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

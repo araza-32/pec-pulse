@@ -1,28 +1,27 @@
+
 import { useState, useMemo, useEffect } from "react";
 import { useWorkbodies } from "@/hooks/useWorkbodies";
 import { OverviewStats } from "@/components/dashboard/OverviewStats";
 import { WorkbodyDistribution } from "@/components/dashboard/WorkbodyDistribution";
 import { ActionCompletionProgress } from "@/components/dashboard/ActionCompletionProgress";
 import { ExpiringTaskForceAlert } from "@/components/workbody/ExpiringTaskForceAlert"; 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { UpcomingMeetings } from "@/components/dashboard/UpcomingMeetings";
 import { useScheduledMeetings } from "@/hooks/useScheduledMeetings";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
-import { WorkbodyType, Workbody } from "@/types";
-import { Pagination } from "@/components/ui/pagination";
+import { WorkbodyTables } from "@/components/dashboard/WorkbodyTables";
+import { AllWorkbodiesTable } from "@/components/dashboard/AllWorkbodiesTable";
+import { DetailDialogs } from "@/components/dashboard/DetailDialogs";
+import { useNavigate } from "react-router-dom";
 
 export default function Dashboard() {
   const { workbodies, isLoading, refetch } = useWorkbodies();
   const { meetings, isLoading: isLoadingMeetings } = useScheduledMeetings();
   const { session } = useAuth();
   const [activeDialog, setActiveDialog] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const navigate = useNavigate();
   
   useEffect(() => {
     const isFirstVisit = !localStorage.getItem('dashboardVisited');
@@ -65,13 +64,6 @@ export default function Dashboard() {
     a.name.localeCompare(b.name)
   );
   
-  const paginatedWorkbodies = sortedFilteredWorkbodies.slice(
-    (currentPage - 1) * itemsPerPage, 
-    currentPage * itemsPerPage
-  );
-  
-  const totalPages = Math.ceil(sortedFilteredWorkbodies.length / itemsPerPage);
-    
   const today = new Date();
   const thirtyDaysFromNow = new Date();
   thirtyDaysFromNow.setDate(today.getDate() + 30);
@@ -119,7 +111,7 @@ export default function Dashboard() {
   };
 
   const handleWorkbodyClick = (workbodyId: string) => {
-    window.location.href = `/workbodies/${workbodyId}`;
+    navigate(`/workbodies/${workbodyId}`);
   };
 
   if (isLoading) {
@@ -219,226 +211,21 @@ export default function Dashboard() {
         }} />
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card className="shadow-sm hover:shadow-md transition-shadow duration-300">
-          <CardHeader>
-            <CardTitle>Workbodies with Most Members</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="max-h-[400px] overflow-y-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Workbody Name</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead className="text-right">Members</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {workbodiesWithMostMembers.map(workbody => (
-                    <TableRow 
-                      key={workbody.id} 
-                      className="cursor-pointer hover:bg-gray-50"
-                      onClick={() => handleWorkbodyClick(workbody.id)}
-                    >
-                      <TableCell className="font-medium">{workbody.name}</TableCell>
-                      <TableCell>{formatWorkbodyType(workbody.type)}</TableCell>
-                      <TableCell className="text-right">{workbody.members.length}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="shadow-sm hover:shadow-md transition-shadow duration-300">
-          <CardHeader>
-            <CardTitle>Workbodies with Most Meetings</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="max-h-[400px] overflow-y-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Workbody Name</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead className="text-right">Total Meetings</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {workbodiesWithMostMeetings.map(workbody => (
-                    <TableRow 
-                      key={workbody.id} 
-                      className="cursor-pointer hover:bg-gray-50"
-                      onClick={() => handleWorkbodyClick(workbody.id)}
-                    >
-                      <TableCell className="font-medium">{workbody.name}</TableCell>
-                      <TableCell>{formatWorkbodyType(workbody.type)}</TableCell>
-                      <TableCell className="text-right">{workbody.totalMeetings}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <WorkbodyTables 
+        workbodiesWithMostMembers={workbodiesWithMostMembers}
+        workbodiesWithMostMeetings={workbodiesWithMostMeetings}
+        handleWorkbodyClick={handleWorkbodyClick}
+      />
 
       <ActionCompletionProgress workbodies={sortedFilteredWorkbodies} />
 
-      <Card className="shadow-sm hover:shadow-md transition-shadow duration-300 mt-6">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>All Workbodies</CardTitle>
-          <Button 
-            variant="outline" 
-            className="text-pec-green border-pec-green hover:bg-pec-green/10"
-          >
-            Export List
-          </Button>
-        </CardHeader>
-        <CardContent>
-          <div className="max-h-[500px] overflow-y-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Created Date</TableHead>
-                  <TableHead className="text-right">Members</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paginatedWorkbodies.map(workbody => (
-                  <TableRow key={workbody.id} className="hover:bg-gray-50">
-                    <TableCell className="font-medium">{workbody.name}</TableCell>
-                    <TableCell>{formatWorkbodyType(workbody.type)}</TableCell>
-                    <TableCell>{new Date(workbody.createdDate).toLocaleDateString()}</TableCell>
-                    <TableCell className="text-right">{workbody.members.length}</TableCell>
-                    <TableCell className="text-right">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
-                        onClick={() => window.location.href = `/workbodies/${workbody.id}`}
-                      >
-                        View Details
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-          
-          {totalPages > 1 && (
-            <div className="flex justify-center mt-4">
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={setCurrentPage}
-              />
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <AllWorkbodiesTable workbodies={sortedFilteredWorkbodies} />
 
-      <Dialog open={activeDialog === 'totalWorkbodies'} onOpenChange={() => setActiveDialog(null)}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Workbodies Overview</DialogTitle>
-          </DialogHeader>
-          <div className="max-h-[70vh] overflow-y-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Created Date</TableHead>
-                  <TableHead className="text-right">Members</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sortedFilteredWorkbodies.map(workbody => (
-                  <TableRow key={workbody.id}>
-                    <TableCell className="font-medium">{workbody.name}</TableCell>
-                    <TableCell>{formatWorkbodyType(workbody.type)}</TableCell>
-                    <TableCell>{new Date(workbody.createdDate).toLocaleDateString()}</TableCell>
-                    <TableCell className="text-right">{workbody.members.length}</TableCell>
-                    <TableCell className="text-right">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
-                        onClick={() => window.location.href = `/workbodies/${workbody.id}`}
-                      >
-                        View Details
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={activeDialog === 'meetingsThisYear'} onOpenChange={() => setActiveDialog(null)}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Meetings This Year</DialogTitle>
-          </DialogHeader>
-          <div className="max-h-[70vh] overflow-y-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Workbody</TableHead>
-                  <TableHead className="text-right">Meetings This Year</TableHead>
-                  <TableHead className="text-right">Total Meetings</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sortedFilteredWorkbodies
-                  .filter(w => w.meetingsThisYear > 0)
-                  .sort((a, b) => b.meetingsThisYear - a.meetingsThisYear)
-                  .map(workbody => (
-                    <TableRow key={workbody.id}>
-                      <TableCell className="font-medium">{workbody.name}</TableCell>
-                      <TableCell className="text-right">{workbody.meetingsThisYear}</TableCell>
-                      <TableCell className="text-right">{workbody.totalMeetings}</TableCell>
-                      <TableCell className="text-right">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
-                          onClick={() => window.location.href = `/workbodies/${workbody.id}`}
-                        >
-                          View Details
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-              </TableBody>
-            </Table>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <DetailDialogs 
+        activeDialog={activeDialog}
+        setActiveDialog={setActiveDialog}
+        workbodies={sortedFilteredWorkbodies}
+      />
     </div>
   );
-}
-
-function formatWorkbodyType(type: WorkbodyType): string {
-  switch(type) {
-    case 'committee':
-      return 'Committee';
-    case 'working-group':
-      return 'Working Group';
-    case 'task-force':
-      return 'Task Force';
-    default:
-      return type;
-  }
 }

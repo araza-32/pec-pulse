@@ -3,10 +3,11 @@ import { format, parseISO } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { CalendarIcon, Clock, MapPin, FileText, Pencil } from "lucide-react";
+import { CalendarIcon, Clock, MapPin, FileText, Pencil, Trash } from "lucide-react";
 import { ScheduledMeeting, Workbody } from "@/types";
 import { useState } from "react";
 import { EditMeetingDialog } from "./EditMeetingDialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 interface ViewMeetingDialogProps {
   meeting: ScheduledMeeting | null;
@@ -30,12 +31,24 @@ export function ViewMeetingDialog({
   userRole = 'member'
 }: ViewMeetingDialogProps) {
   const [isEditMode, setIsEditMode] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const canEditMeeting = userRole === 'admin' || userRole === 'coordination';
 
   if (!meeting) return null;
 
   const handleEdit = () => {
     setIsEditMode(true);
+  };
+
+  const handleDelete = () => {
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (onDelete) {
+      await onDelete(meeting.id);
+      onClose();
+    }
   };
 
   return (
@@ -46,15 +59,26 @@ export function ViewMeetingDialog({
             <DialogTitle className="flex items-center justify-between">
               <span>Meeting Details</span>
               {onUpdate && onDelete && canEditMeeting && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-2"
-                  onClick={handleEdit}
-                >
-                  <Pencil className="h-4 w-4" />
-                  Edit
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                    onClick={handleEdit}
+                  >
+                    <Pencil className="h-4 w-4" />
+                    Edit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 text-red-600 hover:bg-red-50 hover:text-red-700"
+                    onClick={handleDelete}
+                  >
+                    <Trash className="h-4 w-4" />
+                    Delete
+                  </Button>
+                </div>
               )}
             </DialogTitle>
           </DialogHeader>
@@ -143,6 +167,26 @@ export function ViewMeetingDialog({
           isLoadingWorkbodies={isLoadingWorkbodies}
         />
       )}
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Meeting</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this meeting? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

@@ -25,6 +25,7 @@ interface MeetingDetailsFormProps {
   workbodyMembers: WorkbodyMember[];
   onAttendanceChange?: (attendance: AttendanceRecord[]) => void;
   onActionItemsChange?: (actionItems: ActionItem[]) => void;
+  previousActions?: ActionItem[];
 }
 
 export function MeetingDetailsForm({
@@ -43,6 +44,7 @@ export function MeetingDetailsForm({
   workbodyMembers,
   onAttendanceChange = () => {},
   onActionItemsChange = () => {},
+  previousActions = [],
 }: MeetingDetailsFormProps) {
   
   const agendaItemsArray = agendaItems.split('\n').filter(item => item.trim() !== '');
@@ -141,6 +143,7 @@ export function MeetingDetailsForm({
         <ActionItemsTracker
           actionsAgreed={actionsAgreedArray}
           onChange={onActionItemsChange}
+          previousActions={previousActions}
         />
       </TabsContent>
       

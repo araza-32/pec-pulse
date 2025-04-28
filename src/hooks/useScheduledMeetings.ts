@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { ScheduledMeeting } from '@/types';
@@ -27,6 +28,7 @@ export const useScheduledMeetings = () => {
 
       if (error) throw error;
 
+      // Filter out duplicate meetings (same workbody, date, and time)
       const uniqueMeetings = data.reduce((acc: any[], meeting) => {
         const exists = acc.some(m => 
           m.workbody_id === meeting.workbody_id && 

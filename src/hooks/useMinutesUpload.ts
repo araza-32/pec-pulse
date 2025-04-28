@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useWorkbodies } from "@/hooks/useWorkbodies";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,6 +19,7 @@ export const useMinutesUpload = () => {
   const [actionsAgreed, setActionsAgreed] = useState<string>("");
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [actionItems, setActionItems] = useState<ActionItem[]>([]);
+  const [previousActions, setPreviousActions] = useState<ActionItem[]>([]);
 
   const [userRole] = useState<"admin" | "coordination" | "secretary">(
     (window as any).MOCK_USER_ROLE || "admin"
@@ -26,6 +27,47 @@ export const useMinutesUpload = () => {
   const userWorkbodyId = (window as any).MOCK_USER_WORKBODY_ID || null;
 
   const { workbodies = [], isLoading, refetch } = useWorkbodies();
+
+  // Fetch previous action items when workbody is selected
+  useEffect(() => {
+    if (selectedWorkbody) {
+      fetchPreviousActions();
+    }
+  }, [selectedWorkbody]);
+
+  const fetchPreviousActions = async () => {
+    try {
+      // Get the most recent meeting minutes for this workbody
+      const { data, error } = await supabase
+        .from('meeting_minutes')
+        .select('*')
+        .eq('workbody_id', selectedWorkbody)
+        .order('date', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error || !data) {
+        // No previous minutes found, that's OK
+        return;
+      }
+
+      // If there are actions agreed in the previous minutes, add them to the form
+      if (data.actions_agreed && data.actions_agreed.length > 0) {
+        const previousActionItems = data.actions_agreed.map((action: string) => ({
+          action,
+          assignedTo: '',
+          dueDate: '',
+          status: 'pending',
+          progress: 0,
+          isPrevious: true
+        }));
+        
+        setPreviousActions(previousActionItems);
+      }
+    } catch (error) {
+      console.error("Error fetching previous actions:", error);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,20 +145,40 @@ export const useMinutesUpload = () => {
       
       if (minutesError) throw minutesError;
       
-      // If we have attendance records, store them
+      // Store attendance records
       if (attendanceRecords.length > 0) {
-        // Store attendance records - in a production app, this would be stored in a separate table
         console.log("Attendance records:", attendanceRecords);
+        // In a production app, this would be stored in a separate table
+        // For now we're just logging them
       }
       
-      // If we have action items, store them
+      // Store action items
       if (actionItems.length > 0 && minutesData) {
-        // Update action items with the meeting ID and store them
+        // Update action items with the meeting ID
         const updatedActionItems = actionItems.map(item => ({
           ...item,
           meetingId: minutesData.id
         }));
         console.log("Action items:", updatedActionItems);
+        
+        // Update any completed previous actions
+        const completedPreviousActions = actionItems.filter(
+          item => item.isPrevious && item.status === 'completed'
+        );
+        
+        if (completedPreviousActions.length > 0) {
+          console.log("Completed previous actions:", completedPreviousActions);
+          // Update workbody stats for completed actions
+          const workbody = workbodies.find(wb => wb.id === selectedWorkbody);
+          if (workbody) {
+            await supabase
+              .from('workbodies')
+              .update({
+                actions_completed: workbody.actionsCompleted + completedPreviousActions.length
+              })
+              .eq('id', selectedWorkbody);
+          }
+        }
       }
 
       // Update workbody stats
@@ -152,6 +214,7 @@ export const useMinutesUpload = () => {
       setSelectedFile(null);
       setAttendanceRecords([]);
       setActionItems([]);
+      setPreviousActions([]);
       
     } catch (error: any) {
       console.error("Upload error:", error);
@@ -171,6 +234,14 @@ export const useMinutesUpload = () => {
     }
   };
 
+  const handleAttendanceChange = (records: AttendanceRecord[]) => {
+    setAttendanceRecords(records);
+  };
+
+  const handleActionItemsChange = (items: ActionItem[]) => {
+    setActionItems(items);
+  };
+
   return {
     isUploading,
     selectedFile,
@@ -188,12 +259,15 @@ export const useMinutesUpload = () => {
     setAttendanceRecords,
     actionItems,
     setActionItems,
+    previousActions,
     userRole,
     workbodies,
     isLoading,
     userWorkbodyId,
     handleSubmit,
     handleFileChange,
+    handleAttendanceChange,
+    handleActionItemsChange,
     setSelectedWorkbodyType,
     setSelectedWorkbody
   };

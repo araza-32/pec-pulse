@@ -1,10 +1,9 @@
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { WorkbodySelection } from "@/components/minutes/WorkbodySelection";
 import { MeetingDetailsForm } from "@/components/minutes/MeetingDetailsForm";
 import { useMinutesUpload } from "@/hooks/useMinutesUpload";
-import { AttendanceRecord, ActionItem } from "@/types";
 
 export default function UploadMinutes() {
   const {
@@ -26,12 +25,12 @@ export default function UploadMinutes() {
     userWorkbodyId,
     handleSubmit,
     handleFileChange,
+    handleAttendanceChange,
+    handleActionItemsChange,
     setSelectedWorkbodyType,
-    setSelectedWorkbody
+    setSelectedWorkbody,
+    previousActions
   } = useMinutesUpload();
-
-  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
-  const [actionItems, setActionItems] = useState<ActionItem[]>([]);
 
   // Filtering logic based on user role and sorting alphabetically
   const availableWorkbodies = useMemo(() => {
@@ -51,14 +50,6 @@ export default function UploadMinutes() {
     const workbody = workbodies.find(wb => wb.id === selectedWorkbody);
     return workbody ? workbody.members : [];
   }, [selectedWorkbody, workbodies]);
-
-  const handleAttendanceChange = (attendance: AttendanceRecord[]) => {
-    setAttendanceRecords(attendance);
-  };
-
-  const handleActionItemsChange = (items: ActionItem[]) => {
-    setActionItems(items);
-  };
 
   return (
     <div className="space-y-6">
@@ -98,6 +89,7 @@ export default function UploadMinutes() {
               workbodyMembers={currentWorkbodyMembers}
               onAttendanceChange={handleAttendanceChange}
               onActionItemsChange={handleActionItemsChange}
+              previousActions={previousActions}
             />
           </form>
         </CardContent>

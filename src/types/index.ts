@@ -1,4 +1,3 @@
-
 export type WorkbodyType = 'committee' | 'working-group' | 'task-force';
 
 export interface User {
@@ -35,20 +34,20 @@ export interface WorkbodyMember {
 }
 
 export interface AttendanceRecord {
-  memberId: string;
+  memberId?: string;
   memberName: string;
+  organization?: string;
   present: boolean;
-  attendanceType?: 'physical' | 'virtual';
+  remarks?: string;
 }
 
 export interface ActionItem {
-  id: string;
-  description: string;
-  assignedTo?: string;
+  action: string;
+  assignedTo: string;
   dueDate?: string;
-  status: 'pending' | 'completed' | 'delayed';
-  completedDate?: string;
-  meetingId: string;
+  status: 'pending' | 'in-progress' | 'completed' | 'delayed';
+  progress?: number;
+  isPrevious?: boolean;
 }
 
 export interface MeetingMinutes {
@@ -73,8 +72,8 @@ export interface ScheduledMeeting {
   time: string;
   location: string;
   agendaItems: string[];
-  notificationFile?: string;
-  notificationFilePath?: string;
+  notificationFile?: string | null;
+  notificationFilePath?: string | null;
 }
 
 export interface DashboardStat {

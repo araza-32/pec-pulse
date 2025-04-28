@@ -1,11 +1,12 @@
 
-import { useState, useEffect } from "react";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
+import { useEffect, useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { AttendanceRecord, WorkbodyMember } from "@/types";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Card, CardContent } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 
 interface AttendanceTrackerProps {
   workbodyId: string | null;
@@ -13,116 +14,176 @@ interface AttendanceTrackerProps {
   onChange: (attendance: AttendanceRecord[]) => void;
 }
 
-export function AttendanceTracker({ workbodyId, members, onChange }: AttendanceTrackerProps) {
+export function AttendanceTracker({
+  workbodyId,
+  members,
+  onChange
+}: AttendanceTrackerProps) {
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
+  const [nonMembers, setNonMembers] = useState<{name: string, organization: string}[]>([]);
+  const [newAttendee, setNewAttendee] = useState({ name: "", organization: "" });
 
-  // Initialize attendance records when members change
   useEffect(() => {
     if (workbodyId && members.length > 0) {
+      // Initialize attendance records for each member
       const initialAttendance = members.map(member => ({
-        memberId: member.id,
+        memberId: member.id || '',
         memberName: member.name,
         present: false,
-        attendanceType: undefined
+        remarks: ''
       }));
       setAttendance(initialAttendance);
       onChange(initialAttendance);
     }
   }, [workbodyId, members, onChange]);
 
-  const handlePresenceChange = (memberId: string, present: boolean) => {
-    const updatedAttendance = attendance.map(record => {
-      if (record.memberId === memberId) {
-        return {
-          ...record,
-          present,
-          // Reset attendance type if marked as absent
-          attendanceType: present ? record.attendanceType : undefined
-        };
-      }
-      return record;
-    });
-    
+  const handleAttendanceChange = (index: number, present: boolean) => {
+    const updatedAttendance = [...attendance];
+    updatedAttendance[index] = {
+      ...updatedAttendance[index],
+      present
+    };
     setAttendance(updatedAttendance);
-    onChange(updatedAttendance);
+    onChange([...updatedAttendance, ...nonMembers.map(nm => ({
+      memberName: nm.name,
+      organization: nm.organization,
+      present: true,
+      remarks: ''
+    }))]);
   };
 
-  const handleAttendanceTypeChange = (memberId: string, type: 'physical' | 'virtual') => {
-    const updatedAttendance = attendance.map(record => {
-      if (record.memberId === memberId) {
-        return {
-          ...record,
-          attendanceType: type
-        };
-      }
-      return record;
-    });
-    
+  const handleRemarksChange = (index: number, remarks: string) => {
+    const updatedAttendance = [...attendance];
+    updatedAttendance[index] = {
+      ...updatedAttendance[index],
+      remarks
+    };
     setAttendance(updatedAttendance);
-    onChange(updatedAttendance);
+    onChange([...updatedAttendance, ...nonMembers.map(nm => ({
+      memberName: nm.name,
+      organization: nm.organization,
+      present: true,
+      remarks: ''
+    }))]);
   };
 
-  if (members.length === 0) {
+  const addNonMember = () => {
+    if (newAttendee.name.trim() === "") return;
+    
+    setNonMembers([...nonMembers, newAttendee]);
+    setNewAttendee({ name: "", organization: "" });
+    
+    onChange([...attendance, ...nonMembers.map(nm => ({
+      memberName: nm.name,
+      organization: nm.organization,
+      present: true,
+      remarks: ''
+    })), {
+      memberName: newAttendee.name,
+      organization: newAttendee.organization,
+      present: true,
+      remarks: ''
+    }]);
+  };
+
+  const removeNonMember = (index: number) => {
+    const updatedNonMembers = [...nonMembers];
+    updatedNonMembers.splice(index, 1);
+    setNonMembers(updatedNonMembers);
+    
+    onChange([...attendance, ...updatedNonMembers.map(nm => ({
+      memberName: nm.name,
+      organization: nm.organization,
+      present: true,
+      remarks: ''
+    }))]);
+  };
+
+  if (!workbodyId || members.length === 0) {
     return (
-      <div className="text-center p-4">
-        <p className="text-muted-foreground">No members found for this workbody.</p>
+      <div className="text-center p-4 text-muted-foreground">
+        <p>Please select a workbody to mark attendance.</p>
       </div>
     );
   }
 
   return (
-    <Card>
-      <CardContent className="pt-6">
-        <Label className="mb-4 block text-lg font-medium">Meeting Attendance</Label>
+    <div className="space-y-6">
+      <div className="space-y-4">
+        <h3 className="text-lg font-medium">Workbody Members Attendance</h3>
         
-        <ScrollArea className="h-[300px] pr-4">
-          <div className="space-y-4">
-            {attendance.map((record) => (
-              <div key={record.memberId} className="border-b pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center space-x-3">
-                    <Checkbox 
-                      id={`present-${record.memberId}`}
-                      checked={record.present}
-                      onCheckedChange={(checked) => handlePresenceChange(record.memberId, checked === true)}
-                    />
-                    <Label 
-                      htmlFor={`present-${record.memberId}`}
-                      className={record.present ? "font-medium" : "text-muted-foreground"}
-                    >
-                      {record.memberName}
-                    </Label>
-                  </div>
-                </div>
-                
-                {record.present && (
-                  <div className="mt-2 ml-6">
-                    <RadioGroup 
-                      value={record.attendanceType}
-                      onValueChange={(value) => handleAttendanceTypeChange(record.memberId, value as 'physical' | 'virtual')}
-                      className="flex space-x-4"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="physical" id={`physical-${record.memberId}`} />
-                        <Label htmlFor={`physical-${record.memberId}`}>Physical</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="virtual" id={`virtual-${record.memberId}`} />
-                        <Label htmlFor={`virtual-${record.memberId}`}>Virtual</Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
-                )}
-              </div>
-            ))}
+        {attendance.map((record, index) => (
+          <div key={index} className="flex items-start space-x-4 py-3 border-b last:border-0">
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id={`member-${index}`}
+                checked={record.present}
+                onCheckedChange={(checked) => handleAttendanceChange(index, checked as boolean)}
+              />
+              <Label htmlFor={`member-${index}`} className="text-base font-medium">
+                {record.memberName}
+              </Label>
+            </div>
+            
+            {record.present && (
+              <Textarea
+                placeholder="Any remarks about this member's attendance or participation"
+                value={record.remarks}
+                onChange={(e) => handleRemarksChange(index, e.target.value)}
+                className="ml-auto w-2/3"
+                rows={1}
+              />
+            )}
           </div>
-        </ScrollArea>
+        ))}
+      </div>
+      
+      <div className="space-y-4">
+        <h3 className="text-lg font-medium">Additional Attendees</h3>
         
-        <div className="mt-4 text-sm text-muted-foreground">
-          <p>Total Members: {members.length}</p>
-          <p>Present: {attendance.filter(r => r.present).length}</p>
+        {nonMembers.map((nonMember, index) => (
+          <Card key={index} className="mb-2">
+            <CardContent className="pt-4 flex justify-between items-center">
+              <div>
+                <p className="font-medium">{nonMember.name}</p>
+                <p className="text-sm text-muted-foreground">{nonMember.organization}</p>
+              </div>
+              <button 
+                onClick={() => removeNonMember(index)}
+                className="text-red-500 hover:text-red-700 text-sm"
+              >
+                Remove
+              </button>
+            </CardContent>
+          </Card>
+        ))}
+        
+        <div className="grid grid-cols-2 gap-4">
+          <Input
+            placeholder="Attendee Name"
+            value={newAttendee.name}
+            onChange={(e) => setNewAttendee({...newAttendee, name: e.target.value})}
+          />
+          <Input
+            placeholder="Organization"
+            value={newAttendee.organization}
+            onChange={(e) => setNewAttendee({...newAttendee, organization: e.target.value})}
+          />
         </div>
-      </CardContent>
-    </Card>
+        
+        <button
+          type="button"
+          onClick={addNonMember}
+          className="text-blue-600 hover:text-blue-800 text-sm flex items-center"
+          disabled={!newAttendee.name.trim()}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+            <path d="M12 5v14"></path>
+            <path d="M5 12h14"></path>
+          </svg>
+          Add External Attendee
+        </button>
+      </div>
+    </div>
   );
 }
