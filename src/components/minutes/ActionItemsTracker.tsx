@@ -19,10 +19,10 @@ export function ActionItemsTracker({ actionsAgreed, onChange }: ActionItemsTrack
   // Initialize action items when actionsAgreed changes
   useEffect(() => {
     if (actionsAgreed.length > 0) {
-      const initialItems = actionsAgreed.map((description, index) => ({
+      const initialItems: ActionItem[] = actionsAgreed.map((description, index) => ({
         id: `new-${index}`,
         description,
-        status: 'pending',
+        status: 'pending' as const,
         meetingId: '',  // Will be set once the meeting is created
       }));
       setActionItems(initialItems);

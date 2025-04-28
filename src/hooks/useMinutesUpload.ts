@@ -1,8 +1,10 @@
+
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useWorkbodies } from "@/hooks/useWorkbodies";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { AttendanceRecord, ActionItem } from "@/types";
 
 export const useMinutesUpload = () => {
   const navigate = useNavigate();
@@ -15,6 +17,8 @@ export const useMinutesUpload = () => {
   const [meetingLocation, setMeetingLocation] = useState<string>("");
   const [agendaItems, setAgendaItems] = useState<string>("");
   const [actionsAgreed, setActionsAgreed] = useState<string>("");
+  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
+  const [actionItems, setActionItems] = useState<ActionItem[]>([]);
 
   const [userRole] = useState<"admin" | "coordination" | "secretary">(
     (window as any).MOCK_USER_ROLE || "admin"
@@ -82,7 +86,8 @@ export const useMinutesUpload = () => {
       const agendaItemsArray = agendaItems.split('\n').filter(item => item.trim() !== '');
       const actionsAgreedArray = actionsAgreed.split('\n').filter(item => item.trim() !== '');
       
-      await supabase
+      // Insert the meeting minutes
+      const { data: minutesData, error: minutesError } = await supabase
         .from('meeting_minutes')
         .insert({
           workbody_id: selectedWorkbody,
@@ -92,8 +97,29 @@ export const useMinutesUpload = () => {
           actions_agreed: actionsAgreedArray,
           file_url: publicUrl,
           uploaded_at: new Date().toISOString()
-        });
+        })
+        .select('id')
+        .single();
+      
+      if (minutesError) throw minutesError;
+      
+      // If we have attendance records, store them
+      if (attendanceRecords.length > 0) {
+        // Store attendance records - in a production app, this would be stored in a separate table
+        console.log("Attendance records:", attendanceRecords);
+      }
+      
+      // If we have action items, store them
+      if (actionItems.length > 0 && minutesData) {
+        // Update action items with the meeting ID and store them
+        const updatedActionItems = actionItems.map(item => ({
+          ...item,
+          meetingId: minutesData.id
+        }));
+        console.log("Action items:", updatedActionItems);
+      }
 
+      // Update workbody stats
       const workbody = workbodies.find(wb => wb.id === selectedWorkbody);
       if (workbody) {
         const now = new Date();
@@ -124,6 +150,8 @@ export const useMinutesUpload = () => {
       setAgendaItems("");
       setActionsAgreed("");
       setSelectedFile(null);
+      setAttendanceRecords([]);
+      setActionItems([]);
       
     } catch (error: any) {
       console.error("Upload error:", error);
@@ -156,6 +184,10 @@ export const useMinutesUpload = () => {
     setAgendaItems,
     actionsAgreed,
     setActionsAgreed,
+    attendanceRecords,
+    setAttendanceRecords,
+    actionItems,
+    setActionItems,
     userRole,
     workbodies,
     isLoading,
