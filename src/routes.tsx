@@ -31,7 +31,7 @@ export const publicRoutes = [
   {
     path: "/",
     element: (
-      <Layout user={null} onLogout={() => {}}>
+      <Layout>
         <Index />
       </Layout>
     ),
@@ -91,16 +91,7 @@ export const router = [
     ...route,
     element: (
       <ProtectedRoute>
-        <Layout 
-          user={{
-            id: "user-id",
-            name: "User",
-            email: "user@example.com",
-            role: "admin",
-            workbodyId: undefined
-          }} 
-          onLogout={() => {}}
-        >
+        <Layout>
           {route.element}
         </Layout>
       </ProtectedRoute>
@@ -109,9 +100,10 @@ export const router = [
   {
     path: "*",
     element: (
-      <Layout user={null} onLogout={() => {}}>
+      <Layout>
         <NotFound />
       </Layout>
     ),
   },
 ];
+
