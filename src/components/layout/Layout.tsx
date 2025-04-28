@@ -1,8 +1,10 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "./Header";
 import { Sidebar } from "./Sidebar";
 import { useAuth } from "@/contexts/AuthContext";
+import { Toaster } from "@/components/ui/toaster";
+import { Loading } from "@/components/ui/loading";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -11,12 +13,22 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { session, logout } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
   
   const currentUser = session ? {
     name: session.name || 'User',
     role: session.role || 'user',
     workbodyId: session.workbodyId
   } : null;
+  
+  // Simulated loading effect for better user experience
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 800);
+    
+    return () => clearTimeout(timer);
+  }, []);
   
   const handleLogout = () => {
     if (logout) {
@@ -27,6 +39,10 @@ export function Layout({ children }: LayoutProps) {
   
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
   const closeSidebar = () => setSidebarOpen(false);
+  
+  if (isLoading) {
+    return <Loading />;
+  }
   
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">
@@ -47,10 +63,10 @@ export function Layout({ children }: LayoutProps) {
         )}
         
         <main 
-          className="flex-1 overflow-y-auto"
+          className="flex-1 overflow-y-auto transition-all duration-300"
           onClick={closeSidebar}
         >
-          <div className="container py-6">
+          <div className="container py-6 animate-fade-in">
             {children}
           </div>
           
@@ -59,6 +75,8 @@ export function Layout({ children }: LayoutProps) {
           </footer>
         </main>
       </div>
+      
+      <Toaster />
     </div>
   );
 }

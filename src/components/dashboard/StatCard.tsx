@@ -14,8 +14,8 @@ interface StatCardProps {
 
 export function StatCard({ title, value, icon: Icon, colorClass, onClick, clickable = false }: StatCardProps) {
   const cardClasses = clickable 
-    ? "transition-all hover:shadow-lg cursor-pointer transform hover:scale-105" 
-    : "";
+    ? "transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer" 
+    : "transition-shadow duration-300 hover:shadow-md";
 
   return (
     <Card className={cardClasses} onClick={onClick}>
@@ -23,9 +23,9 @@ export function StatCard({ title, value, icon: Icon, colorClass, onClick, clicka
         <div className="flex items-start justify-between">
           <div>
             <p className="text-sm text-muted-foreground">{title}</p>
-            <p className="text-2xl font-bold">{value}</p>
+            <p className="text-2xl font-bold mt-1">{value}</p>
           </div>
-          <div className={`${colorClass} p-2 rounded-lg`}>
+          <div className={`${colorClass} p-3 rounded-lg`}>
             <Icon className="text-white h-5 w-5" />
           </div>
         </div>

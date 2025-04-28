@@ -4,7 +4,7 @@
 @tailwind utilities;
 
 /* Import Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&display=swap');
 
 @layer base {
   :root {
@@ -36,21 +36,42 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Open Sans', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold;
   }
 
   /* Custom hover effects */
   .hover-scale {
-    @apply transition-transform duration-200 hover:scale-105;
+    @apply transition-transform duration-300 hover:scale-105;
   }
 
   /* Card hover effects */
   .card-hover {
-    @apply transition-shadow duration-200 hover:shadow-lg;
+    @apply transition-shadow duration-300 hover:shadow-lg;
   }
 
   /* Button hover effects */
   .button-hover {
-    @apply transition-colors duration-200;
+    @apply transition-colors duration-300;
+  }
+  
+  /* Table improvements */
+  table {
+    @apply w-full text-sm text-left;
+  }
+  
+  th {
+    @apply text-xs uppercase tracking-wider font-semibold py-3 px-4;
+  }
+  
+  td {
+    @apply py-3 px-4;
+  }
+  
+  tr {
+    @apply border-b border-gray-100;
   }
 }

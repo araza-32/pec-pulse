@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
-import { Mail, Lock } from "lucide-react";
+import { Mail, Lock, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface LoginFormProps {
   onLogin: (email: string, password: string) => Promise<void>;
@@ -35,7 +36,7 @@ export function LoginForm({ onLogin }: LoginFormProps) {
       navigate('/dashboard');
     } catch (err) {
       console.error("Login error:", err);
-      setError("Failed to login. Please check your credentials.");
+      setError("Failed to login. Please check your credentials and try again.");
     } finally {
       setIsLoading(false);
     }
@@ -78,7 +79,7 @@ export function LoginForm({ onLogin }: LoginFormProps) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-white to-gray-100">
       <div className="w-full max-w-md px-4">
-        <Card className="w-full shadow-lg border-0">
+        <Card className="w-full shadow-lg border-0 animate-fade-in">
           <CardHeader className="space-y-4 text-center pb-6">
             <div className="flex justify-center">
               <img 
@@ -106,7 +107,7 @@ export function LoginForm({ onLogin }: LoginFormProps) {
                     placeholder="name@pec.org.pk"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 rounded-lg"
                     required
                   />
                 </div>
@@ -131,21 +132,22 @@ export function LoginForm({ onLogin }: LoginFormProps) {
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 rounded-lg"
                     required
                   />
                 </div>
               </div>
               
               {error && (
-                <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">
-                  {error}
-                </div>
+                <Alert variant="destructive" className="animate-fade-in">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
               )}
               
               <Button 
                 type="submit" 
-                className="w-full bg-pec-green hover:bg-pec-green-600 transition-colors duration-300"
+                className="w-full bg-pec-green hover:bg-pec-green-600 transition-colors duration-300 rounded-lg h-11"
                 disabled={isLoading}
               >
                 {isLoading ? "Signing in..." : "Sign in"}
@@ -172,7 +174,7 @@ export function LoginForm({ onLogin }: LoginFormProps) {
                   variant="outline"
                   onClick={handleAdminClick}
                   disabled={isAdminLoading}
-                  className="transition-all duration-300"
+                  className="transition-all duration-300 rounded-lg"
                 >
                   Login as Admin
                 </Button>
@@ -182,7 +184,7 @@ export function LoginForm({ onLogin }: LoginFormProps) {
                   variant="outline"
                   onClick={handleCoordinationClick}
                   disabled={isAdminLoading}
-                  className="transition-all duration-300"
+                  className="transition-all duration-300 rounded-lg"
                 >
                   Login as Coordination
                 </Button>

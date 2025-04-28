@@ -15,14 +15,28 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { WorkbodyType, Workbody } from "@/types";
+import { Pagination } from "@/components/ui/pagination";
 
 export default function Dashboard() {
   const { workbodies, isLoading, refetch } = useWorkbodies();
   const { meetings, isLoading: isLoadingMeetings } = useScheduledMeetings();
   const { session } = useAuth();
   const [activeDialog, setActiveDialog] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   
   useEffect(() => {
+    // Welcome message for first-time users
+    const isFirstVisit = !localStorage.getItem('dashboardVisited');
+    
+    if (isFirstVisit) {
+      toast({
+        title: "Welcome to PEC Pulse!",
+        description: "This dashboard provides an overview of all workbodies. Click on any tile to explore details.",
+      });
+      localStorage.setItem('dashboardVisited', 'true');
+    }
+    
     // Refetch data when component mounts to ensure fresh data
     refetch().catch(error => {
       console.error("Failed to fetch workbodies data:", error);
@@ -56,6 +70,14 @@ export default function Dashboard() {
   const sortedFilteredWorkbodies = [...filteredWorkbodies].sort((a, b) => 
     a.name.localeCompare(b.name)
   );
+  
+  // Pagination
+  const paginatedWorkbodies = sortedFilteredWorkbodies.slice(
+    (currentPage - 1) * itemsPerPage, 
+    currentPage * itemsPerPage
+  );
+  
+  const totalPages = Math.ceil(sortedFilteredWorkbodies.length / itemsPerPage);
     
   // Get task forces that are expiring within the next 30 days
   const today = new Date();
@@ -113,9 +135,9 @@ export default function Dashboard() {
           <h1 className="text-3xl font-bold">Dashboard</h1>
           <p className="text-muted-foreground">Loading workbody statistics...</p>
         </div>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
-            <Card key={i}>
+            <Card key={i} className="shadow-sm hover:shadow-md transition-shadow duration-300">
               <CardContent className="p-6">
                 <div className="space-y-2">
                   <Skeleton className="h-4 w-24" />
@@ -142,10 +164,10 @@ export default function Dashboard() {
 
     return (
       <div className="space-y-6">
-        <div>
+        <div className="bg-white p-6 rounded-lg shadow-sm mb-6 border-l-4 border-pec-green">
           <h1 className="text-3xl font-bold">{workbody.name}</h1>
-          <p className="text-muted-foreground">
-            Workbody Overview and Statistics
+          <p className="text-muted-foreground mt-2">
+            Welcome to your workbody dashboard. Here you can track progress and manage all activities.
           </p>
         </div>
         
@@ -173,10 +195,10 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">PEC Pulse</h1>
-        <p className="text-muted-foreground">
-          Organizational Overview & Analytics
+      <div className="bg-white p-6 rounded-lg shadow-sm mb-6 border-l-4 border-pec-green">
+        <h1 className="text-3xl font-bold">PEC Pulse Dashboard</h1>
+        <p className="text-muted-foreground mt-2">
+          Comprehensive overview of all workbodies, meetings and action items across Pakistan Engineering Council.
         </p>
       </div>
 
@@ -204,60 +226,135 @@ export default function Dashboard() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <Card>
+        <Card className="shadow-sm hover:shadow-md transition-shadow duration-300">
           <CardHeader>
             <CardTitle>Workbodies with Most Members</CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Workbody Name</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead className="text-right">Members</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {workbodiesWithMostMembers.map(workbody => (
-                  <TableRow key={workbody.id}>
-                    <TableCell className="font-medium">{workbody.name}</TableCell>
-                    <TableCell>{formatWorkbodyType(workbody.type)}</TableCell>
-                    <TableCell className="text-right">{workbody.members.length}</TableCell>
+            <div className="max-h-[400px] overflow-y-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Workbody Name</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead className="text-right">Members</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {workbodiesWithMostMembers.map(workbody => (
+                    <TableRow key={workbody.id}>
+                      <TableCell className="font-medium">{workbody.name}</TableCell>
+                      <TableCell>{formatWorkbodyType(workbody.type)}</TableCell>
+                      <TableCell className="text-right">{workbody.members.length}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="shadow-sm hover:shadow-md transition-shadow duration-300">
           <CardHeader>
             <CardTitle>Workbodies with Most Meetings</CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Workbody Name</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead className="text-right">Total Meetings</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {workbodiesWithMostMeetings.map(workbody => (
-                  <TableRow key={workbody.id}>
-                    <TableCell className="font-medium">{workbody.name}</TableCell>
-                    <TableCell>{formatWorkbodyType(workbody.type)}</TableCell>
-                    <TableCell className="text-right">{workbody.totalMeetings}</TableCell>
+            <div className="max-h-[400px] overflow-y-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Workbody Name</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead className="text-right">Total Meetings</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {workbodiesWithMostMeetings.map(workbody => (
+                    <TableRow key={workbody.id}>
+                      <TableCell className="font-medium">{workbody.name}</TableCell>
+                      <TableCell>{formatWorkbodyType(workbody.type)}</TableCell>
+                      <TableCell className="text-right">{workbody.totalMeetings}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
       </div>
 
       <ActionCompletionProgress workbodies={sortedFilteredWorkbodies} />
+
+      <Card className="shadow-sm hover:shadow-md transition-shadow duration-300 mt-6">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>All Workbodies</CardTitle>
+          <Button 
+            variant="outline" 
+            className="text-pec-green border-pec-green hover:bg-pec-green/10"
+          >
+            Export List
+          </Button>
+        </CardHeader>
+        <CardContent>
+          <div className="max-h-[500px] overflow-y-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Created Date</TableHead>
+                  <TableHead className="text-right">Members</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedWorkbodies.map(workbody => (
+                  <TableRow key={workbody.id} className="hover:bg-gray-50">
+                    <TableCell className="font-medium">{workbody.name}</TableCell>
+                    <TableCell>{formatWorkbodyType(workbody.type)}</TableCell>
+                    <TableCell>{new Date(workbody.createdDate).toLocaleDateString()}</TableCell>
+                    <TableCell className="text-right">{workbody.members.length}</TableCell>
+                    <TableCell className="text-right">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                        onClick={() => window.location.href = `/workbodies/${workbody.id}`}
+                      >
+                        View Details
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          
+          {totalPages > 1 && (
+            <div className="flex justify-center mt-4">
+              <Pagination>
+                <button 
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className={`px-3 py-1 rounded ${currentPage === 1 ? 'text-gray-400' : 'text-pec-green hover:bg-pec-green/10'}`}
+                >
+                  Previous
+                </button>
+                <span className="px-4 py-1">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button 
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className={`px-3 py-1 rounded ${currentPage === totalPages ? 'text-gray-400' : 'text-pec-green hover:bg-pec-green/10'}`}
+                >
+                  Next
+                </button>
+              </Pagination>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Detail Dialogs */}
       <Dialog open={activeDialog === 'totalWorkbodies'} onOpenChange={() => setActiveDialog(null)}>
@@ -265,36 +362,39 @@ export default function Dashboard() {
           <DialogHeader>
             <DialogTitle>Workbodies Overview</DialogTitle>
           </DialogHeader>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Created Date</TableHead>
-                <TableHead className="text-right">Members</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sortedFilteredWorkbodies.map(workbody => (
-                <TableRow key={workbody.id}>
-                  <TableCell className="font-medium">{workbody.name}</TableCell>
-                  <TableCell>{formatWorkbodyType(workbody.type)}</TableCell>
-                  <TableCell>{new Date(workbody.createdDate).toLocaleDateString()}</TableCell>
-                  <TableCell className="text-right">{workbody.members.length}</TableCell>
-                  <TableCell className="text-right">
-                    <Button 
-                      variant="link" 
-                      size="sm"
-                      onClick={() => window.location.href = `/workbodies/${workbody.id}`}
-                    >
-                      View Details
-                    </Button>
-                  </TableCell>
+          <div className="max-h-[70vh] overflow-y-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Created Date</TableHead>
+                  <TableHead className="text-right">Members</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {sortedFilteredWorkbodies.map(workbody => (
+                  <TableRow key={workbody.id}>
+                    <TableCell className="font-medium">{workbody.name}</TableCell>
+                    <TableCell>{formatWorkbodyType(workbody.type)}</TableCell>
+                    <TableCell>{new Date(workbody.createdDate).toLocaleDateString()}</TableCell>
+                    <TableCell className="text-right">{workbody.members.length}</TableCell>
+                    <TableCell className="text-right">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                        onClick={() => window.location.href = `/workbodies/${workbody.id}`}
+                      >
+                        View Details
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -303,37 +403,40 @@ export default function Dashboard() {
           <DialogHeader>
             <DialogTitle>Meetings This Year</DialogTitle>
           </DialogHeader>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Workbody</TableHead>
-                <TableHead className="text-right">Meetings This Year</TableHead>
-                <TableHead className="text-right">Total Meetings</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sortedFilteredWorkbodies
-                .filter(w => w.meetingsThisYear > 0)
-                .sort((a, b) => b.meetingsThisYear - a.meetingsThisYear)
-                .map(workbody => (
-                  <TableRow key={workbody.id}>
-                    <TableCell className="font-medium">{workbody.name}</TableCell>
-                    <TableCell className="text-right">{workbody.meetingsThisYear}</TableCell>
-                    <TableCell className="text-right">{workbody.totalMeetings}</TableCell>
-                    <TableCell className="text-right">
-                      <Button 
-                        variant="link" 
-                        size="sm"
-                        onClick={() => window.location.href = `/workbodies/${workbody.id}`}
-                      >
-                        View Details
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-            </TableBody>
-          </Table>
+          <div className="max-h-[70vh] overflow-y-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Workbody</TableHead>
+                  <TableHead className="text-right">Meetings This Year</TableHead>
+                  <TableHead className="text-right">Total Meetings</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sortedFilteredWorkbodies
+                  .filter(w => w.meetingsThisYear > 0)
+                  .sort((a, b) => b.meetingsThisYear - a.meetingsThisYear)
+                  .map(workbody => (
+                    <TableRow key={workbody.id}>
+                      <TableCell className="font-medium">{workbody.name}</TableCell>
+                      <TableCell className="text-right">{workbody.meetingsThisYear}</TableCell>
+                      <TableCell className="text-right">{workbody.totalMeetings}</TableCell>
+                      <TableCell className="text-right">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                          onClick={() => window.location.href = `/workbodies/${workbody.id}`}
+                        >
+                          View Details
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+              </TableBody>
+            </Table>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

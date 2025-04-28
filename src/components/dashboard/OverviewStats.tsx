@@ -20,7 +20,7 @@ export const OverviewStats = ({ stats, onStatClick }: OverviewStatsProps) => {
   };
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 animate-fade-in">
       <StatCard
         title="Total Workbodies"
         value={stats.totalWorkbodies}
@@ -33,7 +33,7 @@ export const OverviewStats = ({ stats, onStatClick }: OverviewStatsProps) => {
         title="Meetings This Year"
         value={stats.meetingsThisYear}
         icon={CalendarClock}
-        colorClass="bg-pec-gold"
+        colorClass="bg-amber-500"
         onClick={() => handleClick('meetingsThisYear')}
         clickable={!!onStatClick}
       />

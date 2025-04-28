@@ -4,8 +4,14 @@ import {
   LogOut, 
   Menu, 
   User,
+  HelpCircle,
+  Settings,
+  Bell
 } from "lucide-react";
 import { useState } from "react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
+import { Link } from "react-router-dom";
 
 interface HeaderProps {
   toggleSidebar: () => void;
@@ -31,11 +37,12 @@ export function Header({ toggleSidebar, user, onLogout }: HeaderProps) {
           size="icon" 
           className="md:hidden" 
           onClick={toggleSidebar}
+          aria-label="Toggle sidebar"
         >
           <Menu className="h-6 w-6" />
           <span className="sr-only">Toggle sidebar</span>
         </Button>
-        <div className="flex items-center gap-3">
+        <Link to={user ? "/dashboard" : "/"} className="flex items-center gap-3">
           <img 
             src="/lovable-uploads/26062e6e-e7ef-45d9-895b-79ac41a220c7.png" 
             alt="PEC Logo" 
@@ -44,45 +51,106 @@ export function Header({ toggleSidebar, user, onLogout }: HeaderProps) {
           <h1 className="text-xl font-semibold text-pec-green">
             PEC Pulse
           </h1>
-        </div>
+        </Link>
       </div>
       
-      {user && (
-        <div className="relative">
-          <Button
-            variant="ghost"
-            className="flex items-center gap-2"
-            onClick={() => setShowUserMenu(!showUserMenu)}
-          >
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-pec-green text-white">
-              <User className="h-4 w-4" />
-            </div>
-            <div className="hidden md:block text-left">
-              <p className="text-sm font-medium">{user.name}</p>
-              <p className="text-xs text-muted-foreground capitalize">{user.role}</p>
-            </div>
-          </Button>
-          
-          {showUserMenu && (
-            <div className="absolute right-0 mt-2 w-48 rounded-lg border bg-white shadow-lg z-50">
-              <div className="p-3">
-                <p className="font-medium">{user.name}</p>
-                <p className="text-sm text-muted-foreground capitalize">{user.role}</p>
-              </div>
-              <div className="border-t">
-                <Button
-                  variant="ghost"
-                  className="flex w-full items-center justify-start gap-2 rounded-none p-3 text-red-600 hover:text-red-700"
-                  onClick={handleLogout}
-                >
-                  <LogOut className="h-4 w-4" />
-                  <span>Logout</span>
+      {user ? (
+        <div className="flex items-center gap-2">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" className="relative">
+                  <Bell className="h-5 w-5" />
+                  <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-red-500">
+                    <span className="text-xs">2</span>
+                  </Badge>
                 </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Notifications</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <HelpCircle className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Help & Support</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Settings className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Settings</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          <div className="relative">
+            <Button
+              variant="ghost"
+              className="flex items-center gap-2 ml-2 rounded-full"
+              onClick={() => setShowUserMenu(!showUserMenu)}
+            >
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-pec-green text-white">
+                <User className="h-4 w-4" />
               </div>
-            </div>
-          )}
+              <div className="hidden md:block text-left">
+                <p className="text-sm font-medium">{user.name}</p>
+                <p className="text-xs text-muted-foreground capitalize">{user.role}</p>
+              </div>
+            </Button>
+            
+            {showUserMenu && (
+              <div className="absolute right-0 mt-2 w-64 rounded-lg border bg-white shadow-lg z-50 animate-fade-in">
+                <div className="p-4 border-b">
+                  <p className="font-medium text-lg">{user.name}</p>
+                  <p className="text-sm text-muted-foreground capitalize">{user.role}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Pakistan Engineering Council</p>
+                </div>
+                <div className="p-1">
+                  <Button
+                    variant="ghost"
+                    className="flex w-full items-center justify-start gap-2 rounded-md p-2 text-gray-600 hover:bg-gray-100"
+                  >
+                    <User className="h-4 w-4" />
+                    <span>Profile</span>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="flex w-full items-center justify-start gap-2 rounded-md p-2 text-gray-600 hover:bg-gray-100"
+                  >
+                    <Settings className="h-4 w-4" />
+                    <span>Settings</span>
+                  </Button>
+                </div>
+                <div className="border-t p-1">
+                  <Button
+                    variant="ghost"
+                    className="flex w-full items-center justify-start gap-2 rounded-md p-2 text-red-600 hover:bg-red-50"
+                    onClick={handleLogout}
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span>Logout</span>
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-      )}
+      ) : null}
     </header>
   );
 }

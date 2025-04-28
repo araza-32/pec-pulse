@@ -36,6 +36,19 @@ export default {
           800: '#004F24',
           900: '#00411F',
         },
+        'pec-blue': {
+          DEFAULT: '#007BFF',
+          50: '#E6F1FF',
+          100: '#CCE4FF',
+          200: '#99C9FF',
+          300: '#66ADFF',
+          400: '#3392FF',
+          500: '#007BFF',
+          600: '#0062CC',
+          700: '#004999',
+          800: '#003166',
+          900: '#001833',
+        },
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
@@ -92,8 +105,12 @@ export default {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        'fade-in': 'fadeIn 0.3s ease-out forwards'
+        'fade-in': 'fadeIn 0.5s ease-out forwards'
       },
+      boxShadow: {
+        'card': '0 2px 8px rgba(0, 0, 0, 0.08)',
+        'card-hover': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+      }
     },
   },
   plugins: [require("tailwindcss-animate")],
