@@ -5,7 +5,6 @@ import { Label } from "@/components/ui/label";
 import { AttendanceRecord, WorkbodyMember } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 
 interface AttendanceTrackerProps {
@@ -44,12 +43,19 @@ export function AttendanceTracker({
       present
     };
     setAttendance(updatedAttendance);
-    onChange([...updatedAttendance, ...nonMembers.map(nm => ({
-      memberName: nm.name,
-      organization: nm.organization,
-      present: true,
-      remarks: ''
-    }))]);
+    
+    // Combine member attendance and non-member attendance
+    const combinedAttendance = [
+      ...updatedAttendance,
+      ...nonMembers.map(nm => ({
+        memberName: nm.name,
+        organization: nm.organization,
+        present: true,
+        remarks: ''
+      }))
+    ];
+    
+    onChange(combinedAttendance);
   };
 
   const handleRemarksChange = (index: number, remarks: string) => {
@@ -59,31 +65,40 @@ export function AttendanceTracker({
       remarks
     };
     setAttendance(updatedAttendance);
-    onChange([...updatedAttendance, ...nonMembers.map(nm => ({
-      memberName: nm.name,
-      organization: nm.organization,
-      present: true,
-      remarks: ''
-    }))]);
+    
+    // Combine member attendance and non-member attendance
+    const combinedAttendance = [
+      ...updatedAttendance,
+      ...nonMembers.map(nm => ({
+        memberName: nm.name,
+        organization: nm.organization,
+        present: true,
+        remarks: ''
+      }))
+    ];
+    
+    onChange(combinedAttendance);
   };
 
   const addNonMember = () => {
     if (newAttendee.name.trim() === "") return;
     
-    setNonMembers([...nonMembers, newAttendee]);
+    const updatedNonMembers = [...nonMembers, newAttendee];
+    setNonMembers(updatedNonMembers);
     setNewAttendee({ name: "", organization: "" });
     
-    onChange([...attendance, ...nonMembers.map(nm => ({
-      memberName: nm.name,
-      organization: nm.organization,
-      present: true,
-      remarks: ''
-    })), {
-      memberName: newAttendee.name,
-      organization: newAttendee.organization,
-      present: true,
-      remarks: ''
-    }]);
+    // Combine member attendance and non-member attendance
+    const combinedAttendance = [
+      ...attendance,
+      ...updatedNonMembers.map(nm => ({
+        memberName: nm.name,
+        organization: nm.organization,
+        present: true,
+        remarks: ''
+      }))
+    ];
+    
+    onChange(combinedAttendance);
   };
 
   const removeNonMember = (index: number) => {
@@ -91,12 +106,18 @@ export function AttendanceTracker({
     updatedNonMembers.splice(index, 1);
     setNonMembers(updatedNonMembers);
     
-    onChange([...attendance, ...updatedNonMembers.map(nm => ({
-      memberName: nm.name,
-      organization: nm.organization,
-      present: true,
-      remarks: ''
-    }))]);
+    // Combine member attendance and non-member attendance
+    const combinedAttendance = [
+      ...attendance,
+      ...updatedNonMembers.map(nm => ({
+        memberName: nm.name,
+        organization: nm.organization,
+        present: true,
+        remarks: ''
+      }))
+    ];
+    
+    onChange(combinedAttendance);
   };
 
   if (!workbodyId || members.length === 0) {

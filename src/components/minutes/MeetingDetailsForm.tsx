@@ -8,6 +8,7 @@ import { AttendanceTracker } from "./AttendanceTracker";
 import { ActionItemsTracker } from "./ActionItemsTracker";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AttendanceRecord, ActionItem, WorkbodyMember } from "@/types";
+import { useState } from "react";
 
 interface MeetingDetailsFormProps {
   selectedFile: File | null;
@@ -47,11 +48,29 @@ export function MeetingDetailsForm({
   previousActions = [],
 }: MeetingDetailsFormProps) {
   
+  const [activeTab, setActiveTab] = useState<string>("basic");
   const agendaItemsArray = agendaItems.split('\n').filter(item => item.trim() !== '');
   const actionsAgreedArray = actionsAgreed.split('\n').filter(item => item.trim() !== '');
   
+  // Auto-switch to attendance tab after basic details are filled
+  const handleDateChange = (date: string) => {
+    setMeetingDate(date);
+    // If date and location are filled, switch to attendance tab
+    if (date && meetingLocation) {
+      setTimeout(() => setActiveTab("attendance"), 500);
+    }
+  };
+  
+  const handleLocationChange = (location: string) => {
+    setMeetingLocation(location);
+    // If date and location are filled, switch to attendance tab
+    if (meetingDate && location) {
+      setTimeout(() => setActiveTab("attendance"), 500);
+    }
+  };
+  
   return (
-    <Tabs defaultValue="basic">
+    <Tabs value={activeTab} onValueChange={setActiveTab}>
       <TabsList className="grid grid-cols-3 mb-4">
         <TabsTrigger value="basic">Basic Details</TabsTrigger>
         <TabsTrigger value="attendance">Attendance</TabsTrigger>
@@ -68,7 +87,7 @@ export function MeetingDetailsForm({
                 type="date" 
                 required 
                 value={meetingDate}
-                onChange={(e) => setMeetingDate(e.target.value)}
+                onChange={(e) => handleDateChange(e.target.value)}
               />
             </div>
             <div className="space-y-2">
@@ -78,7 +97,7 @@ export function MeetingDetailsForm({
                 placeholder="e.g., PEC Headquarters, Islamabad" 
                 required
                 value={meetingLocation}
-                onChange={(e) => setMeetingLocation(e.target.value)} 
+                onChange={(e) => handleLocationChange(e.target.value)} 
               />
             </div>
           </div>
@@ -128,6 +147,16 @@ export function MeetingDetailsForm({
               Upload the official minutes in PDF format (max 10MB)
             </p>
           </div>
+          
+          <div className="flex justify-end">
+            <Button
+              type="button"
+              onClick={() => setActiveTab("attendance")}
+              className="bg-pec-green hover:bg-pec-green-600"
+            >
+              Next: Mark Attendance
+            </Button>
+          </div>
         </div>
       </TabsContent>
       
@@ -137,6 +166,23 @@ export function MeetingDetailsForm({
           members={workbodyMembers}
           onChange={onAttendanceChange}
         />
+        
+        <div className="flex justify-between mt-6">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setActiveTab("basic")}
+          >
+            Back
+          </Button>
+          <Button
+            type="button"
+            onClick={() => setActiveTab("actions")}
+            className="bg-pec-green hover:bg-pec-green-600"
+          >
+            Next: Record Actions
+          </Button>
+        </div>
       </TabsContent>
       
       <TabsContent value="actions">
@@ -145,24 +191,31 @@ export function MeetingDetailsForm({
           onChange={onActionItemsChange}
           previousActions={previousActions}
         />
+        
+        <div className="flex justify-between mt-6">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setActiveTab("attendance")}
+          >
+            Back
+          </Button>
+          <Button
+            type="submit"
+            className="bg-pec-green hover:bg-pec-green-600"
+            disabled={isUploading}
+          >
+            {isUploading ? (
+              "Uploading..."
+            ) : (
+              <>
+                <FileUp className="mr-2 h-4 w-4" />
+                Upload Minutes
+              </>
+            )}
+          </Button>
+        </div>
       </TabsContent>
-      
-      <div className="flex justify-end mt-6">
-        <Button
-          type="submit"
-          className="bg-pec-green hover:bg-pec-green-600"
-          disabled={isUploading}
-        >
-          {isUploading ? (
-            "Uploading..."
-          ) : (
-            <>
-              <FileUp className="mr-2 h-4 w-4" />
-              Upload Minutes
-            </>
-          )}
-        </Button>
-      </div>
     </Tabs>
   );
 }

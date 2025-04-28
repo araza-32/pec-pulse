@@ -13,6 +13,7 @@ export const useScheduledMeetings = () => {
   const { toast } = useToast();
   
   const fetchMeetings = useCallback(async () => {
+    console.log("Fetching meetings...");
     setIsLoading(true);
     try {
       const today = new Date();
@@ -41,6 +42,8 @@ export const useScheduledMeetings = () => {
         return acc;
       }, []);
 
+      console.log("Fetched meetings:", uniqueMeetings.length);
+
       const formattedMeetings = uniqueMeetings.map(meeting => ({
         id: meeting.id,
         workbodyId: meeting.workbody_id,
@@ -66,12 +69,15 @@ export const useScheduledMeetings = () => {
     }
   }, [toast]);
   
+  // Create meeting mutations
   const { addMeeting, updateMeeting, deleteMeeting } = useMeetingMutations(meetings, setMeetings, fetchMeetings);
 
+  // Initial fetch
   useEffect(() => {
     fetchMeetings();
   }, [fetchMeetings]);
 
+  // Set up real-time subscription
   useMeetingSubscription(fetchMeetings);
 
   return { 
