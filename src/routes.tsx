@@ -1,4 +1,3 @@
-
 import { Layout } from "./components/layout/Layout";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -30,11 +29,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 export const publicRoutes = [
   {
     path: "/",
-    element: (
-      <Layout>
-        <Index />
-      </Layout>
-    ),
+    element: <Index />,
   },
   {
     path: "/login",
@@ -106,4 +101,3 @@ export const router = [
     ),
   },
 ];
-
