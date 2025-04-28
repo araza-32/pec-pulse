@@ -25,11 +25,11 @@ export function ActionItemsTracker({
   useEffect(() => {
     if (actionsAgreed.length > 0) {
       // Initialize action items for each action agreed
-      const initialActionItems = actionsAgreed.map((action, index) => ({
+      const initialActionItems: ActionItem[] = actionsAgreed.map((action, index) => ({
         action,
         assignedTo: '',
         dueDate: '',
-        status: 'pending',
+        status: 'pending', // Explicitly using the union type value
         progress: 0
       }));
       setActionItems(initialActionItems);
@@ -52,9 +52,9 @@ export function ActionItemsTracker({
     onChange(updatedActionItems);
   };
 
-  const handleStatusChange = (index: number, status: string) => {
+  const handleStatusChange = (index: number, status: 'pending' | 'in-progress' | 'completed' | 'delayed') => {
     const updatedActionItems = [...actionItems];
-    updatedActionItems[index].status = status as 'pending' | 'in-progress' | 'completed' | 'delayed';
+    updatedActionItems[index].status = status;
     
     // If completed, set progress to 100%
     if (status === 'completed') {
@@ -103,7 +103,9 @@ export function ActionItemsTracker({
                     <Label htmlFor={`status-${index}`}>Status</Label>
                     <Select
                       value={item.status}
-                      onValueChange={(value) => handleActionItemChange(index + actionsAgreed.length, 'status', value)}
+                      onValueChange={(value: 'pending' | 'in-progress' | 'completed' | 'delayed') => 
+                        handleActionItemChange(index + actionsAgreed.length, 'status', value)
+                      }
                     >
                       <SelectTrigger id={`status-${index}`}>
                         <SelectValue placeholder="Select status" />
@@ -191,7 +193,9 @@ export function ActionItemsTracker({
                     <Label htmlFor={`status-${index}`}>Status</Label>
                     <Select
                       value={actionItems[index]?.status || 'pending'}
-                      onValueChange={(value) => handleStatusChange(index, value)}
+                      onValueChange={(value: 'pending' | 'in-progress' | 'completed' | 'delayed') => 
+                        handleStatusChange(index, value)
+                      }
                     >
                       <SelectTrigger id={`status-${index}`}>
                         <SelectValue placeholder="Select status" />

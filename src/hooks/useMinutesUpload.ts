@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useWorkbodies } from "@/hooks/useWorkbodies";
@@ -53,11 +52,11 @@ export const useMinutesUpload = () => {
 
       // If there are actions agreed in the previous minutes, add them to the form
       if (data.actions_agreed && data.actions_agreed.length > 0) {
-        const previousActionItems = data.actions_agreed.map((action: string) => ({
+        const previousActionItems: ActionItem[] = data.actions_agreed.map((action: string) => ({
           action,
           assignedTo: '',
           dueDate: '',
-          status: 'pending',
+          status: 'pending' as const,
           progress: 0,
           isPrevious: true
         }));
