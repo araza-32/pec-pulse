@@ -6,22 +6,7 @@ export const useMeetingSubscription = (onMeetingChange: () => void) => {
   useEffect(() => {
     console.log("Setting up real-time subscription for scheduled_meetings");
     
-    // Enable real-time for the scheduled_meetings table
-    const enableRealtimeQuery = async () => {
-      try {
-        // Using the correct approach to enable realtime
-        await supabase.rpc('supabase_realtime', { 
-          table: 'scheduled_meetings',
-          action: 'subscribe'
-        });
-        console.log("Realtime enabled for scheduled_meetings");
-      } catch (error) {
-        console.error("Failed to enable realtime:", error);
-      }
-    };
-    
-    enableRealtimeQuery();
-    
+    // Create and subscribe to the channel
     const channel = supabase
       .channel('scheduled_meetings_channel')
       .on(
