@@ -3,7 +3,7 @@ import { format, parseISO } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { CalendarIcon, Clock, MapPin, FileText, Pencil, Trash } from "lucide-react";
+import { CalendarIcon, Clock, MapPin, FileText, Pencil, Trash, FilePdf } from "lucide-react";
 import { ScheduledMeeting, Workbody } from "@/types";
 import { useState } from "react";
 import { EditMeetingDialog } from "./EditMeetingDialog";
@@ -32,6 +32,7 @@ export function ViewMeetingDialog({
 }: ViewMeetingDialogProps) {
   const [isEditMode, setIsEditMode] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isPdfViewerOpen, setIsPdfViewerOpen] = useState(false);
   const canEditMeeting = userRole === 'admin' || userRole === 'coordination';
 
   if (!meeting) return null;
@@ -48,6 +49,12 @@ export function ViewMeetingDialog({
     if (onDelete) {
       await onDelete(meeting.id);
       onClose();
+    }
+  };
+
+  const handleViewNotification = () => {
+    if (meeting.notificationFilePath) {
+      window.open(meeting.notificationFilePath, '_blank');
     }
   };
 
@@ -127,17 +134,15 @@ export function ViewMeetingDialog({
                         <FileText className="mr-1 h-4 w-4" />
                         Attached Notification
                       </h4>
-                      <p className="text-sm text-muted-foreground">{meeting.notificationFile}</p>
-                      {meeting.notificationFilePath && (
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          className="mt-2"
-                          onClick={() => window.open(meeting.notificationFilePath, '_blank')}
-                        >
-                          View Notification
-                        </Button>
-                      )}
+                      <p className="text-sm text-muted-foreground mb-2">{meeting.notificationFile}</p>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="gap-2"
+                        onClick={handleViewNotification}
+                      >
+                        <FilePdf className="h-4 w-4" /> View Notification
+                      </Button>
                     </div>
                   )}
                 </div>

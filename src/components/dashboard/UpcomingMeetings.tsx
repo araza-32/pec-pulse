@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { CalendarClock, ChevronRight, FileText, Eye, Calendar } from "lucide-react";
+import { CalendarClock, ChevronRight, FileText, Eye, Calendar, FilePdf } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
@@ -10,6 +10,8 @@ import { ScheduledMeeting } from "@/types";
 import { ViewMeetingDialog } from "@/components/calendar/ViewMeetingDialog";
 import { Badge } from "@/components/ui/badge";
 import { useWorkbodies } from "@/hooks/useWorkbodies";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { X } from "lucide-react";
 
 export const UpcomingMeetings = () => {
   const navigate = useNavigate();
@@ -18,6 +20,7 @@ export const UpcomingMeetings = () => {
   const [selectedMeeting, setSelectedMeeting] = useState<ScheduledMeeting | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [showAll, setShowAll] = useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
 
   // Refresh meetings on component mount
   useEffect(() => {
@@ -34,6 +37,14 @@ export const UpcomingMeetings = () => {
   const handleViewDetails = (meeting: ScheduledMeeting) => {
     setSelectedMeeting(meeting);
     setIsViewDialogOpen(true);
+  };
+
+  const handleViewNotification = (meeting: ScheduledMeeting, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (meeting.notificationFilePath) {
+      setSelectedMeeting(meeting);
+      setIsNotificationOpen(true);
+    }
   };
 
   const handleUpdateMeeting = async (updates: Partial<ScheduledMeeting>) => {
@@ -114,10 +125,16 @@ export const UpcomingMeetings = () => {
                     >
                       <Eye className="h-3 w-3 mr-1" /> View Details
                     </Button>
+                    
                     {meeting.notificationFile && (
-                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                        <FileText className="h-3 w-3 mr-1 inline" /> Notification Available
-                      </Badge>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2 text-xs bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
+                        onClick={(e) => handleViewNotification(meeting, e)}
+                      >
+                        <FilePdf className="h-3 w-3 mr-1" /> View Notification
+                      </Button>
                     )}
                   </div>
                 </div>
@@ -162,6 +179,36 @@ export const UpcomingMeetings = () => {
           isLoadingWorkbodies={isLoadingWorkbodies}
         />
       )}
+
+      {/* PDF Notification Viewer Dialog */}
+      <Dialog 
+        open={isNotificationOpen} 
+        onOpenChange={(open) => setIsNotificationOpen(open)}
+      >
+        <DialogContent className="max-w-4xl max-h-[90vh] h-[90vh] flex flex-col p-0">
+          <div className="flex items-center justify-between p-4 border-b">
+            <h2 className="text-lg font-semibold">
+              Meeting Notification: {selectedMeeting?.workbodyName}
+            </h2>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setIsNotificationOpen(false)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="flex-1 overflow-hidden">
+            {selectedMeeting?.notificationFilePath && (
+              <iframe 
+                src={selectedMeeting.notificationFilePath} 
+                className="w-full h-full border-0"
+                title="Meeting Notification"
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };

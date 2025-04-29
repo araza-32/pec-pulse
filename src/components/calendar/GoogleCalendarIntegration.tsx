@@ -1,9 +1,8 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CalendarPlus, Calendar, RefreshCw } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { CalendarPlus, RefreshCw } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from 'uuid';
 
@@ -123,38 +122,26 @@ export const GoogleCalendarIntegration = ({ onSyncComplete }: { onSyncComplete?:
   };
 
   return (
-    <Card className="shadow-sm">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center text-lg">
-          <Calendar className="mr-2 h-5 w-5" />
-          Google Calendar Integration
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-sm text-muted-foreground mb-4">
-          Sync meetings between Google Calendar and this application.
-          Keep your meeting schedule up-to-date across platforms.
-        </p>
-        <div className="flex flex-col space-y-3">
-          <Button 
-            onClick={handleAddToCalendar}
-            className="w-full"
-            variant="outline"
-          >
-            <CalendarPlus className="mr-2 h-4 w-4" />
-            Add to My Google Calendar
-          </Button>
-          <Button 
-            onClick={fetchAndSyncGoogleCalendarEvents}
-            className="w-full"
-            variant="default"
-            disabled={isSyncing}
-          >
-            <RefreshCw className={`mr-2 h-4 w-4 ${isSyncing ? "animate-spin" : ""}`} />
-            {isSyncing ? "Syncing..." : "Sync from Google Calendar"}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="flex space-x-2">
+      <Button 
+        onClick={handleAddToCalendar}
+        variant="outline"
+        size="sm"
+        className="text-xs"
+      >
+        <CalendarPlus className="mr-1 h-3 w-3" />
+        Add to Google
+      </Button>
+      <Button 
+        onClick={fetchAndSyncGoogleCalendarEvents}
+        variant="default"
+        size="sm"
+        disabled={isSyncing}
+        className="text-xs"
+      >
+        <RefreshCw className={`mr-1 h-3 w-3 ${isSyncing ? "animate-spin" : ""}`} />
+        {isSyncing ? "Syncing..." : "Sync From Google"}
+      </Button>
+    </div>
   );
 };

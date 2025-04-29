@@ -10,6 +10,9 @@ import { AddMeetingDialog } from "@/components/calendar/AddMeetingDialog";
 import { ViewMeetingDialog } from "@/components/calendar/ViewMeetingDialog";
 import { useToast } from "@/hooks/use-toast";
 import { GoogleCalendarIntegration } from "@/components/calendar/GoogleCalendarIntegration";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { X } from "lucide-react";
 
 export default function MeetingCalendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -19,6 +22,7 @@ export default function MeetingCalendar() {
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [selectedMeeting, setSelectedMeeting] = useState<ScheduledMeeting | null>(null);
   const { toast } = useToast();
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
 
   const daysInMonth = new Date(
     currentDate.getFullYear(),
@@ -95,6 +99,18 @@ export default function MeetingCalendar() {
     setIsViewDialogOpen(true);
   };
 
+  const viewNotification = () => {
+    if (selectedMeeting?.notificationFilePath) {
+      setIsNotificationOpen(true);
+    } else {
+      toast({
+        title: "No Notification",
+        description: "There is no notification file available for this meeting.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleSyncComplete = () => {
     // Refresh the meetings data after sync
     refetchMeetings();
@@ -109,18 +125,14 @@ export default function MeetingCalendar() {
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
-        <div className="md:col-span-2">
-          <CalendarHeader
-            currentDate={currentDate}
-            onPrevMonth={() => setCurrentDate(subMonths(currentDate, 1))}
-            onNextMonth={() => setCurrentDate(addMonths(currentDate, 1))}
-            onAddMeeting={() => setIsAddDialogOpen(true)}
-          />
-        </div>
-        <div className="md:col-span-1">
-          <GoogleCalendarIntegration onSyncComplete={handleSyncComplete} />
-        </div>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <CalendarHeader
+          currentDate={currentDate}
+          onPrevMonth={() => setCurrentDate(subMonths(currentDate, 1))}
+          onNextMonth={() => setCurrentDate(addMonths(currentDate, 1))}
+          onAddMeeting={() => setIsAddDialogOpen(true)}
+        />
+        <GoogleCalendarIntegration onSyncComplete={handleSyncComplete} />
       </div>
 
       {/* Calendar Grid */}
@@ -166,6 +178,34 @@ export default function MeetingCalendar() {
         workbodies={workbodies}
         isLoadingWorkbodies={isLoadingWorkbodies}
       />
+
+      {/* PDF Viewer Dialog */}
+      <Dialog 
+        open={isNotificationOpen} 
+        onOpenChange={(open) => setIsNotificationOpen(open)}
+      >
+        <DialogContent className="max-w-4xl max-h-[90vh] h-[90vh] flex flex-col p-0">
+          <div className="flex items-center justify-between p-4 border-b">
+            <h2 className="text-lg font-semibold">Meeting Notification</h2>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setIsNotificationOpen(false)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="flex-1 overflow-hidden">
+            {selectedMeeting?.notificationFilePath && (
+              <iframe 
+                src={selectedMeeting.notificationFilePath} 
+                className="w-full h-full border-0"
+                title="Meeting Notification"
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
