@@ -13,7 +13,7 @@ import { GoogleCalendarIntegration } from "@/components/calendar/GoogleCalendarI
 
 export default function MeetingCalendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const { meetings, isLoading: isLoadingMeetings, addMeeting, updateMeeting, deleteMeeting } = useScheduledMeetings();
+  const { meetings, isLoading: isLoadingMeetings, addMeeting, updateMeeting, deleteMeeting, refetchMeetings } = useScheduledMeetings();
   const { workbodies, isLoading: isLoadingWorkbodies } = useWorkbodies();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
@@ -95,6 +95,11 @@ export default function MeetingCalendar() {
     setIsViewDialogOpen(true);
   };
 
+  const handleSyncComplete = () => {
+    // Refresh the meetings data after sync
+    refetchMeetings();
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -114,7 +119,7 @@ export default function MeetingCalendar() {
           />
         </div>
         <div className="md:col-span-1">
-          <GoogleCalendarIntegration />
+          <GoogleCalendarIntegration onSyncComplete={handleSyncComplete} />
         </div>
       </div>
 

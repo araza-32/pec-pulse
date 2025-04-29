@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CalendarClock, ChevronRight, FileText, Eye, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,11 +13,16 @@ import { useWorkbodies } from "@/hooks/useWorkbodies";
 
 export const UpcomingMeetings = () => {
   const navigate = useNavigate();
-  const { meetings, isLoading, updateMeeting, deleteMeeting } = useScheduledMeetings();
+  const { meetings, isLoading, updateMeeting, deleteMeeting, refetchMeetings } = useScheduledMeetings();
   const { workbodies, isLoading: isLoadingWorkbodies } = useWorkbodies();
   const [selectedMeeting, setSelectedMeeting] = useState<ScheduledMeeting | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [showAll, setShowAll] = useState(false);
+
+  // Refresh meetings on component mount
+  useEffect(() => {
+    refetchMeetings();
+  }, [refetchMeetings]);
 
   const formatDate = (dateStr: string) => {
     return format(parseISO(dateStr), 'MMMM d, yyyy');
