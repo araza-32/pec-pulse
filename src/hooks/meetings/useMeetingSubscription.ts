@@ -9,10 +9,10 @@ export const useMeetingSubscription = (onMeetingChange: () => void) => {
     // Enable real-time for the scheduled_meetings table
     const enableRealtimeQuery = async () => {
       try {
-        // Fix: Using the correct type for the supabase.rpc call
+        // Using the correct approach to enable realtime
         await supabase.rpc('supabase_realtime', { 
-          table: 'scheduled_meetings' as unknown as never,
-          action: 'subscribe' as unknown as never
+          table: 'scheduled_meetings',
+          action: 'subscribe'
         });
         console.log("Realtime enabled for scheduled_meetings");
       } catch (error) {

@@ -1,6 +1,7 @@
 
 import { Users, CalendarClock, CheckSquare, BookOpen } from "lucide-react";
 import { StatCard } from "./StatCard";
+import { useNavigate } from "react-router-dom";
 
 interface OverviewStatsProps {
   stats: {
@@ -13,9 +14,26 @@ interface OverviewStatsProps {
 }
 
 export const OverviewStats = ({ stats, onStatClick }: OverviewStatsProps) => {
+  const navigate = useNavigate();
+
   const handleClick = (statType: string) => {
-    if (onStatClick) {
-      onStatClick(statType);
+    // Handle navigation based on stat type
+    switch (statType) {
+      case 'totalWorkbodies':
+        navigate('/workbodies');
+        break;
+      case 'meetingsThisYear':
+      case 'upcomingMeetings':
+        navigate('/calendar');
+        break;
+      case 'actionCompletion':
+        navigate('/reports');
+        break;
+      default:
+        // For Dialog-based stats, use the original handler
+        if (onStatClick) {
+          onStatClick(statType);
+        }
     }
   };
 
@@ -27,7 +45,7 @@ export const OverviewStats = ({ stats, onStatClick }: OverviewStatsProps) => {
         icon={Users}
         colorClass="bg-pec-green"
         onClick={() => handleClick('totalWorkbodies')}
-        clickable={!!onStatClick}
+        clickable={true}
       />
       <StatCard
         title="Meetings This Year"
@@ -35,7 +53,7 @@ export const OverviewStats = ({ stats, onStatClick }: OverviewStatsProps) => {
         icon={CalendarClock}
         colorClass="bg-amber-500"
         onClick={() => handleClick('meetingsThisYear')}
-        clickable={!!onStatClick}
+        clickable={true}
       />
       <StatCard
         title="Action Completion"
@@ -43,7 +61,7 @@ export const OverviewStats = ({ stats, onStatClick }: OverviewStatsProps) => {
         icon={CheckSquare}
         colorClass="bg-blue-500"
         onClick={() => handleClick('actionCompletion')}
-        clickable={!!onStatClick}
+        clickable={true}
       />
       <StatCard
         title="Upcoming Meetings"
@@ -51,7 +69,7 @@ export const OverviewStats = ({ stats, onStatClick }: OverviewStatsProps) => {
         icon={BookOpen}
         colorClass="bg-purple-500"
         onClick={() => handleClick('upcomingMeetings')}
-        clickable={!!onStatClick}
+        clickable={true}
       />
     </div>
   );

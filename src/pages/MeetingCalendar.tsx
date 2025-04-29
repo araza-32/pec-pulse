@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { format, addMonths, subMonths } from "date-fns";
 import { useWorkbodies } from "@/hooks/useWorkbodies";
@@ -8,6 +9,7 @@ import { CalendarDay } from "@/components/calendar/CalendarDay";
 import { AddMeetingDialog } from "@/components/calendar/AddMeetingDialog";
 import { ViewMeetingDialog } from "@/components/calendar/ViewMeetingDialog";
 import { useToast } from "@/hooks/use-toast";
+import { GoogleCalendarIntegration } from "@/components/calendar/GoogleCalendarIntegration";
 
 export default function MeetingCalendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -102,12 +104,19 @@ export default function MeetingCalendar() {
         </p>
       </div>
 
-      <CalendarHeader
-        currentDate={currentDate}
-        onPrevMonth={() => setCurrentDate(subMonths(currentDate, 1))}
-        onNextMonth={() => setCurrentDate(addMonths(currentDate, 1))}
-        onAddMeeting={() => setIsAddDialogOpen(true)}
-      />
+      <div className="grid gap-6 md:grid-cols-3">
+        <div className="md:col-span-2">
+          <CalendarHeader
+            currentDate={currentDate}
+            onPrevMonth={() => setCurrentDate(subMonths(currentDate, 1))}
+            onNextMonth={() => setCurrentDate(addMonths(currentDate, 1))}
+            onAddMeeting={() => setIsAddDialogOpen(true)}
+          />
+        </div>
+        <div className="md:col-span-1">
+          <GoogleCalendarIntegration />
+        </div>
+      </div>
 
       <div className="grid grid-cols-7 gap-1">
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
