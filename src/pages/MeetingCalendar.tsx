@@ -118,6 +118,7 @@ export default function MeetingCalendar() {
         </div>
       </div>
 
+      {/* Calendar Grid */}
       <div className="grid grid-cols-7 gap-1">
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
           <div
@@ -139,6 +140,7 @@ export default function MeetingCalendar() {
         ))}
       </div>
 
+      {/* Dialogs */}
       <AddMeetingDialog
         isOpen={isAddDialogOpen}
         onClose={() => setIsAddDialogOpen(false)}

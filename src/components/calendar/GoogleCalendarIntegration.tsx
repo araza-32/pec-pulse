@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CalendarClock, Calendar, CalendarPlus } from "lucide-react";
+import { CalendarPlus, Calendar } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
 // The direct Google Calendar URL for adding to calendar
@@ -15,13 +15,8 @@ export const GoogleCalendarIntegration = () => {
     window.open(GOOGLE_CALENDAR_URL, '_blank');
     toast({
       title: "Calendar Sync Initiated",
-      description: "Google Calendar will open in a new tab. Follow the prompts to add the meetings calendar.",
+      description: "Google Calendar will open in a new tab. Follow the prompts to add the meetings calendar to your Google Calendar.",
     });
-  };
-
-  const handleViewCalendar = () => {
-    const baseCalendarUrl = "https://calendar.google.com/calendar/";
-    window.open(baseCalendarUrl, '_blank');
   };
 
   return (
@@ -29,32 +24,22 @@ export const GoogleCalendarIntegration = () => {
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center text-lg">
           <Calendar className="mr-2 h-5 w-5" />
-          Google Calendar Integration
+          Sync with Google Calendar
         </CardTitle>
       </CardHeader>
       <CardContent>
         <p className="text-sm text-muted-foreground mb-4">
-          Stay updated on all workbody meetings by syncing with Google Calendar. 
-          All scheduled meetings will appear in your calendar automatically.
+          Add all scheduled workbody meetings to your Google Calendar. 
+          Once synced, all meetings will appear in your Google Calendar automatically.
         </p>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <Button 
-            onClick={handleAddToCalendar}
-            className="w-full"
-            variant="default"
-          >
-            <CalendarPlus className="mr-2 h-4 w-4" />
-            Add to My Calendar
-          </Button>
-          <Button 
-            onClick={handleViewCalendar}
-            className="w-full"
-            variant="outline"
-          >
-            <CalendarClock className="mr-2 h-4 w-4" />
-            View Google Calendar
-          </Button>
-        </div>
+        <Button 
+          onClick={handleAddToCalendar}
+          className="w-full"
+          variant="default"
+        >
+          <CalendarPlus className="mr-2 h-4 w-4" />
+          Add to My Google Calendar
+        </Button>
       </CardContent>
     </Card>
   );
