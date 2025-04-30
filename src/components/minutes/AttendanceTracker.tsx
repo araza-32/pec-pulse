@@ -25,13 +25,13 @@ export function AttendanceTracker({
 
   useEffect(() => {
     if (workbodyId && members.length > 0) {
-      // Initialize attendance records for each member
+      // Initialize attendance records for each member with the correct type for attendanceStatus
       const initialAttendance = members.map(member => ({
         memberId: member.id || '',
         memberName: member.name,
         present: false,
         remarks: '',
-        attendanceStatus: 'absent' // Default to absent
+        attendanceStatus: 'absent' as 'absent' | 'present-physical' | 'present-virtual'
       }));
       setAttendance(initialAttendance);
       onChange(initialAttendance);
@@ -55,7 +55,7 @@ export function AttendanceTracker({
         organization: nm.organization,
         present: true,
         remarks: '',
-        attendanceStatus: 'present-physical' as const // Default for external attendees
+        attendanceStatus: 'present-physical' as const
       }))
     ];
     
@@ -78,7 +78,7 @@ export function AttendanceTracker({
         organization: nm.organization,
         present: true,
         remarks: '',
-        attendanceStatus: 'present-physical' as const // Default for external attendees
+        attendanceStatus: 'present-physical' as const
       }))
     ];
     
@@ -100,7 +100,7 @@ export function AttendanceTracker({
         organization: nm.organization,
         present: true,
         remarks: '',
-        attendanceStatus: 'present-physical' as const // Default for external attendees
+        attendanceStatus: 'present-physical' as const
       }))
     ];
     
@@ -120,7 +120,7 @@ export function AttendanceTracker({
         organization: nm.organization,
         present: true,
         remarks: '',
-        attendanceStatus: 'present-physical' as const // Default for external attendees
+        attendanceStatus: 'present-physical' as const
       }))
     ];
     

@@ -14,13 +14,15 @@ import { SignaturesSection } from "./SignaturesSection";
 import { TaskforceNavigation } from "./TaskforceNavigation";
 import { useTaskforceForm } from "@/hooks/useTaskforceForm";
 import { TaskforcePrintableSummary } from "./TaskforcePrintableSummary";
-import { Check, Printer } from "lucide-react"; // Add the missing import for Check and Printer icons
+import { Check, Printer } from "lucide-react";
+import { TaskforcePreviewPDF } from "./TaskforcePreviewPDF";
+import { TaskforceSubmitSection } from "./TaskforceSubmitSection";
 
 interface TaskforceFormProps {
   onSubmit: (data: TaskforceFormValues) => void;
   onCancel: () => void;
   initialData?: Partial<TaskforceFormValues>;
-  onAfterSubmit?: () => void; // New callback for after submission actions
+  onAfterSubmit?: () => void;
 }
 
 export function TaskforceForm({ onSubmit, onCancel, initialData, onAfterSubmit }: TaskforceFormProps) {
@@ -71,51 +73,25 @@ export function TaskforceForm({ onSubmit, onCancel, initialData, onAfterSubmit }
 
   const navigateToNextTab = (currentTab: string) => {
     switch(currentTab) {
-      case "overview":
-        setActiveTab("scope");
-        break;
-      case "scope":
-        setActiveTab("composition");
-        break;
-      case "composition":
-        setActiveTab("procedures");
-        break;
-      case "procedures":
-        setActiveTab("deliverables");
-        break;
-      case "deliverables":
-        setActiveTab("signatures");
-        break;
-      case "signatures":
-        if (showSubmitTab) setActiveTab("submit-request");
-        break;
-      default:
-        break;
+      case "overview": setActiveTab("scope"); break;
+      case "scope": setActiveTab("composition"); break;
+      case "composition": setActiveTab("procedures"); break;
+      case "procedures": setActiveTab("deliverables"); break;
+      case "deliverables": setActiveTab("signatures"); break;
+      case "signatures": if (showSubmitTab) setActiveTab("submit-request"); break;
+      default: break;
     }
   };
 
   const navigateToPreviousTab = (currentTab: string) => {
     switch(currentTab) {
-      case "scope":
-        setActiveTab("overview");
-        break;
-      case "composition":
-        setActiveTab("scope");
-        break;
-      case "procedures":
-        setActiveTab("composition");
-        break;
-      case "deliverables":
-        setActiveTab("procedures");
-        break;
-      case "signatures":
-        setActiveTab("deliverables");
-        break;
-      case "submit-request":
-        setActiveTab("signatures");
-        break;
-      default:
-        break;
+      case "scope": setActiveTab("overview"); break;
+      case "composition": setActiveTab("scope"); break;
+      case "procedures": setActiveTab("composition"); break;
+      case "deliverables": setActiveTab("procedures"); break;
+      case "signatures": setActiveTab("deliverables"); break;
+      case "submit-request": setActiveTab("signatures"); break;
+      default: break;
     }
   };
 
@@ -315,6 +291,8 @@ export function TaskforceForm({ onSubmit, onCancel, initialData, onAfterSubmit }
                 Print / Save as PDF
               </Button>
               
+              <TaskforcePreviewPDF form={form} userRole={userRole} />
+              
               <TaskforceNavigation
                 activeTab={activeTab}
                 onPrevious={() => navigateToPreviousTab(activeTab)}
@@ -341,57 +319,25 @@ export function TaskforceForm({ onSubmit, onCancel, initialData, onAfterSubmit }
 
           {/* Secretary: the final Submit Request section */}
           {showSubmitTab && (
-          <TabsContent value="submit-request" className="space-y-6 pt-4">
-            <div className="rounded-lg border p-6">
-              <h3 className="text-lg font-medium mb-4">Review and Submit Request</h3>
-              
-              <p className="mb-4">
-                Please review your task force formation request before submission. 
-                You can go back to previous tabs to make any changes, or use the print button to generate a PDF.
-              </p>
-              
-              <Button 
-                type="button" 
-                variant="outline"
-                onClick={handlePrint}
-                className="mb-6 flex items-center"
-              >
-                <Printer className="mr-2 h-4 w-4" />
-                Print / Save as PDF
-              </Button>
-              
-              <div className="space-y-4 border-t pt-4">
-                <h4 className="font-medium">Final Confirmation</h4>
-                <p>
-                  By submitting this request, you confirm that all information provided is 
-                  accurate and complete to the best of your knowledge.
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex flex-col md:flex-row gap-2 md:gap-4 justify-end">
-              <Button type="submit" className="bg-pec-green hover:bg-pec-green-600">
-                Submit Request
-              </Button>
-              <TaskforceNavigation
-                activeTab={activeTab}
-                onPrevious={() => navigateToPreviousTab(activeTab)}
-                onNext={() => {}}
-                onCancel={onCancel}
-                isLastTab={true}
+            <TabsContent value="submit-request" className="space-y-6 pt-4">
+              <TaskforceSubmitSection 
+                handlePrint={handlePrint}
+                requestSubmitted={requestSubmitted}
               />
-            </div>
-            
-            {requestSubmitted && (
-              <div className="rounded-lg bg-green-50 border border-green-200 p-4 mt-4 animate-fade-in">
-                <div className="flex items-center gap-2">
-                  <Check className="w-5 h-5 text-green-600" />
-                  <p className="text-green-700 font-medium">Your task force formation request has been submitted and is being reviewed by the Admin/Coordination team.</p>
-                </div>
-                <p className="mt-2 text-green-700">You can track the status in the "Task Force Requests" tab.</p>
+              
+              <div className="flex flex-col md:flex-row gap-2 md:gap-4 justify-end">
+                <Button type="submit" className="bg-pec-green hover:bg-pec-green-600">
+                  Submit Request
+                </Button>
+                <TaskforceNavigation
+                  activeTab={activeTab}
+                  onPrevious={() => navigateToPreviousTab(activeTab)}
+                  onNext={() => {}}
+                  onCancel={onCancel}
+                  isLastTab={true}
+                />
               </div>
-            )}
-          </TabsContent>
+            </TabsContent>
           )}
         </Tabs>
       </form>
