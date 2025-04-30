@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useWorkbodies } from "@/hooks/useWorkbodies";
@@ -27,9 +28,10 @@ export const useMinutesUpload = () => {
 
   const { workbodies = [], isLoading, refetch } = useWorkbodies();
 
-  // Fetch previous action items when workbody is selected
+  // Reset previous actions when workbody is changed
   useEffect(() => {
     if (selectedWorkbody) {
+      setPreviousActions([]);
       fetchPreviousActions();
     }
   }, [selectedWorkbody]);

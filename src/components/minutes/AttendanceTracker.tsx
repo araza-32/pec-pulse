@@ -29,7 +29,6 @@ export function AttendanceTracker({
         memberId: member.id || '',
         memberName: member.name,
         present: false,
-        remarks: '',
         attendanceStatus: 'absent' as 'absent' | 'present-physical' | 'present-virtual'
       }));
       setAttendance(initialAttendance);
@@ -53,7 +52,6 @@ export function AttendanceTracker({
         memberName: nm.name,
         organization: nm.organization,
         present: true,
-        remarks: '',
         attendanceStatus: 'present-physical' as const
       }))
     ];
@@ -75,7 +73,6 @@ export function AttendanceTracker({
         memberName: nm.name,
         organization: nm.organization,
         present: true,
-        remarks: '',
         attendanceStatus: 'present-physical' as const
       }))
     ];
@@ -95,7 +92,6 @@ export function AttendanceTracker({
         memberName: nm.name,
         organization: nm.organization,
         present: true,
-        remarks: '',
         attendanceStatus: 'present-physical' as const
       }))
     ];
@@ -124,7 +120,7 @@ export function AttendanceTracker({
               </Label>
               
               <RadioGroup
-                value={record.attendanceStatus || 'absent'}
+                value={record.attendanceStatus}
                 onValueChange={(value) => handleAttendanceChange(
                   index, 
                   value as 'present-physical' | 'present-virtual' | 'absent'
