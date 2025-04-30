@@ -14,7 +14,7 @@ import { SignaturesSection } from "./SignaturesSection";
 import { TaskforceNavigation } from "./TaskforceNavigation";
 import { useTaskforceForm } from "@/hooks/useTaskforceForm";
 import { TaskforcePrintableSummary } from "./TaskforcePrintableSummary";
-import { Check } from "lucide-react"; // Add the missing import for Check icon
+import { Check, Printer } from "lucide-react"; // Add the missing import for Check and Printer icons
 
 interface TaskforceFormProps {
   onSubmit: (data: TaskforceFormValues) => void;
@@ -30,9 +30,7 @@ export function TaskforceForm({ onSubmit, onCancel, initialData, onAfterSubmit }
   );
   // The review tab is only shown to secretary
   const showSubmitTab = userRole === "secretary";
-  // Print is only for admin/coordination
-  const canPrint = userRole === "admin" || userRole === "coordination";
-
+  
   // Remove 'review' tab for admin/coordination
   const [activeTab, setActiveTab] = useState("overview");
   const { toast } = useToast();
@@ -122,21 +120,105 @@ export function TaskforceForm({ onSubmit, onCancel, initialData, onAfterSubmit }
   };
 
   const handlePrint = () => {
-    window.print();
+    // Create a new window with just the printable content
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast({
+        title: "Error",
+        description: "Could not open print window. Please check if pop-ups are blocked.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Get the HTML content of the printable summary
+    const printContent = document.getElementById('taskforce-printable-summary');
+    
+    if (!printContent) {
+      printWindow.close();
+      toast({
+        title: "Error",
+        description: "Print content not found.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Write the HTML to the new window
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Task Force Formation - ${form.getValues().name}</title>
+          <style>
+            @media print {
+              @page {
+                margin: 2cm;
+                size: portrait;
+              }
+              body {
+                font-family: 'Arial', sans-serif;
+                font-size: 12pt;
+                color: #000;
+                background: #fff;
+              }
+              .page-break-before {
+                page-break-before: always;
+              }
+              table {
+                page-break-inside: avoid;
+                width: 100%;
+                border-collapse: collapse;
+                margin-bottom: 1rem;
+              }
+              th, td {
+                border: 1px solid #ddd;
+                padding: 8px;
+                text-align: left;
+              }
+              th {
+                background-color: #f2f2f2;
+              }
+              h1, h2, h3 {
+                page-break-after: avoid;
+              }
+              table thead {
+                display: table-header-group;
+              }
+              table tfoot {
+                display: table-row-group;
+              }
+              table tr {
+                page-break-inside: avoid;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          ${printContent.innerHTML}
+          <script>
+            setTimeout(() => { 
+              window.print();
+              setTimeout(() => { window.close(); }, 500);
+            }, 500);
+          </script>
+        </body>
+      </html>
+    `);
+    
+    printWindow.document.close();
   };
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className={canPrint ? "grid w-full grid-cols-6" : "grid w-full grid-cols-7"}>
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="scope">Scope & ToRs</TabsTrigger>
             <TabsTrigger value="composition">Composition</TabsTrigger>
             <TabsTrigger value="procedures">Procedures</TabsTrigger>
             <TabsTrigger value="deliverables">Deliverables</TabsTrigger>
             <TabsTrigger value="signatures">Signatures</TabsTrigger>
-            {showSubmitTab && <TabsTrigger value="submit-request">Submit Request</TabsTrigger>}
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6 pt-4">
@@ -175,6 +257,7 @@ export function TaskforceForm({ onSubmit, onCancel, initialData, onAfterSubmit }
               onCancel={onCancel}
             />
           </TabsContent>
+          
           <TabsContent value="composition" className="space-y-6 pt-4">
             <div className="rounded-lg border p-6">
               <CompositionSection form={form} />
@@ -186,6 +269,7 @@ export function TaskforceForm({ onSubmit, onCancel, initialData, onAfterSubmit }
               onCancel={onCancel}
             />
           </TabsContent>
+          
           <TabsContent value="procedures" className="space-y-6 pt-4">
             <div className="rounded-lg border p-6">
               <OperatingProceduresSection form={form} />
@@ -197,6 +281,7 @@ export function TaskforceForm({ onSubmit, onCancel, initialData, onAfterSubmit }
               onCancel={onCancel}
             />
           </TabsContent>
+          
           <TabsContent value="deliverables" className="space-y-6 pt-4">
             <div className="rounded-lg border p-6">
               <DeliverablesSection form={form} />
@@ -209,33 +294,81 @@ export function TaskforceForm({ onSubmit, onCancel, initialData, onAfterSubmit }
             />
           </TabsContent>
 
-          {/* Move Signatures before review/submit-request */}
           <TabsContent value="signatures" className="space-y-6 pt-4">
             <div className="rounded-lg border p-6">
               <SignaturesSection form={form} />
             </div>
-            <TaskforceNavigation
-              activeTab={activeTab}
-              onPrevious={() => navigateToPreviousTab(activeTab)}
-              onNext={() => {
-                if (showSubmitTab) {
-                  navigateToNextTab(activeTab);
-                } else {
-                  // If admin/coordination: skip review, just inform user to print, no need to show next
-                  // Potential: Could show a summary if desired
-                }
-              }}
-              onCancel={onCancel}
-              isLastTab={!showSubmitTab}
-            />
+            
+            {/* Hidden div containing printable content */}
+            <div id="taskforce-printable-summary" className="hidden">
+              <TaskforcePrintableSummary form={form} userRole={userRole} />
+            </div>
+            
+            <div className="flex justify-between">
+              <Button 
+                type="button" 
+                variant="outline"
+                onClick={handlePrint}
+                className="flex items-center"
+              >
+                <Printer className="mr-2 h-4 w-4" />
+                Print / Save as PDF
+              </Button>
+              
+              <TaskforceNavigation
+                activeTab={activeTab}
+                onPrevious={() => navigateToPreviousTab(activeTab)}
+                onNext={() => {
+                  if (showSubmitTab) {
+                    navigateToNextTab(activeTab);
+                  }
+                }}
+                onCancel={onCancel}
+                isLastTab={!showSubmitTab}
+              />
+            </div>
+            
+            {requestSubmitted && (
+              <div className="rounded-lg bg-green-50 border border-green-200 p-4 mt-4 animate-fade-in">
+                <div className="flex items-center gap-2">
+                  <Check className="w-5 h-5 text-green-600" />
+                  <p className="text-green-700 font-medium">Your task force formation request has been submitted and is being reviewed by the Admin/Coordination team.</p>
+                </div>
+                <p className="mt-2 text-green-700">You can track the status in the "Task Force Requests" tab.</p>
+              </div>
+            )}
           </TabsContent>
 
           {/* Secretary: the final Submit Request section */}
           {showSubmitTab && (
-          <TabsContent value="submit-request" className="space-y-6 pt-4 bg-white print:bg-white">
-            <div className="rounded-lg border p-6 bg-white print:bg-white">
-              <TaskforcePrintableSummary form={form} userRole={userRole} />
+          <TabsContent value="submit-request" className="space-y-6 pt-4">
+            <div className="rounded-lg border p-6">
+              <h3 className="text-lg font-medium mb-4">Review and Submit Request</h3>
+              
+              <p className="mb-4">
+                Please review your task force formation request before submission. 
+                You can go back to previous tabs to make any changes, or use the print button to generate a PDF.
+              </p>
+              
+              <Button 
+                type="button" 
+                variant="outline"
+                onClick={handlePrint}
+                className="mb-6 flex items-center"
+              >
+                <Printer className="mr-2 h-4 w-4" />
+                Print / Save as PDF
+              </Button>
+              
+              <div className="space-y-4 border-t pt-4">
+                <h4 className="font-medium">Final Confirmation</h4>
+                <p>
+                  By submitting this request, you confirm that all information provided is 
+                  accurate and complete to the best of your knowledge.
+                </p>
+              </div>
             </div>
+            
             <div className="flex flex-col md:flex-row gap-2 md:gap-4 justify-end">
               <Button type="submit" className="bg-pec-green hover:bg-pec-green-600">
                 Submit Request
@@ -248,6 +381,7 @@ export function TaskforceForm({ onSubmit, onCancel, initialData, onAfterSubmit }
                 isLastTab={true}
               />
             </div>
+            
             {requestSubmitted && (
               <div className="rounded-lg bg-green-50 border border-green-200 p-4 mt-4 animate-fade-in">
                 <div className="flex items-center gap-2">
@@ -259,18 +393,6 @@ export function TaskforceForm({ onSubmit, onCancel, initialData, onAfterSubmit }
             )}
           </TabsContent>
           )}
-
-          {/* Admin/Coordination: after Signatures show only Print button, no review section */}
-          {(canPrint && !showSubmitTab) && (
-            <TabsContent value="signatures" className="space-y-6 pt-4 bg-white print:bg-white">
-              <div className="flex justify-end gap-2 mt-2">
-                <Button type="button" variant="secondary" onClick={handlePrint}>
-                  Print / Save as PDF
-                </Button>
-              </div>
-            </TabsContent>
-          )}
-
         </Tabs>
       </form>
     </Form>

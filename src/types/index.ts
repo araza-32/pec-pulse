@@ -38,7 +38,8 @@ export interface AttendanceRecord {
   memberName: string;
   organization?: string;
   present: boolean;
-  remarks?: string;
+  remarks: string;
+  attendanceStatus?: 'present-physical' | 'present-virtual' | 'absent';
 }
 
 export interface ActionItem {

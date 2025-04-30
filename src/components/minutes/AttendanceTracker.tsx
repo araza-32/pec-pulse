@@ -1,11 +1,12 @@
 
 import { useEffect, useState } from "react";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { AttendanceRecord, WorkbodyMember } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Check, UserCheck, X } from "lucide-react";
 
 interface AttendanceTrackerProps {
   workbodyId: string | null;
@@ -29,18 +30,20 @@ export function AttendanceTracker({
         memberId: member.id || '',
         memberName: member.name,
         present: false,
-        remarks: ''
+        remarks: '',
+        attendanceStatus: 'absent' // Default to absent
       }));
       setAttendance(initialAttendance);
       onChange(initialAttendance);
     }
   }, [workbodyId, members, onChange]);
 
-  const handleAttendanceChange = (index: number, present: boolean) => {
+  const handleAttendanceChange = (index: number, status: 'present-physical' | 'present-virtual' | 'absent') => {
     const updatedAttendance = [...attendance];
     updatedAttendance[index] = {
       ...updatedAttendance[index],
-      present
+      present: status !== 'absent', // Set present to true for both "present" options
+      attendanceStatus: status
     };
     setAttendance(updatedAttendance);
     
@@ -51,7 +54,8 @@ export function AttendanceTracker({
         memberName: nm.name,
         organization: nm.organization,
         present: true,
-        remarks: ''
+        remarks: '',
+        attendanceStatus: 'present-physical' as const // Default for external attendees
       }))
     ];
     
@@ -73,7 +77,8 @@ export function AttendanceTracker({
         memberName: nm.name,
         organization: nm.organization,
         present: true,
-        remarks: ''
+        remarks: '',
+        attendanceStatus: 'present-physical' as const // Default for external attendees
       }))
     ];
     
@@ -94,7 +99,8 @@ export function AttendanceTracker({
         memberName: nm.name,
         organization: nm.organization,
         present: true,
-        remarks: ''
+        remarks: '',
+        attendanceStatus: 'present-physical' as const // Default for external attendees
       }))
     ];
     
@@ -113,7 +119,8 @@ export function AttendanceTracker({
         memberName: nm.name,
         organization: nm.organization,
         present: true,
-        remarks: ''
+        remarks: '',
+        attendanceStatus: 'present-physical' as const // Default for external attendees
       }))
     ];
     
@@ -135,18 +142,46 @@ export function AttendanceTracker({
         
         {attendance.map((record, index) => (
           <div key={index} className="flex items-start space-x-4 py-3 border-b last:border-0">
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id={`member-${index}`}
-                checked={record.present}
-                onCheckedChange={(checked) => handleAttendanceChange(index, checked as boolean)}
-              />
-              <Label htmlFor={`member-${index}`} className="text-base font-medium">
+            <div className="flex flex-col space-y-2 w-1/3">
+              <Label className="text-base font-medium">
                 {record.memberName}
               </Label>
+              
+              <RadioGroup
+                value={record.attendanceStatus || 'absent'}
+                onValueChange={(value) => handleAttendanceChange(
+                  index, 
+                  value as 'present-physical' | 'present-virtual' | 'absent'
+                )}
+                className="flex space-x-2"
+              >
+                <div className="flex items-center space-x-1">
+                  <RadioGroupItem value="present-physical" id={`physical-${index}`} />
+                  <Label htmlFor={`physical-${index}`} className="text-xs flex items-center cursor-pointer">
+                    <Check className="h-3 w-3 mr-1 text-green-600" />
+                    Physical
+                  </Label>
+                </div>
+                
+                <div className="flex items-center space-x-1">
+                  <RadioGroupItem value="present-virtual" id={`virtual-${index}`} />
+                  <Label htmlFor={`virtual-${index}`} className="text-xs flex items-center cursor-pointer">
+                    <UserCheck className="h-3 w-3 mr-1 text-blue-600" />
+                    Virtual
+                  </Label>
+                </div>
+                
+                <div className="flex items-center space-x-1">
+                  <RadioGroupItem value="absent" id={`absent-${index}`} />
+                  <Label htmlFor={`absent-${index}`} className="text-xs flex items-center cursor-pointer">
+                    <X className="h-3 w-3 mr-1 text-red-600" />
+                    Absent
+                  </Label>
+                </div>
+              </RadioGroup>
             </div>
             
-            {record.present && (
+            {record.attendanceStatus !== 'absent' && (
               <Textarea
                 placeholder="Any remarks about this member's attendance or participation"
                 value={record.remarks}

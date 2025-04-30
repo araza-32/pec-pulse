@@ -33,7 +33,7 @@ export function SidebarNavigation({ userRole, showAdminOptions, isCoordinationUs
         Dashboard
       </NavLink>
       
-      {showAdminOptions && (
+      {showAdminOptions && userRole !== 'chairman' && (
         <>
           <NavLink
             to="/reports"
@@ -82,7 +82,7 @@ export function SidebarNavigation({ userRole, showAdminOptions, isCoordinationUs
         Calendar
       </NavLink>
       
-      {(userRole === 'secretary' || showAdminOptions) && (
+      {((userRole === 'secretary' || showAdminOptions) && userRole !== 'chairman') && (
         <NavLink
           to="/minutes/upload"
           className={({ isActive }) =>
@@ -99,7 +99,7 @@ export function SidebarNavigation({ userRole, showAdminOptions, isCoordinationUs
         </NavLink>
       )}
       
-      {userRole === 'chairman' && !isCoordinationUser && (
+      {userRole === 'chairman' && (
         <NavLink
           to="/chairman-dashboard"
           className={({ isActive }) =>
@@ -113,6 +113,23 @@ export function SidebarNavigation({ userRole, showAdminOptions, isCoordinationUs
         >
           <BarChart3 className="h-4 w-4" />
           Overview
+        </NavLink>
+      )}
+      
+      {userRole === 'chairman' && (
+        <NavLink
+          to="/reports"
+          className={({ isActive }) =>
+            cn(
+              "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+              isActive
+                ? "bg-pec-green text-white"
+                : "hover:bg-pec-green-50"
+            )
+          }
+        >
+          <BarChart3 className="h-4 w-4" />
+          Reports
         </NavLink>
       )}
     </div>
