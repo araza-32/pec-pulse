@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useWorkbodies } from "@/hooks/useWorkbodies";
@@ -133,7 +132,6 @@ export const useMinutesUpload = () => {
         member_name: record.memberName,
         organization: record.organization || '',
         present: record.present,
-        remarks: record.remarks || '',
         attendance_status: record.attendanceStatus || 'absent'
       }));
 

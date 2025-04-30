@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { Label } from "@/components/ui/label";
 import { AttendanceRecord, WorkbodyMember } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Check, UserCheck, X } from "lucide-react";
@@ -44,29 +43,6 @@ export function AttendanceTracker({
       ...updatedAttendance[index],
       present: status !== 'absent', // Set present to true for both "present" options
       attendanceStatus: status
-    };
-    setAttendance(updatedAttendance);
-    
-    // Combine member attendance and non-member attendance
-    const combinedAttendance = [
-      ...updatedAttendance,
-      ...nonMembers.map(nm => ({
-        memberName: nm.name,
-        organization: nm.organization,
-        present: true,
-        remarks: '',
-        attendanceStatus: 'present-physical' as const
-      }))
-    ];
-    
-    onChange(combinedAttendance);
-  };
-
-  const handleRemarksChange = (index: number, remarks: string) => {
-    const updatedAttendance = [...attendance];
-    updatedAttendance[index] = {
-      ...updatedAttendance[index],
-      remarks
     };
     setAttendance(updatedAttendance);
     
@@ -141,8 +117,8 @@ export function AttendanceTracker({
         <h3 className="text-lg font-medium">Workbody Members Attendance</h3>
         
         {attendance.map((record, index) => (
-          <div key={index} className="flex items-start space-x-4 py-3 border-b last:border-0">
-            <div className="flex flex-col space-y-2 w-1/3">
+          <div key={index} className="flex items-center py-3 border-b last:border-0">
+            <div className="flex flex-col space-y-2 w-full">
               <Label className="text-base font-medium">
                 {record.memberName}
               </Label>
@@ -153,43 +129,33 @@ export function AttendanceTracker({
                   index, 
                   value as 'present-physical' | 'present-virtual' | 'absent'
                 )}
-                className="flex space-x-2"
+                className="flex space-x-4"
               >
                 <div className="flex items-center space-x-1">
                   <RadioGroupItem value="present-physical" id={`physical-${index}`} />
-                  <Label htmlFor={`physical-${index}`} className="text-xs flex items-center cursor-pointer">
-                    <Check className="h-3 w-3 mr-1 text-green-600" />
+                  <Label htmlFor={`physical-${index}`} className="text-sm flex items-center cursor-pointer">
+                    <Check className="h-4 w-4 mr-1 text-green-600" />
                     Physical
                   </Label>
                 </div>
                 
                 <div className="flex items-center space-x-1">
                   <RadioGroupItem value="present-virtual" id={`virtual-${index}`} />
-                  <Label htmlFor={`virtual-${index}`} className="text-xs flex items-center cursor-pointer">
-                    <UserCheck className="h-3 w-3 mr-1 text-blue-600" />
+                  <Label htmlFor={`virtual-${index}`} className="text-sm flex items-center cursor-pointer">
+                    <UserCheck className="h-4 w-4 mr-1 text-blue-600" />
                     Virtual
                   </Label>
                 </div>
                 
                 <div className="flex items-center space-x-1">
                   <RadioGroupItem value="absent" id={`absent-${index}`} />
-                  <Label htmlFor={`absent-${index}`} className="text-xs flex items-center cursor-pointer">
-                    <X className="h-3 w-3 mr-1 text-red-600" />
+                  <Label htmlFor={`absent-${index}`} className="text-sm flex items-center cursor-pointer">
+                    <X className="h-4 w-4 mr-1 text-red-600" />
                     Absent
                   </Label>
                 </div>
               </RadioGroup>
             </div>
-            
-            {record.attendanceStatus !== 'absent' && (
-              <Textarea
-                placeholder="Any remarks about this member's attendance or participation"
-                value={record.remarks}
-                onChange={(e) => handleRemarksChange(index, e.target.value)}
-                className="ml-auto w-2/3"
-                rows={1}
-              />
-            )}
           </div>
         ))}
       </div>

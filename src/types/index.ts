@@ -1,3 +1,4 @@
+
 export type WorkbodyType = 'committee' | 'working-group' | 'task-force';
 
 export interface User {
@@ -38,7 +39,7 @@ export interface AttendanceRecord {
   memberName: string;
   organization?: string;
   present: boolean;
-  remarks: string;
+  remarks?: string; // Made optional since we're not using it anymore
   attendanceStatus?: 'present-physical' | 'present-virtual' | 'absent';
 }
 
