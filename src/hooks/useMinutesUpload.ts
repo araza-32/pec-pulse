@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useWorkbodies } from "@/hooks/useWorkbodies";
@@ -127,6 +128,17 @@ export const useMinutesUpload = () => {
       const agendaItemsArray = agendaItems.split('\n').filter(item => item.trim() !== '');
       const actionsAgreedArray = actionsAgreed.split('\n').filter(item => item.trim() !== '');
       
+      // Prepare attendance data
+      const attendanceData = attendanceRecords.map(record => ({
+        member_name: record.memberName,
+        organization: record.organization || '',
+        present: record.present,
+        remarks: record.remarks || '',
+        attendance_status: record.attendanceStatus || 'absent'
+      }));
+
+      console.log("Saving attendance records:", attendanceData);
+      
       // Insert the meeting minutes
       const { data: minutesData, error: minutesError } = await supabase
         .from('meeting_minutes')
@@ -137,18 +149,15 @@ export const useMinutesUpload = () => {
           agenda_items: agendaItemsArray,
           actions_agreed: actionsAgreedArray,
           file_url: publicUrl,
-          uploaded_at: new Date().toISOString()
+          uploaded_at: new Date().toISOString(),
+          attendance: attendanceData
         })
         .select('id')
         .single();
       
-      if (minutesError) throw minutesError;
-      
-      // Store attendance records
-      if (attendanceRecords.length > 0) {
-        console.log("Attendance records:", attendanceRecords);
-        // In a production app, this would be stored in a separate table
-        // For now we're just logging them
+      if (minutesError) {
+        console.error("Minutes insertion error:", minutesError);
+        throw minutesError;
       }
       
       // Store action items
@@ -234,6 +243,7 @@ export const useMinutesUpload = () => {
   };
 
   const handleAttendanceChange = (records: AttendanceRecord[]) => {
+    console.log("Attendance records updated:", records);
     setAttendanceRecords(records);
   };
 

@@ -68,6 +68,11 @@ export function MeetingDetailsForm({
       setTimeout(() => setActiveTab("attendance"), 500);
     }
   };
+
+  const handleAttendanceChange = (attendance: AttendanceRecord[]) => {
+    console.log("Attendance change in form:", attendance);
+    onAttendanceChange(attendance);
+  };
   
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -164,7 +169,7 @@ export function MeetingDetailsForm({
         <AttendanceTracker
           workbodyId={workbodyId}
           members={workbodyMembers}
-          onChange={onAttendanceChange}
+          onChange={handleAttendanceChange}
         />
         
         <div className="flex justify-between mt-6">
