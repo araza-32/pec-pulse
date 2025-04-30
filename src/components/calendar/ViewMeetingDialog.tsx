@@ -3,7 +3,7 @@ import { format, parseISO } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { CalendarIcon, Clock, MapPin, FileText, Pencil, Trash, FilePdf } from "lucide-react";
+import { CalendarIcon, Clock, MapPin, FileText, Pencil, Trash } from "lucide-react";
 import { ScheduledMeeting, Workbody } from "@/types";
 import { useState } from "react";
 import { EditMeetingDialog } from "./EditMeetingDialog";
@@ -141,7 +141,7 @@ export function ViewMeetingDialog({
                         className="gap-2"
                         onClick={handleViewNotification}
                       >
-                        <FilePdf className="h-4 w-4" /> View Notification
+                        <FileText className="h-4 w-4" /> View Notification
                       </Button>
                     </div>
                   )}

@@ -122,25 +122,27 @@ export const GoogleCalendarIntegration = ({ onSyncComplete }: { onSyncComplete?:
   };
 
   return (
-    <div className="flex space-x-2">
+    <div className="flex gap-1">
       <Button 
         onClick={handleAddToCalendar}
         variant="outline"
         size="sm"
-        className="text-xs"
+        className="text-xs flex items-center"
+        title="Add to your Google Calendar"
       >
         <CalendarPlus className="mr-1 h-3 w-3" />
-        Add to Google
+        Add
       </Button>
       <Button 
         onClick={fetchAndSyncGoogleCalendarEvents}
-        variant="default"
+        variant="outline"
         size="sm"
         disabled={isSyncing}
-        className="text-xs"
+        className="text-xs flex items-center"
+        title="Import meetings from Google Calendar"
       >
         <RefreshCw className={`mr-1 h-3 w-3 ${isSyncing ? "animate-spin" : ""}`} />
-        {isSyncing ? "Syncing..." : "Sync From Google"}
+        {isSyncing ? "Syncing" : "Sync"}
       </Button>
     </div>
   );

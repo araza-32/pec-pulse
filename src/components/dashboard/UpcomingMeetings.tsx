@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from "react";
-import { CalendarClock, ChevronRight, FileText, Eye, Calendar, FilePdf } from "lucide-react";
+import { CalendarClock, ChevronRight, FileText, Eye, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
@@ -133,7 +132,7 @@ export const UpcomingMeetings = () => {
                         className="h-7 px-2 text-xs bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
                         onClick={(e) => handleViewNotification(meeting, e)}
                       >
-                        <FilePdf className="h-3 w-3 mr-1" /> View Notification
+                        <FileText className="h-3 w-3 mr-1" /> View Notification
                       </Button>
                     )}
                   </div>
