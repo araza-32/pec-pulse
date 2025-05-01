@@ -48,8 +48,8 @@ export const useMeetingMutations = (
         agendaItems: data.agenda_items,
         notificationFile: data.notification_file_name,
         notificationFilePath: data.notification_file_path,
-        agendaFile: data.agenda_file_name,
-        agendaFilePath: data.agenda_file_path
+        agendaFile: data.agenda_file_name || null, // Handle potentially missing properties
+        agendaFilePath: data.agenda_file_path || null // Handle potentially missing properties
       };
 
       return addedMeeting;

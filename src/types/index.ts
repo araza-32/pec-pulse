@@ -1,4 +1,3 @@
-
 export type WorkbodyType = 'committee' | 'working-group' | 'task-force';
 
 export interface User {
@@ -76,8 +75,8 @@ export interface ScheduledMeeting {
   agendaItems: string[];
   notificationFile?: string | null;
   notificationFilePath?: string | null;
-  agendaFile?: string | null; // Added for agenda PDF file name
-  agendaFilePath?: string | null; // Added for agenda PDF file path
+  agendaFile?: string | null; // Added property for agenda PDF file name
+  agendaFilePath?: string | null; // Added property for agenda PDF file path
 }
 
 export interface DashboardStat {

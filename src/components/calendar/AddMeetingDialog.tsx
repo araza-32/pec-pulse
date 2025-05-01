@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { WorkbodySelection } from "@/components/minutes/WorkbodySelection";
 import { useToast } from "@/hooks/use-toast";
 import { Workbody } from "@/types";
+import { supabase } from "@/integrations/supabase/client"; // Added missing supabase import
 
 interface AddMeetingDialogProps {
   isOpen: boolean;

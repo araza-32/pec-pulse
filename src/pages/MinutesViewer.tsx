@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Download, FileText, FilePdf, FileText as FileTextIcon } from "lucide-react";
+import { Download, FileText, FileText as FileTextIcon, File } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -67,7 +66,7 @@ export default function MinutesViewer() {
           actions_agreed: data.actions_agreed,
           file_url: data.file_url,
           uploaded_at: data.uploaded_at,
-          agenda_document_url: data.agenda_document_url
+          agenda_document_url: data.agenda_document_url || null
         };
         
         setMinutes(minutesData);
@@ -228,14 +227,14 @@ export default function MinutesViewer() {
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Agenda Items</CardTitle>
             <div className="flex space-x-2">
-              {minutes.agenda_document_url && (
+              {minutes?.agenda_document_url && (
                 <Button 
                   variant="outline" 
                   size="sm"
                   onClick={() => setIsAgendaPdfOpen(true)}
                   className="flex items-center gap-1"
                 >
-                  <FilePdf className="h-4 w-4" /> View Agenda
+                  <File className="h-4 w-4" /> View Agenda
                 </Button>
               )}
               {!isEditingAgenda ? (
