@@ -1,7 +1,7 @@
 
 import { useLocation } from "react-router-dom";
 import { Link } from "react-router-dom";
-import { BarChart3, Calendar, ChevronRight, ClipboardList, FileText, Home, Settings, UploadCloud, Users } from "lucide-react";
+import { BarChart3, Calendar, ChevronRight, ClipboardList, FileText, Home, Settings, Users } from "lucide-react";
 
 interface SidebarItem {
   name: string;
@@ -26,12 +26,6 @@ export function getNavigation(): SidebarItem[] {
       href: "/chairman-dashboard", 
       icon: BarChart3, 
       current: location.pathname === "/chairman-dashboard" 
-    },
-    { 
-      name: "Executive Dashboard", 
-      href: "/chairman-executive-dashboard", 
-      icon: BarChart3, 
-      current: location.pathname === "/chairman-executive-dashboard" 
     },
     {
       name: "Workbodies",
@@ -90,7 +84,7 @@ export function SidebarNavigation({
   // Filter navigation items based on user role
   const filteredNavigation = navigation.filter(item => {
     // Show Chairman's Dashboard only to chairman or admin/coordination users
-    if (item.name === "Chairman's Dashboard" || item.name === "Executive Dashboard") {
+    if (item.name === "Chairman's Dashboard") {
       return userRole === 'chairman' || showAdminOptions;
     }
     
