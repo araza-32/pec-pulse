@@ -73,3 +73,51 @@ export function getNavigation(): SidebarItem[] {
     },
   ];
 }
+
+// Create and export the SidebarNavigation component
+export function SidebarNavigation({ 
+  userRole, 
+  showAdminOptions, 
+  isCoordinationUser 
+}: { 
+  userRole: string; 
+  showAdminOptions: boolean; 
+  isCoordinationUser: boolean; 
+}) {
+  const navigation = getNavigation();
+  
+  // Filter navigation items based on user role
+  const filteredNavigation = navigation.filter(item => {
+    // Show Chairman's Dashboard only to chairman or admin/coordination users
+    if (item.name === "Chairman's Dashboard" || item.name === "Executive Dashboard") {
+      return userRole === 'chairman' || showAdminOptions;
+    }
+    
+    // Show all other items
+    return true;
+  });
+
+  return (
+    <div>
+      <h4 className="mb-2 px-3 text-xs font-semibold uppercase text-muted-foreground">
+        Navigation
+      </h4>
+      <nav className="space-y-1">
+        {filteredNavigation.map((item) => (
+          <a
+            key={item.name}
+            href={item.href}
+            className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
+              item.current 
+                ? "bg-pec-green text-white" 
+                : "hover:bg-pec-green-50"
+            }`}
+          >
+            {item.icon && <item.icon className="h-5 w-5" />}
+            {item.name}
+          </a>
+        ))}
+      </nav>
+    </div>
+  );
+}
