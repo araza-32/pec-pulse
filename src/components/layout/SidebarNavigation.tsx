@@ -1,5 +1,6 @@
 
 import { useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { BarChart3, Calendar, ChevronRight, ClipboardList, FileText, Home, Settings, UploadCloud, Users } from "lucide-react";
 
 interface SidebarItem {
@@ -104,9 +105,9 @@ export function SidebarNavigation({
       </h4>
       <nav className="space-y-1">
         {filteredNavigation.map((item) => (
-          <a
+          <Link
             key={item.name}
-            href={item.href}
+            to={item.href}
             className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
               item.current 
                 ? "bg-pec-green text-white" 
@@ -115,7 +116,7 @@ export function SidebarNavigation({
           >
             {item.icon && <item.icon className="h-5 w-5" />}
             {item.name}
-          </a>
+          </Link>
         ))}
       </nav>
     </div>
