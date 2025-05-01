@@ -12,6 +12,7 @@ export type Database = {
       meeting_minutes: {
         Row: {
           actions_agreed: string[]
+          agenda_document_url: string | null
           agenda_items: string[]
           date: string
           file_url: string
@@ -23,6 +24,7 @@ export type Database = {
         }
         Insert: {
           actions_agreed?: string[]
+          agenda_document_url?: string | null
           agenda_items?: string[]
           date: string
           file_url: string
@@ -34,6 +36,7 @@ export type Database = {
         }
         Update: {
           actions_agreed?: string[]
+          agenda_document_url?: string | null
           agenda_items?: string[]
           date?: string
           file_url?: string
@@ -73,6 +76,8 @@ export type Database = {
       }
       scheduled_meetings: {
         Row: {
+          agenda_file_name: string | null
+          agenda_file_path: string | null
           agenda_items: string[]
           created_at: string
           date: string
@@ -86,6 +91,8 @@ export type Database = {
           workbody_name: string
         }
         Insert: {
+          agenda_file_name?: string | null
+          agenda_file_path?: string | null
           agenda_items?: string[]
           created_at?: string
           date: string
@@ -99,6 +106,8 @@ export type Database = {
           workbody_name: string
         }
         Update: {
+          agenda_file_name?: string | null
+          agenda_file_path?: string | null
           agenda_items?: string[]
           created_at?: string
           date?: string

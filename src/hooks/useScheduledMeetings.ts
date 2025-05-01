@@ -41,8 +41,8 @@ export const useScheduledMeetings = () => {
         agendaItems: meeting.agenda_items,
         notificationFile: meeting.notification_file_name,
         notificationFilePath: meeting.notification_file_path,
-        agendaFile: meeting.agenda_file_name || null, // Handle potentially missing properties
-        agendaFilePath: meeting.agenda_file_path || null // Handle potentially missing properties
+        agendaFile: meeting.agenda_file_name || null,
+        agendaFilePath: meeting.agenda_file_path || null
       }));
 
       setMeetings(formattedMeetings);

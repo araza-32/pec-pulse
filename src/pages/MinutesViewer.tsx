@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,7 +22,7 @@ interface MinutesData {
   actions_agreed: string[];
   file_url: string;
   uploaded_at: string;
-  agenda_document_url?: string;
+  agenda_document_url?: string | null;
 }
 
 export default function MinutesViewer() {
@@ -227,7 +228,7 @@ export default function MinutesViewer() {
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Agenda Items</CardTitle>
             <div className="flex space-x-2">
-              {minutes?.agenda_document_url && (
+              {minutes.agenda_document_url && (
                 <Button 
                   variant="outline" 
                   size="sm"

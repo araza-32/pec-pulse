@@ -38,7 +38,7 @@ export const useMeetingMutations = (
       // Force a refetch to ensure data consistency
       await refetchMeetings();
       
-      const addedMeeting = {
+      const addedMeeting: ScheduledMeeting = {
         id: data.id,
         workbodyId: data.workbody_id,
         workbodyName: data.workbody_name,
@@ -48,8 +48,8 @@ export const useMeetingMutations = (
         agendaItems: data.agenda_items,
         notificationFile: data.notification_file_name,
         notificationFilePath: data.notification_file_path,
-        agendaFile: data.agenda_file_name || null, // Handle potentially missing properties
-        agendaFilePath: data.agenda_file_path || null // Handle potentially missing properties
+        agendaFile: data.agenda_file_name || null,
+        agendaFilePath: data.agenda_file_path || null
       };
 
       return addedMeeting;
