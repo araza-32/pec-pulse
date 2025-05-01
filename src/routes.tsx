@@ -1,8 +1,10 @@
+
 import { Layout } from "./components/layout/Layout";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import ChairmanDashboard from "./pages/ChairmanDashboard";
+import ChairmanExecutiveDashboard from "./pages/ChairmanExecutiveDashboard";
 import WorkbodyManagement from "./pages/WorkbodyManagement";
 import WorkbodyDetail from "./pages/WorkbodyDetail";
 import UploadMinutes from "./pages/UploadMinutes";
@@ -46,6 +48,10 @@ export const protectedRoutes = [
   {
     path: "/chairman-dashboard",
     element: <ChairmanDashboard />,
+  },
+  {
+    path: "/chairman-executive-dashboard",
+    element: <ChairmanExecutiveDashboard />,
   },
   {
     path: "/workbodies",

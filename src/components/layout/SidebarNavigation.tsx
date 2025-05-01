@@ -1,137 +1,75 @@
 
-import { NavLink } from "react-router-dom";
-import { 
-  BarChart3, 
-  Calendar,
-  FileUp, 
-  Home
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useLocation } from "react-router-dom";
+import { BarChart3, Calendar, ChevronRight, ClipboardList, FileText, Home, Settings, UploadCloud, Users } from "lucide-react";
 
-interface NavItemsProps {
-  userRole: string;
-  showAdminOptions: boolean;
-  isCoordinationUser: boolean;
+interface SidebarItem {
+  name: string;
+  href: string;
+  icon: any;
+  current?: boolean;
+  children?: SidebarItem[];
 }
 
-export function SidebarNavigation({ userRole, showAdminOptions, isCoordinationUser }: NavItemsProps) {
-  return (
-    <div className="space-y-2">
-      <NavLink
-        to="/dashboard"
-        className={({ isActive }) =>
-          cn(
-            "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-            isActive
-              ? "bg-pec-green text-white"
-              : "hover:bg-pec-green-50"
-          )
+export function getNavigation(): SidebarItem[] {
+  const location = useLocation();
+  
+  return [
+    { 
+      name: "Dashboard", 
+      href: "/dashboard", 
+      icon: Home, 
+      current: location.pathname === "/dashboard" 
+    },
+    { 
+      name: "Chairman's Dashboard", 
+      href: "/chairman-dashboard", 
+      icon: BarChart3, 
+      current: location.pathname === "/chairman-dashboard" 
+    },
+    { 
+      name: "Executive Dashboard", 
+      href: "/chairman-executive-dashboard", 
+      icon: BarChart3, 
+      current: location.pathname === "/chairman-executive-dashboard" 
+    },
+    {
+      name: "Workbodies",
+      href: "/workbodies",
+      icon: Users,
+      current: location.pathname.startsWith("/workbodies") && location.pathname !== "/workbodies",
+      children: []
+    },
+    {
+      name: "Meeting Minutes",
+      href: "/minutes",
+      icon: FileText,
+      current: location.pathname.includes("/minutes"),
+      children: [
+        {
+          name: "Upload Minutes",
+          href: "/minutes/upload",
+          icon: ChevronRight,
+          current: location.pathname === "/minutes/upload",
         }
-        end
-      >
-        <Home className="h-4 w-4" />
-        Dashboard
-      </NavLink>
-      
-      {showAdminOptions && userRole !== 'chairman' && (
-        <>
-          <NavLink
-            to="/reports"
-            className={({ isActive }) =>
-              cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-                isActive
-                  ? "bg-pec-green text-white"
-                  : "hover:bg-pec-green-50"
-              )
-            }
-          >
-            <BarChart3 className="h-4 w-4" />
-            Reports
-          </NavLink>
-          
-          <NavLink
-            to="/workbodies"
-            className={({ isActive }) =>
-              cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-                isActive
-                  ? "bg-pec-green text-white"
-                  : "hover:bg-pec-green-50"
-              )
-            }
-          >
-            <Calendar className="h-4 w-4" />
-            Manage Workbodies
-          </NavLink>
-        </>
-      )}
-      
-      <NavLink
-        to="/calendar"
-        className={({ isActive }) =>
-          cn(
-            "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-            isActive
-              ? "bg-pec-green text-white"
-              : "hover:bg-pec-green-50"
-          )
-        }
-      >
-        <Calendar className="h-4 w-4" />
-        Calendar
-      </NavLink>
-      
-      {((userRole === 'secretary' || showAdminOptions) && userRole !== 'chairman') && (
-        <NavLink
-          to="/minutes/upload"
-          className={({ isActive }) =>
-            cn(
-              "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-              isActive
-                ? "bg-pec-green text-white"
-                : "hover:bg-pec-green-50"
-            )
-          }
-        >
-          <FileUp className="h-4 w-4" />
-          Upload Minutes
-        </NavLink>
-      )}
-      
-      {userRole === 'chairman' && (
-        <NavLink
-          to="/chairman-dashboard"
-          className={({ isActive }) =>
-            cn(
-              "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-              isActive
-                ? "bg-pec-green text-white"
-                : "hover:bg-pec-green-50"
-            )
-          }
-        >
-          <BarChart3 className="h-4 w-4" />
-          Overview
-        </NavLink>
-      )}
-      
-      {userRole === 'chairman' && (
-        <NavLink
-          to="/reports"
-          className={({ isActive }) =>
-            cn(
-              "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-              isActive
-                ? "bg-pec-green text-white"
-                : "hover:bg-pec-green-50"
-            )
-          }
-        >
-          <BarChart3 className="h-4 w-4" />
-          Reports
-        </NavLink>
-      )}
-    </div>
-  );
+      ]
+    },
+    {
+      name: "Meeting Calendar",
+      href: "/calendar",
+      icon: Calendar,
+      current: location.pathname === "/calendar",
+    },
+    {
+      name: "Reports",
+      href: "/reports",
+      icon: ClipboardList,
+      current: location.pathname === "/reports",
+    },
+    {
+      name: "Settings",
+      href: "/settings",
+      icon: Settings,
+      current: location.pathname === "/settings",
+    },
+  ];
 }
