@@ -28,6 +28,7 @@ export function AddMeetingDialog({
   const [selectedWorkbodyType, setSelectedWorkbodyType] = useState('');
   const [selectedWorkbodyId, setSelectedWorkbodyId] = useState('');
   const [notificationFile, setNotificationFile] = useState<File | null>(null);
+  const [agendaFile, setAgendaFile] = useState<File | null>(null);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newMeeting, setNewMeeting] = useState({
@@ -85,6 +86,46 @@ export function AddMeetingDialog({
     try {
       setIsSubmitting(true);
       
+      // Upload files if they exist
+      let notificationFilePath = null;
+      let agendaFilePath = null;
+      
+      if (notificationFile) {
+        const fileExt = notificationFile.name.split('.').pop();
+        const fileName = `${Date.now()}-notification.${fileExt}`;
+        const filePath = `meeting-notifications/${fileName}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('workbody-documents')
+          .upload(filePath, notificationFile);
+          
+        if (uploadError) throw uploadError;
+        
+        const { data: { publicUrl } } = supabase.storage
+          .from('workbody-documents')
+          .getPublicUrl(filePath);
+          
+        notificationFilePath = publicUrl;
+      }
+      
+      if (agendaFile) {
+        const fileExt = agendaFile.name.split('.').pop();
+        const fileName = `${Date.now()}-agenda.${fileExt}`;
+        const filePath = `meeting-agendas/${fileName}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('workbody-documents')
+          .upload(filePath, agendaFile);
+          
+        if (uploadError) throw uploadError;
+        
+        const { data: { publicUrl } } = supabase.storage
+          .from('workbody-documents')
+          .getPublicUrl(filePath);
+          
+        agendaFilePath = publicUrl;
+      }
+      
       await onAddMeeting({
         workbodyId: selectedWorkbodyId,
         workbodyName: selectedWorkbody.name,
@@ -92,7 +133,10 @@ export function AddMeetingDialog({
         time: newMeeting.time,
         location: newMeeting.location,
         agendaItems: newMeeting.agendaItems.split('\n').filter(item => item.trim() !== ''),
-        notificationFile: notificationFile ? notificationFile.name : undefined
+        notificationFile: notificationFile ? notificationFile.name : null,
+        notificationFilePath: notificationFilePath,
+        agendaFile: agendaFile ? agendaFile.name : null,
+        agendaFilePath: agendaFilePath
       });
 
       toast({
@@ -110,6 +154,7 @@ export function AddMeetingDialog({
         agendaItems: "",
       });
       setNotificationFile(null);
+      setAgendaFile(null);
       setFormErrors({});
       onClose();
     } catch (error: any) {
@@ -199,6 +244,21 @@ export function AddMeetingDialog({
               onChange={(e) => setNewMeeting({ ...newMeeting, agendaItems: e.target.value })}
               required
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="agendaFile">
+              Upload Meeting Agenda (PDF)
+            </Label>
+            <Input 
+              id="agendaFile" 
+              type="file" 
+              accept=".pdf"
+              onChange={(e) => setAgendaFile(e.target.files?.[0] || null)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Upload the detailed agenda document in PDF format
+            </p>
           </div>
 
           <div className="space-y-2">

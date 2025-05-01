@@ -63,6 +63,7 @@ export interface MeetingMinutes {
   uploadedBy: string;
   attendance?: AttendanceRecord[];
   actionItems?: ActionItem[];
+  agendaDocumentUrl?: string; // Added for agenda PDF
 }
 
 export interface ScheduledMeeting {
@@ -75,6 +76,8 @@ export interface ScheduledMeeting {
   agendaItems: string[];
   notificationFile?: string | null;
   notificationFilePath?: string | null;
+  agendaFile?: string | null; // Added for agenda PDF file name
+  agendaFilePath?: string | null; // Added for agenda PDF file path
 }
 
 export interface DashboardStat {

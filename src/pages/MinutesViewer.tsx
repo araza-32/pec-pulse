@@ -1,12 +1,16 @@
 
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Download, FileText } from "lucide-react";
+import { Download, FileText, FilePdf, FileText as FileTextIcon } from "lucide-react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { X } from "lucide-react";
 
 interface MinutesData {
   id: string;
@@ -18,12 +22,20 @@ interface MinutesData {
   actions_agreed: string[];
   file_url: string;
   uploaded_at: string;
+  agenda_document_url?: string;
 }
 
 export default function MinutesViewer() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [minutes, setMinutes] = useState<MinutesData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isEditingAgenda, setIsEditingAgenda] = useState(false);
+  const [isEditingActions, setIsEditingActions] = useState(false);
+  const [editedAgenda, setEditedAgenda] = useState<string>("");
+  const [editedActions, setEditedActions] = useState<string>("");
+  const [isAgendaPdfOpen, setIsAgendaPdfOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -48,16 +60,19 @@ export default function MinutesViewer() {
         const minutesData: MinutesData = {
           id: data.id,
           workbody_id: data.workbody_id,
-          workbodyName: data.workbodies?.name,
+          workbodyName: data.workbodies?.name || "Unknown",
           date: data.date,
           location: data.location,
           agenda_items: data.agenda_items,
           actions_agreed: data.actions_agreed,
           file_url: data.file_url,
-          uploaded_at: data.uploaded_at
+          uploaded_at: data.uploaded_at,
+          agenda_document_url: data.agenda_document_url
         };
         
         setMinutes(minutesData);
+        setEditedAgenda(minutesData.agenda_items.join('\n'));
+        setEditedActions(minutesData.actions_agreed.join('\n'));
       } catch (error: any) {
         console.error("Error fetching minutes:", error);
         toast({
@@ -72,6 +87,78 @@ export default function MinutesViewer() {
     
     fetchMinutes();
   }, [id, toast]);
+
+  const handleSaveAgenda = async () => {
+    if (!minutes) return;
+    
+    try {
+      setIsSaving(true);
+      const newAgendaItems = editedAgenda
+        .split('\n')
+        .map(item => item.trim())
+        .filter(item => item !== '');
+        
+      const { error } = await supabase
+        .from('meeting_minutes')
+        .update({ agenda_items: newAgendaItems })
+        .eq('id', minutes.id);
+        
+      if (error) throw error;
+      
+      setMinutes(prev => prev ? { ...prev, agenda_items: newAgendaItems } : null);
+      setIsEditingAgenda(false);
+      
+      toast({
+        title: "Success",
+        description: "Agenda items updated successfully",
+      });
+    } catch (error: any) {
+      console.error("Error updating agenda items:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update agenda items",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveActions = async () => {
+    if (!minutes) return;
+    
+    try {
+      setIsSaving(true);
+      const newActions = editedActions
+        .split('\n')
+        .map(action => action.trim())
+        .filter(action => action !== '');
+        
+      const { error } = await supabase
+        .from('meeting_minutes')
+        .update({ actions_agreed: newActions })
+        .eq('id', minutes.id);
+        
+      if (error) throw error;
+      
+      setMinutes(prev => prev ? { ...prev, actions_agreed: newActions } : null);
+      setIsEditingActions(false);
+      
+      toast({
+        title: "Success",
+        description: "Actions agreed updated successfully",
+      });
+    } catch (error: any) {
+      console.error("Error updating actions:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update actions agreed",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -138,29 +225,125 @@ export default function MinutesViewer() {
         </Card>
         
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Agenda Items</CardTitle>
+            <div className="flex space-x-2">
+              {minutes.agenda_document_url && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setIsAgendaPdfOpen(true)}
+                  className="flex items-center gap-1"
+                >
+                  <FilePdf className="h-4 w-4" /> View Agenda
+                </Button>
+              )}
+              {!isEditingAgenda ? (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setIsEditingAgenda(true)}
+                >
+                  Edit
+                </Button>
+              ) : (
+                <div className="flex space-x-2">
+                  <Button 
+                    variant="default" 
+                    size="sm"
+                    onClick={handleSaveAgenda}
+                    disabled={isSaving}
+                  >
+                    {isSaving ? "Saving..." : "Save"}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      setIsEditingAgenda(false);
+                      setEditedAgenda(minutes.agenda_items.join('\n'));
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
-            <ul className="list-disc pl-5 space-y-1">
-              {minutes.agenda_items.map((item, index) => (
-                <li key={index}>{item}</li>
-              ))}
-            </ul>
+            {isEditingAgenda ? (
+              <div className="space-y-2">
+                <Label htmlFor="agenda-items">Edit Agenda Items (one per line)</Label>
+                <Textarea
+                  id="agenda-items"
+                  value={editedAgenda}
+                  onChange={(e) => setEditedAgenda(e.target.value)}
+                  rows={6}
+                />
+              </div>
+            ) : (
+              <ul className="list-disc pl-5 space-y-1">
+                {minutes.agenda_items.map((item, index) => (
+                  <li key={index}>{item}</li>
+                ))}
+              </ul>
+            )}
           </CardContent>
         </Card>
       </div>
       
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Actions Agreed</CardTitle>
+          {!isEditingActions ? (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setIsEditingActions(true)}
+            >
+              Edit
+            </Button>
+          ) : (
+            <div className="flex space-x-2">
+              <Button 
+                variant="default" 
+                size="sm"
+                onClick={handleSaveActions}
+                disabled={isSaving}
+              >
+                {isSaving ? "Saving..." : "Save"}
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  setIsEditingActions(false);
+                  setEditedActions(minutes.actions_agreed.join('\n'));
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          )}
         </CardHeader>
         <CardContent>
-          <ul className="list-disc pl-5 space-y-1">
-            {minutes.actions_agreed.map((action, index) => (
-              <li key={index}>{action}</li>
-            ))}
-          </ul>
+          {isEditingActions ? (
+            <div className="space-y-2">
+              <Label htmlFor="actions-agreed">Edit Actions Agreed (one per line)</Label>
+              <Textarea
+                id="actions-agreed"
+                value={editedActions}
+                onChange={(e) => setEditedActions(e.target.value)}
+                rows={6}
+              />
+            </div>
+          ) : (
+            <ul className="list-disc pl-5 space-y-1">
+              {minutes.actions_agreed.map((action, index) => (
+                <li key={index}>{action}</li>
+              ))}
+            </ul>
+          )}
         </CardContent>
       </Card>
       
@@ -178,6 +361,34 @@ export default function MinutesViewer() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Agenda PDF Viewer Dialog */}
+      <Dialog 
+        open={isAgendaPdfOpen} 
+        onOpenChange={(open) => setIsAgendaPdfOpen(open)}
+      >
+        <DialogContent className="max-w-4xl max-h-[90vh] h-[90vh] flex flex-col p-0">
+          <div className="flex items-center justify-between p-4 border-b">
+            <h2 className="text-lg font-semibold">Meeting Agenda</h2>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setIsAgendaPdfOpen(false)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="flex-1 overflow-hidden">
+            {minutes.agenda_document_url && (
+              <iframe 
+                src={minutes.agenda_document_url} 
+                className="w-full h-full border-0"
+                title="Meeting Agenda"
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -12,13 +12,7 @@ export const useMeetingMutations = (
 
   const addMeeting = async (newMeeting: Omit<ScheduledMeeting, 'id'>) => {
     console.log("Adding new meeting:", newMeeting);
-    const duplicate = checkForDuplicates(newMeeting);
     
-    if (duplicate) {
-      console.error("Duplicate meeting detected:", duplicate);
-      throw new Error(`A meeting for ${newMeeting.workbodyName} is already scheduled on ${newMeeting.date} at ${newMeeting.time}. Please choose a different time or modify the existing meeting instead.`);
-    }
-
     try {
       const { data, error } = await supabase
         .from('scheduled_meetings')
@@ -30,7 +24,9 @@ export const useMeetingMutations = (
           location: newMeeting.location,
           agenda_items: newMeeting.agendaItems,
           notification_file_name: newMeeting.notificationFile,
-          notification_file_path: newMeeting.notificationFilePath
+          notification_file_path: newMeeting.notificationFilePath,
+          agenda_file_name: newMeeting.agendaFile,
+          agenda_file_path: newMeeting.agendaFilePath
         })
         .select()
         .single();
@@ -51,7 +47,9 @@ export const useMeetingMutations = (
         location: data.location,
         agendaItems: data.agenda_items,
         notificationFile: data.notification_file_name,
-        notificationFilePath: data.notification_file_path
+        notificationFilePath: data.notification_file_path,
+        agendaFile: data.agenda_file_name,
+        agendaFilePath: data.agenda_file_path
       };
 
       return addedMeeting;
@@ -73,6 +71,8 @@ export const useMeetingMutations = (
       if (updates.agendaItems) updateData.agenda_items = updates.agendaItems;
       if (updates.notificationFile !== undefined) updateData.notification_file_name = updates.notificationFile;
       if (updates.notificationFilePath !== undefined) updateData.notification_file_path = updates.notificationFilePath;
+      if (updates.agendaFile !== undefined) updateData.agenda_file_name = updates.agendaFile;
+      if (updates.agendaFilePath !== undefined) updateData.agenda_file_path = updates.agendaFilePath;
 
       console.log("Updating meeting with data:", updateData);
 

@@ -29,22 +29,9 @@ export const useScheduledMeetings = () => {
 
       if (error) throw error;
 
-      // Filter out duplicate meetings (same workbody, date, and time)
-      const uniqueMeetings = data.reduce((acc: any[], meeting) => {
-        const exists = acc.some(m => 
-          m.workbody_id === meeting.workbody_id && 
-          m.date === meeting.date && 
-          m.time === meeting.time
-        );
-        if (!exists) {
-          acc.push(meeting);
-        }
-        return acc;
-      }, []);
+      console.log("Fetched meetings:", data.length);
 
-      console.log("Fetched meetings:", uniqueMeetings.length);
-
-      const formattedMeetings = uniqueMeetings.map(meeting => ({
+      const formattedMeetings = data.map(meeting => ({
         id: meeting.id,
         workbodyId: meeting.workbody_id,
         workbodyName: meeting.workbody_name,
@@ -53,7 +40,9 @@ export const useScheduledMeetings = () => {
         location: meeting.location,
         agendaItems: meeting.agenda_items,
         notificationFile: meeting.notification_file_name,
-        notificationFilePath: meeting.notification_file_path
+        notificationFilePath: meeting.notification_file_path,
+        agendaFile: meeting.agenda_file_name,
+        agendaFilePath: meeting.agenda_file_path
       }));
 
       setMeetings(formattedMeetings);
