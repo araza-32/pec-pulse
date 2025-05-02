@@ -43,16 +43,7 @@ export function getNavigation(): SidebarItem[] {
       href: "/meetings/year",
       icon: FileText,
       current: location.pathname === "/meetings/year" || location.pathname.includes("/minutes/"),
-      roles: ["admin", "secretary", "chairman", "registrar"],
-      children: [
-        {
-          name: "Upload Minutes",
-          href: "/minutes/upload",
-          icon: ChevronRight,
-          current: location.pathname === "/minutes/upload",
-          roles: ["admin", "secretary"]
-        }
-      ]
+      roles: ["admin", "secretary", "chairman", "registrar"]
     },
     {
       name: "Meeting Calendar",

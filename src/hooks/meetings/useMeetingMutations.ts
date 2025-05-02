@@ -100,7 +100,12 @@ export const useMeetingMutations = (
     try {
       console.log("Deleting meeting:", id);
       
-      // Verify the meeting exists before attempting to delete
+      if (!id) {
+        console.error("Invalid meeting ID provided for deletion");
+        throw new Error("Invalid meeting ID");
+      }
+      
+      // First verify the meeting exists before attempting to delete
       const { data: meetingToDelete, error: fetchError } = await supabase
         .from('scheduled_meetings')
         .select('*')
@@ -124,7 +129,7 @@ export const useMeetingMutations = (
 
       console.log("Meeting deleted successfully");
       
-      // Force a refetch rather than manipulating the local state
+      // Force a refetch rather than manipulating the local state directly
       await refetchMeetings();
     } catch (error) {
       console.error('Error deleting meeting:', error);
