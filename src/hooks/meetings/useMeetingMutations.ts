@@ -110,7 +110,7 @@ export const useMeetingMutations = (
         .from('scheduled_meetings')
         .select('*')
         .eq('id', id)
-        .maybeSingle(); // Change from single() to maybeSingle() to prevent crash if meeting doesn't exist
+        .maybeSingle();
         
       if (fetchError) {
         console.error("Error fetching meeting to delete:", fetchError);

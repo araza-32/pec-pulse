@@ -52,7 +52,7 @@ export function Layout({ children }: LayoutProps) {
         onLogout={handleLogout} 
       />
       
-      <div className="flex flex-1">
+      <div className="flex flex-1 overflow-hidden">
         {currentUser && (
           <Sidebar 
             isOpen={sidebarOpen} 
@@ -63,10 +63,10 @@ export function Layout({ children }: LayoutProps) {
         )}
         
         <main 
-          className="flex-1 overflow-y-auto transition-all duration-300"
+          className="flex-1 overflow-y-auto transition-all duration-300 w-full"
           onClick={closeSidebar}
         >
-          <div className="container py-6 animate-fade-in">
+          <div className="container py-6 animate-fade-in mx-auto max-w-full px-4 sm:px-6">
             {children}
           </div>
           

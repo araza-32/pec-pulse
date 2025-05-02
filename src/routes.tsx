@@ -102,7 +102,7 @@ export const protectedRoutes = [
     element: <UploadMinutes />,
   },
   {
-    path: "/meetings/year",
+    path: "/meetings/list",
     element: <MeetingsList />
   },
   {
