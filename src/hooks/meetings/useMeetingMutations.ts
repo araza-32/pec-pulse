@@ -110,11 +110,19 @@ export const useMeetingMutations = (
         .from('scheduled_meetings')
         .select('*')
         .eq('id', id)
-        .single();
+        .maybeSingle(); // Change from single() to maybeSingle() to prevent crash if meeting doesn't exist
         
       if (fetchError) {
         console.error("Error fetching meeting to delete:", fetchError);
         throw new Error("Meeting not found or could not be accessed");
+      }
+      
+      // If meeting not found, handle gracefully
+      if (!meetingToDelete) {
+        console.warn("Meeting already deleted or doesn't exist:", id);
+        // Force a refetch to update UI
+        await refetchMeetings();
+        return;
       }
       
       const { error } = await supabase
@@ -133,7 +141,9 @@ export const useMeetingMutations = (
       await refetchMeetings();
     } catch (error) {
       console.error('Error deleting meeting:', error);
-      throw error;
+      // Don't re-throw error here to prevent app crash
+      // Instead, force a refresh to make sure UI is in sync with actual data
+      await refetchMeetings();
     }
   };
 

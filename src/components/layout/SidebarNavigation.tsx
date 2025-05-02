@@ -40,9 +40,9 @@ export function getNavigation(): SidebarItem[] {
     },
     {
       name: "Meeting Minutes",
-      href: "/meetings/year",
+      href: "/meetings/list", // Fixed path to point to the meetings list
       icon: FileText,
-      current: location.pathname === "/meetings/year" || location.pathname.includes("/minutes/"),
+      current: location.pathname === "/meetings/list" || location.pathname.includes("/minutes/"),
       roles: ["admin", "secretary", "chairman", "registrar"]
     },
     {
