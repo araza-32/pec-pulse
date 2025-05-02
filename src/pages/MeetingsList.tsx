@@ -28,6 +28,7 @@ export default function MeetingsList() {
       if (error) throw error;
       
       setMeetings(data || []);
+      console.info('Fetched meetings:', data?.length);
     } catch (error) {
       console.error("Error fetching meetings:", error);
     } finally {

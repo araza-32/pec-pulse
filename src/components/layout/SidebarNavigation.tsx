@@ -1,7 +1,7 @@
 
 import { useLocation } from "react-router-dom";
 import { Link } from "react-router-dom";
-import { BarChart3, Calendar, ChevronRight, ClipboardList, FileText, Home, Settings, Users } from "lucide-react";
+import { BarChart3, Calendar, FileText, Home, Settings, Users } from "lucide-react";
 
 interface SidebarItem {
   name: string;
@@ -50,13 +50,6 @@ export function getNavigation(): SidebarItem[] {
       href: "/calendar",
       icon: Calendar,
       current: location.pathname === "/calendar",
-      roles: ["admin", "secretary", "chairman", "registrar"]
-    },
-    {
-      name: "Reports",
-      href: "/reports",
-      icon: ClipboardList,
-      current: location.pathname === "/reports",
       roles: ["admin", "secretary", "chairman", "registrar"]
     },
     {

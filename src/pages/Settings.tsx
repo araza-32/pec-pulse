@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
@@ -36,7 +35,6 @@ import { useAuth } from '@/contexts/AuthContext';
 export default function Settings() {
   const { toast } = useToast();
   const { session } = useAuth();
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
   const [users, setUsers] = useState<Array<any>>([]);
   const [workbodies, setWorkbodies] = useState<Array<any>>([]);
@@ -49,10 +47,6 @@ export default function Settings() {
   });
 
   useEffect(() => {
-    // Check for dark mode in localStorage
-    const savedTheme = localStorage.getItem('theme');
-    setIsDarkMode(savedTheme === 'dark');
-    
     // Fetch users and workbodies
     fetchUsers();
     fetchWorkbodies();
@@ -81,23 +75,6 @@ export default function Settings() {
     } catch (error) {
       console.error('Error fetching workbodies:', error);
     }
-  };
-
-  const handleDarkModeToggle = (checked: boolean) => {
-    setIsDarkMode(checked);
-    
-    if (checked) {
-      document.documentElement.classList.add('dark');
-      localStorage.theme = 'dark';
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.theme = 'light';
-    }
-    
-    toast({
-      title: `${checked ? 'Dark' : 'Light'} mode activated`,
-      description: `Interface theme has been updated.`,
-    });
   };
 
   const handleAddUser = async () => {
@@ -182,29 +159,10 @@ export default function Settings() {
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Settings</h1>
       
-      <Tabs defaultValue="appearance">
+      <Tabs defaultValue="users">
         <TabsList>
-          <TabsTrigger value="appearance">Appearance</TabsTrigger>
           {isAdmin && <TabsTrigger value="users">User Management</TabsTrigger>}
         </TabsList>
-        
-        <TabsContent value="appearance" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Theme Settings</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Switch 
-                  id="dark-mode" 
-                  checked={isDarkMode}
-                  onCheckedChange={handleDarkModeToggle}
-                />
-                <Label htmlFor="dark-mode">Dark Mode</Label>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
         
         {isAdmin && (
           <TabsContent value="users" className="space-y-4">
