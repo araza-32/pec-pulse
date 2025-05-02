@@ -13,9 +13,9 @@ import Reports from "./pages/Reports";
 import NotFound from "./pages/NotFound";
 import { useAuth } from "./contexts/AuthContext";
 import { Navigate } from "react-router-dom";
-import { User } from "./types";
 import MeetingsList from "./pages/MeetingsList";
 import WorkbodyList from "./pages/WorkbodyList";
+import Settings from "./pages/Settings";
 
 // Protected route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -108,6 +108,12 @@ export const protectedRoutes = [
   {
     path: "/workbodies/list",
     element: <WorkbodyList />
+  },
+  {
+    path: "/settings",
+    element: <RoleBasedRoute roles={['admin']}>
+      <Settings />
+    </RoleBasedRoute>
   }
 ];
 

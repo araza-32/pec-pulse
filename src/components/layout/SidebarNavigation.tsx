@@ -34,22 +34,23 @@ export function getNavigation(): SidebarItem[] {
       name: "Workbodies",
       href: "/workbodies",
       icon: Users,
-      current: location.pathname.startsWith("/workbodies") && location.pathname !== "/workbodies",
+      current: location.pathname.startsWith("/workbodies") && location.pathname !== "/workbodies/list",
       children: [],
       roles: ["admin", "secretary"]
     },
     {
       name: "Meeting Minutes",
-      href: "/minutes",
+      href: "/meetings/year",
       icon: FileText,
-      current: location.pathname.includes("/minutes"),
-      roles: ["admin", "secretary"],
+      current: location.pathname === "/meetings/year" || location.pathname.includes("/minutes/"),
+      roles: ["admin", "secretary", "chairman", "registrar"],
       children: [
         {
           name: "Upload Minutes",
           href: "/minutes/upload",
           icon: ChevronRight,
           current: location.pathname === "/minutes/upload",
+          roles: ["admin", "secretary"]
         }
       ]
     },
@@ -111,18 +112,46 @@ export function SidebarNavigation({
       </h4>
       <nav className="space-y-1">
         {filteredNavigation.map((item) => (
-          <Link
-            key={item.name}
-            to={item.href}
-            className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
-              item.current 
-                ? "bg-pec-green text-white" 
-                : "hover:bg-pec-green-50"
-            }`}
-          >
-            {item.icon && <item.icon className="h-5 w-5" />}
-            {item.name}
-          </Link>
+          <div key={item.name}>
+            <Link
+              to={item.href}
+              className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
+                item.current 
+                  ? "bg-pec-green text-white" 
+                  : "hover:bg-pec-green-50"
+              }`}
+            >
+              {item.icon && <item.icon className="h-5 w-5" />}
+              {item.name}
+            </Link>
+            
+            {item.children && item.children.length > 0 && (
+              <div className="ml-6 space-y-1 mt-1">
+                {item.children.filter(subItem => {
+                  if (subItem.roles) {
+                    if (userRole === 'admin' || showAdminOptions) {
+                      return true;
+                    }
+                    return subItem.roles.includes(userRole);
+                  }
+                  return true;
+                }).map(subItem => (
+                  <Link
+                    key={subItem.name}
+                    to={subItem.href}
+                    className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors ${
+                      subItem.current 
+                        ? "bg-pec-green/80 text-white" 
+                        : "hover:bg-pec-green-50"
+                    }`}
+                  >
+                    {subItem.icon && <subItem.icon className="h-4 w-4" />}
+                    {subItem.name}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
         ))}
       </nav>
     </div>

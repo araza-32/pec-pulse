@@ -100,6 +100,18 @@ export const useMeetingMutations = (
     try {
       console.log("Deleting meeting:", id);
       
+      // Verify the meeting exists before attempting to delete
+      const { data: meetingToDelete, error: fetchError } = await supabase
+        .from('scheduled_meetings')
+        .select('*')
+        .eq('id', id)
+        .single();
+        
+      if (fetchError) {
+        console.error("Error fetching meeting to delete:", fetchError);
+        throw new Error("Meeting not found or could not be accessed");
+      }
+      
       const { error } = await supabase
         .from('scheduled_meetings')
         .delete()
