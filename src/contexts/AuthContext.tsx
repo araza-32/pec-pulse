@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 
 // Define the User type with specific role types
-type UserRole = 'admin' | 'secretary' | 'chairman';
+type UserRole = 'admin' | 'secretary' | 'chairman' | 'registrar';
 
 interface User {
   id: string;
@@ -44,9 +44,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUser({
             id: userId,
             name: userRole === 'admin' ? 'Admin User' : 
-                 userRole === 'secretary' ? 'Secretary User' : 'Chairman User',
+                 userRole === 'secretary' ? 'Secretary User' : 
+                 userRole === 'chairman' ? 'Chairman PEC' :
+                 'Registrar PEC',
             email: userRole === 'admin' ? 'admin@pec.org.pk' : 
-                  userRole === 'secretary' ? 'secretary@pec.org.pk' : 'chairman@pec.org.pk',
+                  userRole === 'secretary' ? 'secretary@pec.org.pk' : 
+                  userRole === 'chairman' ? 'chairman@pec.org.pk' :
+                  'registrar@pec.org.pk',
             role: userRole,
             workbodyId
           });
@@ -77,7 +81,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } else if (email.includes('chairman')) {
         role = 'chairman';
         id = '3';
-        name = 'Chairman User';
+        name = 'Chairman PEC';
+      } else if (email.includes('registrar')) {
+        role = 'registrar';
+        id = '4';
+        name = 'Registrar PEC';
       }
       
       // Set the user with the proper typed role

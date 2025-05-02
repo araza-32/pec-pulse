@@ -14,6 +14,8 @@ import NotFound from "./pages/NotFound";
 import { useAuth } from "./contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 import { User } from "./types";
+import MeetingsList from "./pages/MeetingsList";
+import WorkbodyList from "./pages/WorkbodyList";
 
 // Protected route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -21,6 +23,27 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   
   if (!session) {
     return <Navigate to="/login" replace />;
+  }
+  
+  return children;
+};
+
+// Role-based route component
+const RoleBasedRoute = ({ 
+  roles, 
+  children 
+}: { 
+  roles: string[], 
+  children: React.ReactNode 
+}) => {
+  const { session } = useAuth();
+  
+  if (!session) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  if (!roles.includes(session.role)) {
+    return <Navigate to="/dashboard" replace />;
   }
   
   return children;
@@ -46,7 +69,9 @@ export const protectedRoutes = [
   },
   {
     path: "/chairman-dashboard",
-    element: <ChairmanDashboard />,
+    element: <RoleBasedRoute roles={['chairman', 'admin', 'registrar']}>
+      <ChairmanDashboard />
+    </RoleBasedRoute>
   },
   {
     path: "/workbodies",
@@ -57,7 +82,6 @@ export const protectedRoutes = [
     element: <WorkbodyDetail />,
   },
   {
-    // Added path for minutes/upload to match the sidebar nav link
     path: "/minutes/upload",
     element: <UploadMinutes />,
   },
@@ -73,11 +97,18 @@ export const protectedRoutes = [
     path: "/reports",
     element: <Reports />,
   },
-  // Added an additional route for the upload path mentioned in the sidebar
   {
     path: "/upload",
     element: <UploadMinutes />,
   },
+  {
+    path: "/meetings/year",
+    element: <MeetingsList />
+  },
+  {
+    path: "/workbodies/list",
+    element: <WorkbodyList />
+  }
 ];
 
 // For use in the App component

@@ -13,6 +13,7 @@ import { GoogleCalendarIntegration } from "@/components/calendar/GoogleCalendarI
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function MeetingCalendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -23,6 +24,10 @@ export default function MeetingCalendar() {
   const [selectedMeeting, setSelectedMeeting] = useState<ScheduledMeeting | null>(null);
   const { toast } = useToast();
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const { user } = useAuth();
+  
+  // Determine if user has edit permissions
+  const canEditMeetings = user?.role === 'admin' || user?.role === 'secretary';
 
   const daysInMonth = new Date(
     currentDate.getFullYear(),
@@ -46,6 +51,32 @@ export default function MeetingCalendar() {
 
   const handleAddMeeting = async (meetingData: Omit<ScheduledMeeting, 'id'>) => {
     try {
+      // Check for duplicate meetings on the same day, time, and workbody
+      const potentialDuplicates = meetings.filter(meeting => 
+        meeting.date === meetingData.date && 
+        meeting.time === meetingData.time && 
+        meeting.workbodyId === meetingData.workbodyId
+      );
+      
+      if (potentialDuplicates.length > 0) {
+        toast({
+          title: "Duplicate Meeting",
+          description: "A meeting for this workbody at this time already exists.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Validate that all required fields are filled
+      if (!meetingData.date || !meetingData.time || !meetingData.workbodyId || !meetingData.location) {
+        toast({
+          title: "Missing Information",
+          description: "Please fill all required fields",
+          variant: "destructive"
+        });
+        return;
+      }
+      
       await addMeeting(meetingData);
       setIsAddDialogOpen(false);
       toast({
@@ -55,7 +86,7 @@ export default function MeetingCalendar() {
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to schedule meeting",
         variant: "destructive"
       });
     }
@@ -64,6 +95,34 @@ export default function MeetingCalendar() {
   const handleUpdateMeeting = async (updates: Partial<ScheduledMeeting>) => {
     if (!selectedMeeting) return;
     try {
+      // Validate that all required fields are filled
+      const updatedMeeting = { ...selectedMeeting, ...updates };
+      if (!updatedMeeting.date || !updatedMeeting.time || !updatedMeeting.workbodyId || !updatedMeeting.location) {
+        toast({
+          title: "Missing Information",
+          description: "Please fill all required fields",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Check for duplicate meetings (excluding this one)
+      const potentialDuplicates = meetings.filter(meeting => 
+        meeting.id !== selectedMeeting.id &&
+        meeting.date === updatedMeeting.date && 
+        meeting.time === updatedMeeting.time && 
+        meeting.workbodyId === updatedMeeting.workbodyId
+      );
+      
+      if (potentialDuplicates.length > 0) {
+        toast({
+          title: "Duplicate Meeting",
+          description: "A meeting for this workbody at this time already exists.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
       await updateMeeting(selectedMeeting.id, updates);
       toast({
         title: "Success",
@@ -130,9 +189,11 @@ export default function MeetingCalendar() {
           currentDate={currentDate}
           onPrevMonth={() => setCurrentDate(subMonths(currentDate, 1))}
           onNextMonth={() => setCurrentDate(addMonths(currentDate, 1))}
-          onAddMeeting={() => setIsAddDialogOpen(true)}
+          onAddMeeting={canEditMeetings ? () => setIsAddDialogOpen(true) : undefined}
         />
-        <GoogleCalendarIntegration onSyncComplete={handleSyncComplete} />
+        {canEditMeetings && (
+          <GoogleCalendarIntegration onSyncComplete={handleSyncComplete} />
+        )}
       </div>
 
       {/* Calendar Grid */}
@@ -158,13 +219,15 @@ export default function MeetingCalendar() {
       </div>
 
       {/* Dialogs */}
-      <AddMeetingDialog
-        isOpen={isAddDialogOpen}
-        onClose={() => setIsAddDialogOpen(false)}
-        onAddMeeting={handleAddMeeting}
-        workbodies={workbodies}
-        isLoadingWorkbodies={isLoadingWorkbodies}
-      />
+      {canEditMeetings && (
+        <AddMeetingDialog
+          isOpen={isAddDialogOpen}
+          onClose={() => setIsAddDialogOpen(false)}
+          onAddMeeting={handleAddMeeting}
+          workbodies={workbodies}
+          isLoadingWorkbodies={isLoadingWorkbodies}
+        />
+      )}
 
       <ViewMeetingDialog
         meeting={selectedMeeting}
@@ -173,10 +236,11 @@ export default function MeetingCalendar() {
           setIsViewDialogOpen(false);
           setSelectedMeeting(null);
         }}
-        onUpdate={handleUpdateMeeting}
-        onDelete={handleDeleteMeeting}
+        onUpdate={canEditMeetings ? handleUpdateMeeting : undefined}
+        onDelete={canEditMeetings ? handleDeleteMeeting : undefined}
         workbodies={workbodies}
         isLoadingWorkbodies={isLoadingWorkbodies}
+        userRole={user?.role}
       />
 
       {/* PDF Viewer Dialog */}

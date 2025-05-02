@@ -20,9 +20,11 @@ export const OverviewStats = ({ stats, onStatClick }: OverviewStatsProps) => {
     // Handle navigation based on stat type
     switch (statType) {
       case 'totalWorkbodies':
-        navigate('/workbodies');
+        navigate('/workbodies/list');
         break;
       case 'meetingsThisYear':
+        navigate('/meetings/year');
+        break;
       case 'upcomingMeetings':
         navigate('/calendar');
         break;

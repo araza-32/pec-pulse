@@ -9,6 +9,7 @@ interface SidebarItem {
   icon: any;
   current?: boolean;
   children?: SidebarItem[];
+  roles?: string[];
 }
 
 export function getNavigation(): SidebarItem[] {
@@ -19,26 +20,30 @@ export function getNavigation(): SidebarItem[] {
       name: "Dashboard", 
       href: "/dashboard", 
       icon: Home, 
-      current: location.pathname === "/dashboard" 
+      current: location.pathname === "/dashboard",
+      roles: ["admin", "secretary", "chairman", "registrar"]
     },
     { 
       name: "Chairman's Dashboard", 
       href: "/chairman-dashboard", 
       icon: BarChart3, 
-      current: location.pathname === "/chairman-dashboard" 
+      current: location.pathname === "/chairman-dashboard",
+      roles: ["admin", "chairman", "registrar"]
     },
     {
       name: "Workbodies",
       href: "/workbodies",
       icon: Users,
       current: location.pathname.startsWith("/workbodies") && location.pathname !== "/workbodies",
-      children: []
+      children: [],
+      roles: ["admin", "secretary"]
     },
     {
       name: "Meeting Minutes",
       href: "/minutes",
       icon: FileText,
       current: location.pathname.includes("/minutes"),
+      roles: ["admin", "secretary"],
       children: [
         {
           name: "Upload Minutes",
@@ -53,18 +58,21 @@ export function getNavigation(): SidebarItem[] {
       href: "/calendar",
       icon: Calendar,
       current: location.pathname === "/calendar",
+      roles: ["admin", "secretary", "chairman", "registrar"]
     },
     {
       name: "Reports",
       href: "/reports",
       icon: ClipboardList,
       current: location.pathname === "/reports",
+      roles: ["admin", "secretary", "chairman", "registrar"]
     },
     {
       name: "Settings",
       href: "/settings",
       icon: Settings,
       current: location.pathname === "/settings",
+      roles: ["admin"]
     },
   ];
 }
@@ -79,16 +87,20 @@ export function SidebarNavigation({
   showAdminOptions: boolean; 
   isCoordinationUser: boolean; 
 }) {
-  const navigation = getNavigation();
+  const allNavigation = getNavigation();
   
   // Filter navigation items based on user role
-  const filteredNavigation = navigation.filter(item => {
-    // Show Chairman's Dashboard only to chairman or admin/coordination users
-    if (item.name === "Chairman's Dashboard") {
-      return userRole === 'chairman' || showAdminOptions;
+  const filteredNavigation = allNavigation.filter(item => {
+    // If roles are defined, check if user role is included
+    if (item.roles) {
+      if (userRole === 'admin' || showAdminOptions) {
+        // Admin and coordination users can see everything
+        return true;
+      }
+      return item.roles.includes(userRole);
     }
     
-    // Show all other items
+    // Items without defined roles are shown to everyone
     return true;
   });
 

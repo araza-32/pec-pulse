@@ -44,10 +44,38 @@ export const useAuthHandlers = ({ onLogin, toast, setError }: AuthHandlerProps) 
       throw err;
     }
   };
+  
+  const handleChairmanLogin = async () => {
+    try {
+      const chairmanEmail = "chairman@pec.org.pk";
+      const chairmanPassword = "Chairman@123!";
+      
+      await onLogin(chairmanEmail, chairmanPassword);
+    } catch (err) {
+      console.error('Unexpected error during chairman login:', err);
+      setError('An unexpected error occurred');
+      throw err;
+    }
+  };
+  
+  const handleRegistrarLogin = async () => {
+    try {
+      const registrarEmail = "registrar@pec.org.pk";
+      const registrarPassword = "Registrar@123!";
+      
+      await onLogin(registrarEmail, registrarPassword);
+    } catch (err) {
+      console.error('Unexpected error during registrar login:', err);
+      setError('An unexpected error occurred');
+      throw err;
+    }
+  };
 
   return {
     handleUserLogin,
     handleAdminLogin,
-    handleCoordinationLogin
+    handleCoordinationLogin,
+    handleChairmanLogin,
+    handleRegistrarLogin
   };
 };
