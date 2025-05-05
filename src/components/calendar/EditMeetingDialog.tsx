@@ -2,14 +2,9 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Calendar, Clock, MapPin } from "lucide-react";
-import { WorkbodySelection } from "@/components/minutes/WorkbodySelection";
 import { ScheduledMeeting, Workbody } from "@/types";
-import { format, parseISO } from "date-fns";
+import { MeetingForm } from "./MeetingForm";
 
 interface EditMeetingDialogProps {
   meeting: ScheduledMeeting;
@@ -32,10 +27,6 @@ export function EditMeetingDialog({
 }: EditMeetingDialogProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedWorkbodyType, setSelectedWorkbodyType] = useState(() => {
-    const workbody = workbodies.find(w => w.id === meeting.workbodyId);
-    return workbody?.type || '';
-  });
   
   const [formData, setFormData] = useState({
     workbodyId: meeting.workbodyId,
@@ -45,6 +36,10 @@ export function EditMeetingDialog({
     location: meeting.location,
     agendaItems: meeting.agendaItems.join('\n'),
   });
+
+  const handleFormChange = (newData: Partial<typeof formData>) => {
+    setFormData(prev => ({ ...prev, ...newData }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,80 +100,12 @@ export function EditMeetingDialog({
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
-          <WorkbodySelection
-            selectedWorkbodyType={selectedWorkbodyType}
-            selectedWorkbody={formData.workbodyId}
-            onWorkbodyTypeChange={setSelectedWorkbodyType}
-            onWorkbodyChange={(id) => {
-              const workbody = workbodies.find(w => w.id === id);
-              setFormData(prev => ({
-                ...prev,
-                workbodyId: id,
-                workbodyName: workbody?.name || prev.workbodyName,
-              }));
-            }}
-            availableWorkbodies={workbodies}
-            isLoading={isLoadingWorkbodies}
+          <MeetingForm
+            formData={formData}
+            onFormChange={handleFormChange}
+            workbodies={workbodies}
+            isLoadingWorkbodies={isLoadingWorkbodies}
           />
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="date">Date</Label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="date"
-                  type="date"
-                  value={formData.date}
-                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  className="pl-10"
-                  required
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="time">Time</Label>
-              <div className="relative">
-                <Clock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="time"
-                  type="time"
-                  value={formData.time}
-                  onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                  className="pl-10"
-                  required
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="location">Location</Label>
-            <div className="relative">
-              <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                id="location"
-                value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                className="pl-10"
-                placeholder="Meeting location"
-                required
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="agendaItems">Agenda Items (one per line)</Label>
-            <Textarea
-              id="agendaItems"
-              value={formData.agendaItems}
-              onChange={(e) => setFormData({ ...formData, agendaItems: e.target.value })}
-              placeholder="Enter agenda items..."
-              rows={4}
-              required
-            />
-          </div>
 
           <div className="flex justify-end space-x-4 pt-4">
             <Button

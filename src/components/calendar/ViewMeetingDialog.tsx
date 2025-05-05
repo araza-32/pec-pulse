@@ -1,13 +1,21 @@
 
-import { format, parseISO } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { CalendarIcon, Clock, MapPin, FileText, Pencil, Trash } from "lucide-react";
+import { Pencil, Trash } from "lucide-react";
 import { ScheduledMeeting, Workbody } from "@/types";
 import { useState } from "react";
 import { EditMeetingDialog } from "./EditMeetingDialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { MeetingDetails } from "./MeetingDetails";
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle 
+} from "@/components/ui/alert-dialog";
 
 interface ViewMeetingDialogProps {
   meeting: ScheduledMeeting | null;
@@ -32,7 +40,6 @@ export function ViewMeetingDialog({
 }: ViewMeetingDialogProps) {
   const [isEditMode, setIsEditMode] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isPdfViewerOpen, setIsPdfViewerOpen] = useState(false);
   const canEditMeeting = userRole === 'admin' || userRole === 'coordination';
 
   if (!meeting) return null;
@@ -90,70 +97,13 @@ export function ViewMeetingDialog({
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <Card>
-              <CardContent className="pt-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-medium">
-                      {meeting.workbodyName}
-                    </h3>
-                  </div>
-
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <CalendarIcon className="mr-1 h-4 w-4" />
-                    <span>
-                      {format(parseISO(meeting.date), "EEEE, MMMM d, yyyy")}
-                    </span>
-                    <Clock className="ml-3 mr-1 h-4 w-4" />
-                    <span>{meeting.time}</span>
-                  </div>
-
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <MapPin className="mr-1 h-4 w-4" />
-                    <span>{meeting.location}</span>
-                  </div>
-
-                  <div className="pt-2">
-                    <h4 className="text-sm font-medium mb-2 flex items-center">
-                      <FileText className="mr-1 h-4 w-4" />
-                      Agenda Items
-                    </h4>
-                    <ul className="space-y-1 text-sm">
-                      {meeting.agendaItems.map((item, index) => (
-                        <li key={index} className="flex items-start gap-2">
-                          <span className="mt-1.5 h-1 w-1 rounded-full bg-primary" />
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  
-                  {meeting.notificationFile && (
-                    <div className="pt-2">
-                      <h4 className="text-sm font-medium mb-2 flex items-center">
-                        <FileText className="mr-1 h-4 w-4" />
-                        Attached Notification
-                      </h4>
-                      <p className="text-sm text-muted-foreground mb-2">{meeting.notificationFile}</p>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="gap-2"
-                        onClick={handleViewNotification}
-                      >
-                        <FileText className="h-4 w-4" /> View Notification
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+            <MeetingDetails 
+              meeting={meeting} 
+              onViewNotification={handleViewNotification} 
+            />
 
             <div className="flex justify-end space-x-4">
-              <Button
-                variant="outline"
-                onClick={onClose}
-              >
+              <Button variant="outline" onClick={onClose}>
                 Close
               </Button>
             </div>
