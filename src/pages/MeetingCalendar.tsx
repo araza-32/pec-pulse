@@ -6,10 +6,8 @@ import { useScheduledMeetings } from "@/hooks/useScheduledMeetings";
 import { ScheduledMeeting } from "@/types";
 import { CalendarHeader } from "@/components/calendar/CalendarHeader";
 import { CalendarDay } from "@/components/calendar/CalendarDay";
-import { AddMeetingDialog } from "@/components/calendar/AddMeetingDialog";
 import { ViewMeetingDialog } from "@/components/calendar/ViewMeetingDialog";
 import { useToast } from "@/hooks/use-toast";
-import { GoogleCalendarIntegration } from "@/components/calendar/GoogleCalendarIntegration";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
@@ -17,17 +15,16 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export default function MeetingCalendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const { meetings, isLoading: isLoadingMeetings, addMeeting, updateMeeting, deleteMeeting, refetchMeetings } = useScheduledMeetings();
+  const { meetings, isLoading: isLoadingMeetings, updateMeeting, deleteMeeting } = useScheduledMeetings();
   const { workbodies, isLoading: isLoadingWorkbodies } = useWorkbodies();
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [selectedMeeting, setSelectedMeeting] = useState<ScheduledMeeting | null>(null);
   const { toast } = useToast();
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-  const { user } = useAuth();
+  const { session } = useAuth();
   
   // Determine if user has edit permissions
-  const canEditMeetings = user?.role === 'admin' || user?.role === 'secretary';
+  const canEditMeetings = session?.role === 'admin' || session?.role === 'secretary';
 
   const daysInMonth = new Date(
     currentDate.getFullYear(),
@@ -48,49 +45,6 @@ export default function MeetingCalendar() {
   for (let i = 1; i <= daysInMonth; i++) {
     calendarDays.push({ day: i, isCurrentMonth: true });
   }
-
-  const handleAddMeeting = async (meetingData: Omit<ScheduledMeeting, 'id'>) => {
-    try {
-      // Check for duplicate meetings on the same day, time, and workbody
-      const potentialDuplicates = meetings.filter(meeting => 
-        meeting.date === meetingData.date && 
-        meeting.time === meetingData.time && 
-        meeting.workbodyId === meetingData.workbodyId
-      );
-      
-      if (potentialDuplicates.length > 0) {
-        toast({
-          title: "Duplicate Meeting",
-          description: "A meeting for this workbody at this time already exists.",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      // Validate that all required fields are filled
-      if (!meetingData.date || !meetingData.time || !meetingData.workbodyId || !meetingData.location) {
-        toast({
-          title: "Missing Information",
-          description: "Please fill all required fields",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      await addMeeting(meetingData);
-      setIsAddDialogOpen(false);
-      toast({
-        title: "Success",
-        description: "Meeting scheduled successfully",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to schedule meeting",
-        variant: "destructive"
-      });
-    }
-  };
 
   const handleUpdateMeeting = async (updates: Partial<ScheduledMeeting>) => {
     if (!selectedMeeting) return;
@@ -128,6 +82,7 @@ export default function MeetingCalendar() {
         title: "Success",
         description: "Meeting updated successfully",
       });
+      setIsViewDialogOpen(false);
     } catch (error) {
       toast({
         title: "Error",
@@ -140,11 +95,14 @@ export default function MeetingCalendar() {
   const handleDeleteMeeting = async (id: string) => {
     try {
       await deleteMeeting(id);
+      setIsViewDialogOpen(false);
+      setSelectedMeeting(null);
       toast({
         title: "Success",
         description: "Meeting deleted successfully",
       });
     } catch (error) {
+      console.error("Error deleting meeting:", error);
       toast({
         title: "Error",
         description: "Failed to delete meeting",
@@ -170,17 +128,12 @@ export default function MeetingCalendar() {
     }
   };
 
-  const handleSyncComplete = () => {
-    // Refresh the meetings data after sync
-    refetchMeetings();
-  };
-
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Meeting Calendar</h1>
         <p className="text-muted-foreground">
-          View and manage scheduled workbody meetings
+          View scheduled workbody meetings
         </p>
       </div>
 
@@ -189,11 +142,7 @@ export default function MeetingCalendar() {
           currentDate={currentDate}
           onPrevMonth={() => setCurrentDate(subMonths(currentDate, 1))}
           onNextMonth={() => setCurrentDate(addMonths(currentDate, 1))}
-          onAddMeeting={canEditMeetings ? () => setIsAddDialogOpen(true) : undefined}
         />
-        {canEditMeetings && (
-          <GoogleCalendarIntegration onSyncComplete={handleSyncComplete} />
-        )}
       </div>
 
       {/* Calendar Grid */}
@@ -219,16 +168,6 @@ export default function MeetingCalendar() {
       </div>
 
       {/* Dialogs */}
-      {canEditMeetings && (
-        <AddMeetingDialog
-          isOpen={isAddDialogOpen}
-          onClose={() => setIsAddDialogOpen(false)}
-          onAddMeeting={handleAddMeeting}
-          workbodies={workbodies}
-          isLoadingWorkbodies={isLoadingWorkbodies}
-        />
-      )}
-
       <ViewMeetingDialog
         meeting={selectedMeeting}
         isOpen={isViewDialogOpen}
@@ -240,7 +179,7 @@ export default function MeetingCalendar() {
         onDelete={canEditMeetings ? handleDeleteMeeting : undefined}
         workbodies={workbodies}
         isLoadingWorkbodies={isLoadingWorkbodies}
-        userRole={user?.role}
+        userRole={session?.role}
       />
 
       {/* PDF Viewer Dialog */}

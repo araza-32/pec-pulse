@@ -29,9 +29,9 @@ export const useScheduledMeetings = () => {
 
       if (error) throw error;
 
-      console.log("Fetched meetings:", data.length);
+      console.log("Fetched meetings:", data?.length || 0);
 
-      const formattedMeetings = data.map(meeting => ({
+      const formattedMeetings = data ? data.map(meeting => ({
         id: meeting.id,
         workbodyId: meeting.workbody_id,
         workbodyName: meeting.workbody_name,
@@ -43,7 +43,7 @@ export const useScheduledMeetings = () => {
         notificationFilePath: meeting.notification_file_path,
         agendaFile: meeting.agenda_file_name || null,
         agendaFilePath: meeting.agenda_file_path || null
-      }));
+      })) : [];
 
       setMeetings(formattedMeetings);
     } catch (error) {

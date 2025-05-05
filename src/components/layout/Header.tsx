@@ -21,6 +21,7 @@ interface HeaderProps {
 
 export function Header({ toggleSidebar, user, onLogout }: HeaderProps) {
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   
   const handleLogout = () => {
     setShowUserMenu(false);
@@ -28,6 +29,12 @@ export function Header({ toggleSidebar, user, onLogout }: HeaderProps) {
       onLogout();
     }
   };
+  
+  // Mock notifications for demonstration purposes
+  const notifications = [
+    { id: 1, text: "New meeting scheduled for ECO Committee", time: "2 hours ago" },
+    { id: 2, text: "Minutes uploaded for Legal Affairs review", time: "Yesterday" },
+  ];
   
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-white px-4 shadow-sm md:px-6">
@@ -56,21 +63,54 @@ export function Header({ toggleSidebar, user, onLogout }: HeaderProps) {
       
       {user ? (
         <div className="flex items-center gap-2">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative">
-                  <Bell className="h-5 w-5" />
-                  <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-red-500">
-                    <span className="text-xs">2</span>
-                  </Badge>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Notifications</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <div className="relative">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="relative" onClick={() => setShowNotifications(!showNotifications)}>
+                    <Bell className="h-5 w-5" />
+                    {notifications.length > 0 && (
+                      <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-red-500">
+                        <span className="text-xs">{notifications.length}</span>
+                      </Badge>
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Notifications</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            
+            {showNotifications && (
+              <div className="absolute right-0 mt-2 w-72 rounded-lg border bg-white shadow-lg z-50 animate-fade-in">
+                <div className="p-3 border-b">
+                  <p className="font-medium">Notifications</p>
+                </div>
+                <div className="max-h-[300px] overflow-y-auto">
+                  {notifications.length > 0 ? (
+                    <div>
+                      {notifications.map((notification) => (
+                        <div key={notification.id} className="p-3 border-b hover:bg-gray-50">
+                          <p className="text-sm">{notification.text}</p>
+                          <p className="text-xs text-gray-500 mt-1">{notification.time}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-4 text-center text-gray-500">
+                      <p>No new notifications</p>
+                    </div>
+                  )}
+                </div>
+                <div className="p-2 border-t text-center">
+                  <Button variant="ghost" className="text-xs w-full text-pec-green">
+                    Mark all as read
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
 
           <TooltipProvider>
             <Tooltip>
@@ -88,9 +128,11 @@ export function Header({ toggleSidebar, user, onLogout }: HeaderProps) {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <Settings className="h-5 w-5" />
-                </Button>
+                <Link to="/settings">
+                  <Button variant="ghost" size="icon">
+                    <Settings className="h-5 w-5" />
+                  </Button>
+                </Link>
               </TooltipTrigger>
               <TooltipContent>
                 <p>Settings</p>
@@ -128,13 +170,15 @@ export function Header({ toggleSidebar, user, onLogout }: HeaderProps) {
                     <User className="h-4 w-4" />
                     <span>Profile</span>
                   </Button>
-                  <Button
-                    variant="ghost"
-                    className="flex w-full items-center justify-start gap-2 rounded-md p-2 text-gray-600 hover:bg-gray-100"
-                  >
-                    <Settings className="h-4 w-4" />
-                    <span>Settings</span>
-                  </Button>
+                  <Link to="/settings">
+                    <Button
+                      variant="ghost"
+                      className="flex w-full items-center justify-start gap-2 rounded-md p-2 text-gray-600 hover:bg-gray-100"
+                    >
+                      <Settings className="h-4 w-4" />
+                      <span>Settings</span>
+                    </Button>
+                  </Link>
                 </div>
                 <div className="border-t p-1">
                   <Button

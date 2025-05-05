@@ -1,87 +1,154 @@
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Pagination } from "@/components/ui/pagination";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Workbody } from "@/types";
 import { useState } from "react";
-import { formatWorkbodyType } from "./WorkbodyTables";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { useNavigate } from "react-router-dom";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-interface AllWorkbodiesTableProps {
-  workbodies: Workbody[];
+interface WorkbodyTableProps {
+  workbodies: any[];
 }
 
-export const AllWorkbodiesTable = ({ workbodies }: AllWorkbodiesTableProps) => {
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
-  
-  const sortedWorkbodies = [...workbodies].sort((a, b) => 
-    a.name.localeCompare(b.name)
-  );
-  
-  const paginatedWorkbodies = sortedWorkbodies.slice(
-    (currentPage - 1) * itemsPerPage, 
-    currentPage * itemsPerPage
-  );
-  
-  const totalPages = Math.ceil(sortedWorkbodies.length / itemsPerPage);
+export function AllWorkbodiesTable({ workbodies }: WorkbodyTableProps) {
+  const navigate = useNavigate();
+  const [filterValue, setFilterValue] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
+
+  // Apply filters
+  const filteredWorkbodies = workbodies.filter((wb) => {
+    const matchesSearch = wb.name
+      .toLowerCase()
+      .includes(filterValue.toLowerCase());
+    const matchesType =
+      typeFilter === "all" || wb.type.toLowerCase() === typeFilter;
+    return matchesSearch && matchesType;
+  });
+
+  const handleRowClick = (id: string) => {
+    navigate(`/workbodies/${id}`);
+  };
+
+  // Function to get badge color based on workbody type
+  const getTypeBadgeColor = (type: string) => {
+    switch (type) {
+      case "committee":
+        return "bg-blue-100 text-blue-800";
+      case "working-group":
+        return "bg-green-100 text-green-800";
+      case "task-force":
+        return "bg-amber-100 text-amber-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
 
   return (
-    <Card className="shadow-sm hover:shadow-md transition-shadow duration-300 mt-6">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>All Workbodies</CardTitle>
-        <Button 
-          variant="outline" 
-          className="text-pec-green border-pec-green hover:bg-pec-green/10"
-        >
-          Export List
-        </Button>
-      </CardHeader>
-      <CardContent>
-        <div className="max-h-[500px] overflow-y-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Created Date</TableHead>
-                <TableHead className="text-right">Members</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginatedWorkbodies.map(workbody => (
-                <TableRow key={workbody.id} className="hover:bg-gray-50">
-                  <TableCell className="font-medium">{workbody.name}</TableCell>
-                  <TableCell>{formatWorkbodyType(workbody.type)}</TableCell>
-                  <TableCell>{new Date(workbody.createdDate).toLocaleDateString()}</TableCell>
-                  <TableCell className="text-right">{workbody.members.length}</TableCell>
-                  <TableCell className="text-right">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
-                      onClick={() => window.location.href = `/workbodies/${workbody.id}`}
+    <div className="rounded-md border bg-white">
+      <div className="p-4 flex flex-col sm:flex-row gap-4 justify-between items-center border-b">
+        <h3 className="text-lg font-semibold">All Workbodies</h3>
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <Input
+            placeholder="Search workbodies..."
+            value={filterValue}
+            onChange={(e) => setFilterValue(e.target.value)}
+            className="sm:w-[200px]"
+          />
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Select type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="committee">Committees</SelectItem>
+              <SelectItem value="working-group">Working Groups</SelectItem>
+              <SelectItem value="task-force">Task Forces</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[300px]">Name</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead className="text-center">Members</TableHead>
+              <TableHead className="text-center">Total Meetings</TableHead>
+              <TableHead className="text-center">Completion Rate</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredWorkbodies.length > 0 ? (
+              filteredWorkbodies.map((wb) => (
+                <TableRow
+                  key={wb.id}
+                  className="hover:bg-gray-50 cursor-pointer"
+                  onClick={() => handleRowClick(wb.id)}
+                >
+                  <TableCell className="font-medium">{wb.name}</TableCell>
+                  <TableCell>
+                    <Badge
+                      className={`${getTypeBadgeColor(
+                        wb.type
+                      )} hover:bg-opacity-80 transition-all`}
+                      variant="outline"
                     >
-                      View Details
+                      {wb.type.replace("-", " ")}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-center">{wb.members.length}</TableCell>
+                  <TableCell className="text-center">{wb.totalMeetings}</TableCell>
+                  <TableCell className="text-center">
+                    {wb.actionsAgreed ? (
+                      <span>
+                        {Math.round((wb.actionsCompleted / wb.actionsAgreed) * 100)}
+                        %
+                      </span>
+                    ) : (
+                      <span>N/A</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRowClick(wb.id);
+                      }}
+                    >
+                      View
                     </Button>
                   </TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-        
-        {totalPages > 1 && (
-          <div className="flex justify-center mt-4">
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={setCurrentPage}
-            />
-          </div>
-        )}
-      </CardContent>
-    </Card>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={6} className="h-24 text-center">
+                  No workbodies match your filters
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
   );
-};
+}
