@@ -19,7 +19,7 @@ export function WorkbodyMeetings({ minutes, isLoadingMinutes }: WorkbodyMeetings
   if (isLoadingMinutes) {
     return (
       <Card>
-        <CardHeader>
+        <CardHeader className="text-center">
           <CardTitle>Meeting Minutes</CardTitle>
         </CardHeader>
         <CardContent>
@@ -35,17 +35,17 @@ export function WorkbodyMeetings({ minutes, isLoadingMinutes }: WorkbodyMeetings
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="text-center">
         <CardTitle>Meeting Minutes</CardTitle>
       </CardHeader>
       <CardContent>
         {minutes.length > 0 ? (
           <div className="space-y-4">
             {sortedMinutes.map((meeting) => (
-              <Card key={meeting.id}>
+              <Card key={meeting.id} className="hover:shadow-md transition-shadow">
                 <CardContent className="p-4">
                   <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-                    <div>
+                    <div className="text-left">
                       <h3 className="font-semibold">
                         Meeting on{" "}
                         {new Date(meeting.date).toLocaleDateString("en-US", {
@@ -57,7 +57,7 @@ export function WorkbodyMeetings({ minutes, isLoadingMinutes }: WorkbodyMeetings
                       <p className="text-sm text-muted-foreground">{meeting.location}</p>
                     </div>
                     <Link to={`/minutes/${meeting.id}`}>
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" className="bg-white hover:bg-gray-50">
                         <FileText className="mr-2 h-4 w-4" />
                         View Minutes
                       </Button>
@@ -68,7 +68,9 @@ export function WorkbodyMeetings({ minutes, isLoadingMinutes }: WorkbodyMeetings
             ))}
           </div>
         ) : (
-          <p>No meeting minutes available</p>
+          <div className="text-center py-6 text-muted-foreground">
+            <p>No meeting minutes available</p>
+          </div>
         )}
       </CardContent>
     </Card>

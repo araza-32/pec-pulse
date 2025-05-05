@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { CalendarClock, ChevronRight, FileText, Eye, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,9 +22,16 @@ export const UpcomingMeetings = () => {
   const [showAll, setShowAll] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
 
-  // Refresh meetings on component mount
+  // Refresh meetings on component mount and every 30 seconds
   useEffect(() => {
     refetchMeetings();
+    
+    // Set up periodic refresh
+    const refreshInterval = setInterval(() => {
+      refetchMeetings();
+    }, 30000); // Refresh every 30 seconds
+    
+    return () => clearInterval(refreshInterval);
   }, [refetchMeetings]);
 
   const formatDate = (dateStr: string) => {
@@ -50,6 +58,7 @@ export const UpcomingMeetings = () => {
     if (!selectedMeeting) return;
     try {
       await updateMeeting(selectedMeeting.id, updates);
+      await refetchMeetings(); // Force refresh to ensure updates appear
       setIsViewDialogOpen(false);
       setSelectedMeeting(null);
     } catch (error) {
@@ -60,6 +69,7 @@ export const UpcomingMeetings = () => {
   const handleDeleteMeeting = async (id: string) => {
     try {
       await deleteMeeting(id);
+      await refetchMeetings(); // Force refresh after deletion
       setIsViewDialogOpen(false);
       setSelectedMeeting(null);
     } catch (error) {
@@ -69,7 +79,7 @@ export const UpcomingMeetings = () => {
 
   return (
     <Card className="animate-fade-in h-full">
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
+      <CardHeader className="flex flex-row items-center justify-between pb-2 text-center">
         <CardTitle className="flex items-center gap-2">
           <Calendar className="h-5 w-5" />
           Upcoming Meetings
@@ -107,8 +117,8 @@ export const UpcomingMeetings = () => {
                 <div className="bg-blue-100 rounded p-2 text-blue-700 flex-shrink-0">
                   <CalendarClock className="h-5 w-5" />
                 </div>
-                <div className="flex-grow">
-                  <div className="font-medium">{meeting.workbodyName}</div>
+                <div className="flex-grow text-left">
+                  <div className="font-medium">{meeting.workbodyName || "Unnamed Meeting"}</div>
                   <div className="text-sm text-muted-foreground">
                     {formatDate(meeting.date)} at {meeting.time}
                   </div>

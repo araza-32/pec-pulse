@@ -8,10 +8,11 @@ import {
   Settings,
   Bell
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 interface HeaderProps {
   toggleSidebar: () => void;
@@ -22,6 +23,7 @@ interface HeaderProps {
 export function Header({ toggleSidebar, user, onLogout }: HeaderProps) {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const { toast } = useToast();
   
   const handleLogout = () => {
     setShowUserMenu(false);
@@ -35,6 +37,22 @@ export function Header({ toggleSidebar, user, onLogout }: HeaderProps) {
     { id: 1, text: "New meeting scheduled for ECO Committee", time: "2 hours ago" },
     { id: 2, text: "Minutes uploaded for Legal Affairs review", time: "Yesterday" },
   ];
+
+  // Close menus when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showUserMenu || showNotifications) {
+        const target = event.target as HTMLElement;
+        if (!target.closest('[data-dropdown]')) {
+          setShowUserMenu(false);
+          setShowNotifications(false);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showUserMenu, showNotifications]);
   
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-white px-4 shadow-sm md:px-6">
@@ -63,7 +81,7 @@ export function Header({ toggleSidebar, user, onLogout }: HeaderProps) {
       
       {user ? (
         <div className="flex items-center gap-2">
-          <div className="relative">
+          <div className="relative" data-dropdown="notifications">
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -91,7 +109,7 @@ export function Header({ toggleSidebar, user, onLogout }: HeaderProps) {
                   {notifications.length > 0 ? (
                     <div>
                       {notifications.map((notification) => (
-                        <div key={notification.id} className="p-3 border-b hover:bg-gray-50">
+                        <div key={notification.id} className="p-3 border-b hover:bg-gray-50 cursor-pointer">
                           <p className="text-sm">{notification.text}</p>
                           <p className="text-xs text-gray-500 mt-1">{notification.time}</p>
                         </div>
@@ -104,7 +122,17 @@ export function Header({ toggleSidebar, user, onLogout }: HeaderProps) {
                   )}
                 </div>
                 <div className="p-2 border-t text-center">
-                  <Button variant="ghost" className="text-xs w-full text-pec-green">
+                  <Button 
+                    variant="ghost" 
+                    className="text-xs w-full text-pec-green"
+                    onClick={() => {
+                      setShowNotifications(false);
+                      toast({
+                        title: "Notifications cleared",
+                        description: "All notifications have been marked as read",
+                      });
+                    }}
+                  >
                     Mark all as read
                   </Button>
                 </div>
@@ -140,7 +168,7 @@ export function Header({ toggleSidebar, user, onLogout }: HeaderProps) {
             </Tooltip>
           </TooltipProvider>
 
-          <div className="relative">
+          <div className="relative" data-dropdown="user-menu">
             <Button
               variant="ghost"
               className="flex items-center gap-2 ml-2 rounded-full"
@@ -163,13 +191,15 @@ export function Header({ toggleSidebar, user, onLogout }: HeaderProps) {
                   <p className="text-xs text-muted-foreground mt-1">Pakistan Engineering Council</p>
                 </div>
                 <div className="p-1">
-                  <Button
-                    variant="ghost"
-                    className="flex w-full items-center justify-start gap-2 rounded-md p-2 text-gray-600 hover:bg-gray-100"
-                  >
-                    <User className="h-4 w-4" />
-                    <span>Profile</span>
-                  </Button>
+                  <Link to="/settings">
+                    <Button
+                      variant="ghost"
+                      className="flex w-full items-center justify-start gap-2 rounded-md p-2 text-gray-600 hover:bg-gray-100"
+                    >
+                      <User className="h-4 w-4" />
+                      <span>Profile</span>
+                    </Button>
+                  </Link>
                   <Link to="/settings">
                     <Button
                       variant="ghost"

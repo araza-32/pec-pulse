@@ -10,14 +10,16 @@ import { ViewMeetingDialog } from "@/components/calendar/ViewMeetingDialog";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
+import { CalendarPlus, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { AddMeetingDialog } from "@/components/calendar/AddMeetingDialog";
 
 export default function MeetingCalendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const { meetings, isLoading: isLoadingMeetings, updateMeeting, deleteMeeting } = useScheduledMeetings();
+  const { meetings, isLoading: isLoadingMeetings, updateMeeting, deleteMeeting, addMeeting, refetchMeetings } = useScheduledMeetings();
   const { workbodies, isLoading: isLoadingWorkbodies } = useWorkbodies();
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isAddMeetingDialogOpen, setIsAddMeetingDialogOpen] = useState(false);
   const [selectedMeeting, setSelectedMeeting] = useState<ScheduledMeeting | null>(null);
   const { toast } = useToast();
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
@@ -128,10 +130,30 @@ export default function MeetingCalendar() {
     }
   };
 
+  // Handle adding a new meeting
+  const handleAddMeeting = async (newMeeting: Omit<ScheduledMeeting, 'id'>) => {
+    try {
+      await addMeeting(newMeeting);
+      await refetchMeetings(); // Force refresh to ensure new meeting appears
+      setIsAddMeetingDialogOpen(false);
+      toast({
+        title: "Success",
+        description: "Meeting scheduled successfully",
+      });
+    } catch (error) {
+      console.error("Error scheduling meeting:", error);
+      toast({
+        title: "Error",
+        description: "Failed to schedule meeting",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-5xl mx-auto text-center">
       <div>
-        <h1 className="text-3xl font-bold">Meeting Calendar</h1>
+        <h1 className="text-3xl font-bold mb-2">Meeting Calendar</h1>
         <p className="text-muted-foreground">
           View scheduled workbody meetings
         </p>
@@ -143,10 +165,20 @@ export default function MeetingCalendar() {
           onPrevMonth={() => setCurrentDate(subMonths(currentDate, 1))}
           onNextMonth={() => setCurrentDate(addMonths(currentDate, 1))}
         />
+        
+        {canEditMeetings && (
+          <Button 
+            onClick={() => setIsAddMeetingDialogOpen(true)}
+            className="bg-pec-green hover:bg-pec-green/90"
+          >
+            <CalendarPlus className="mr-2 h-4 w-4" />
+            Schedule Meeting
+          </Button>
+        )}
       </div>
 
       {/* Calendar Grid */}
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-1 bg-white rounded-lg p-4 shadow-sm">
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
           <div
             key={day}
@@ -181,6 +213,17 @@ export default function MeetingCalendar() {
         isLoadingWorkbodies={isLoadingWorkbodies}
         userRole={session?.role}
       />
+
+      {/* Add Meeting Dialog */}
+      {canEditMeetings && (
+        <AddMeetingDialog
+          isOpen={isAddMeetingDialogOpen}
+          onClose={() => setIsAddMeetingDialogOpen(false)}
+          onAddMeeting={handleAddMeeting}
+          workbodies={workbodies}
+          isLoadingWorkbodies={isLoadingWorkbodies}
+        />
+      )}
 
       {/* PDF Viewer Dialog */}
       <Dialog 

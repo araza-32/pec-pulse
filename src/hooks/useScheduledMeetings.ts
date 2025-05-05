@@ -64,6 +64,13 @@ export const useScheduledMeetings = () => {
   // Initial fetch
   useEffect(() => {
     fetchMeetings();
+    
+    // Set up a regular polling interval as a fallback
+    const interval = setInterval(() => {
+      fetchMeetings();
+    }, 60000); // Poll every minute
+    
+    return () => clearInterval(interval);
   }, [fetchMeetings]);
 
   // Set up real-time subscription
