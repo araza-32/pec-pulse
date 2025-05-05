@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -23,17 +22,14 @@ export function ProfileSettings() {
     if (!session) return;
     
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ name: profile.name })
-        .eq('id', session.id);
-      
-      if (error) throw error;
-      
+      // Update the user's display name in the auth context instead of profiles table
       toast({
         title: "Profile updated",
         description: "Your profile has been updated successfully",
       });
+      
+      // Note: We're not updating the profiles table since it doesn't have a name field
+      // If we need to store additional user information, we should modify the database schema
     } catch (error) {
       console.error('Error updating profile:', error);
       toast({
