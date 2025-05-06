@@ -154,12 +154,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const role = (profileData?.role || 'admin') as UserRole;
         const name = profileData?.name || authData.user.email?.split('@')[0] || 'User';
         
+        // Store workbodyId separately since it's not in the profiles table
+        // We'll use a custom metadata approach or separate storage
+        let workbodyId: string | undefined;
+        
+        // For secretary roles, we might want to fetch their workbody assignment
+        // from a separate table or use another approach
+        if (role === 'secretary') {
+          try {
+            // Example: Check if there's a workbody assignment in a separate table
+            // This is just a placeholder - implement according to your data model
+            const { data: assignmentData } = await supabase
+              .from('workbody_assignments') // This table would need to be created
+              .select('workbody_id')
+              .eq('user_id', authData.user.id)
+              .maybeSingle();
+            
+            workbodyId = assignmentData?.workbody_id;
+          } catch (error) {
+            console.error('Error fetching workbody assignment:', error);
+          }
+        }
+        
         const userData = {
           id: authData.user.id,
           name: name,
           email: authData.user.email || '',
           role: role,
-          workbodyId: profileData?.workbody_id
+          workbodyId: workbodyId
         };
         
         setUser(userData);
@@ -169,8 +191,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem('userId', authData.user.id);
         localStorage.setItem('userName', name);
         localStorage.setItem('userEmail', authData.user.email || '');
-        if (profileData?.workbody_id) {
-          localStorage.setItem('workbodyId', profileData.workbody_id);
+        if (workbodyId) {
+          localStorage.setItem('workbodyId', workbodyId);
         }
       }
     } catch (error) {
