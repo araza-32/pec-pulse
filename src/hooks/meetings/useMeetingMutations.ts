@@ -14,6 +14,9 @@ export const useMeetingMutations = (
     console.log("Adding new meeting:", newMeeting);
     
     try {
+      // First validate the meeting for duplicates
+      await checkForDuplicates(newMeeting);
+      
       const { data, error } = await supabase
         .from('scheduled_meetings')
         .insert({
@@ -31,7 +34,10 @@ export const useMeetingMutations = (
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error adding meeting:", error);
+        throw error;
+      }
 
       console.log("Meeting added successfully:", data);
       
@@ -114,7 +120,7 @@ export const useMeetingMutations = (
         
       if (fetchError) {
         console.error("Error fetching meeting to delete:", fetchError);
-        throw new Error("Meeting not found or could not be accessed");
+        throw fetchError;
       }
       
       // If meeting not found, handle gracefully
@@ -141,9 +147,9 @@ export const useMeetingMutations = (
       await refetchMeetings();
     } catch (error) {
       console.error('Error deleting meeting:', error);
-      // Don't re-throw error here to prevent app crash
-      // Instead, force a refresh to make sure UI is in sync with actual data
+      // Force a refresh to make sure UI is in sync with actual data
       await refetchMeetings();
+      throw error;
     }
   };
 

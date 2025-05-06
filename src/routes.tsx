@@ -1,4 +1,3 @@
-
 import { Layout } from "./components/layout/Layout";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -16,6 +15,7 @@ import { Navigate } from "react-router-dom";
 import MeetingsList from "./pages/MeetingsList";
 import WorkbodyList from "./pages/WorkbodyList";
 import Settings from "./pages/Settings";
+import MeetingsThisYear from "./pages/MeetingsThisYear";
 
 // Protected route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -130,6 +130,10 @@ export const router = [
       </ProtectedRoute>
     )
   })),
+  {
+    path: "/meetings/year",
+    element: <MeetingsThisYear />,
+  },
   {
     path: "*",
     element: (

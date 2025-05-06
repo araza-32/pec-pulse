@@ -66,7 +66,7 @@ export function Layout({ children }: LayoutProps) {
           className="flex-1 overflow-y-auto transition-all duration-300 w-full"
           onClick={closeSidebar}
         >
-          <div className="container py-6 animate-fade-in mx-auto px-4 sm:px-6 lg:px-8 text-left">
+          <div className="container mx-auto py-6 px-2 sm:px-4 lg:px-6 xl:px-0 animate-fade-in w-full">
             {children}
           </div>
           

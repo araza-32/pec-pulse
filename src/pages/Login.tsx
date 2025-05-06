@@ -30,7 +30,8 @@ export default function Login() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-md text-center">
+        <h1 className="text-3xl font-bold mb-6 text-center">Login to PEC Pulse</h1>
         <LoginForm onLogin={handleLogin} />
       </div>
     </div>

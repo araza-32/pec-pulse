@@ -14,11 +14,16 @@ interface StatCardProps {
 
 export function StatCard({ title, value, icon: Icon, colorClass, onClick, clickable = false }: StatCardProps) {
   const cardClasses = clickable 
-    ? "transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer" 
+    ? "transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer border-2 hover:border-gray-300" 
     : "transition-shadow duration-300 hover:shadow-md";
 
   return (
-    <Card className={cardClasses} onClick={onClick}>
+    <Card 
+      className={cardClasses} 
+      onClick={onClick}
+      role={clickable ? "button" : undefined}
+      tabIndex={clickable ? 0 : undefined}
+    >
       <CardContent className="p-4 sm:p-6">
         <div className="flex items-start justify-between">
           <div>

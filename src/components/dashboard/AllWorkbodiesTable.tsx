@@ -90,7 +90,6 @@ export function AllWorkbodiesTable({ workbodies }: WorkbodyTableProps) {
               <TableHead className="text-left">Type</TableHead>
               <TableHead className="text-right">Members</TableHead>
               <TableHead className="text-right">Total Meetings</TableHead>
-              <TableHead className="text-right">Completion Rate</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -116,16 +115,6 @@ export function AllWorkbodiesTable({ workbodies }: WorkbodyTableProps) {
                   <TableCell className="text-right">{wb.members.length}</TableCell>
                   <TableCell className="text-right">{wb.totalMeetings}</TableCell>
                   <TableCell className="text-right">
-                    {wb.actionsAgreed ? (
-                      <span>
-                        {Math.round((wb.actionsCompleted / wb.actionsAgreed) * 100)}
-                        %
-                      </span>
-                    ) : (
-                      <span>N/A</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -141,7 +130,7 @@ export function AllWorkbodiesTable({ workbodies }: WorkbodyTableProps) {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">
+                <TableCell colSpan={5} className="h-24 text-center">
                   No workbodies match your filters
                 </TableCell>
               </TableRow>
