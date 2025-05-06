@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ProfileData {
   name: string;
@@ -19,10 +20,12 @@ interface ProfileSectionProps {
   profile: ProfileData;
   setProfile: React.Dispatch<React.SetStateAction<ProfileData>>;
   sessionId?: string;
+  onProfileUpdate?: (profile: ProfileData) => Promise<{ success: boolean, error?: any }>;
 }
 
-export function ProfileSection({ profile, setProfile, sessionId }: ProfileSectionProps) {
+export function ProfileSection({ profile, setProfile, sessionId, onProfileUpdate }: ProfileSectionProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleProfileUpdate = async () => {
@@ -31,7 +34,13 @@ export function ProfileSection({ profile, setProfile, sessionId }: ProfileSectio
     setIsLoading(true);
     
     try {
-      // Update the user's profile in the profiles table
+      // First, try to use the custom update handler if provided
+      if (onProfileUpdate) {
+        const result = await onProfileUpdate(profile);
+        if (!result.success) throw result.error || new Error('Failed to update profile');
+      }
+      
+      // Then update the Supabase profile
       const { error } = await supabase
         .from('profiles')
         .update({ 
@@ -62,15 +71,16 @@ export function ProfileSection({ profile, setProfile, sessionId }: ProfileSectio
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Profile</CardTitle>
-        <CardDescription>
+        <CardTitle className="text-center">Profile</CardTitle>
+        <CardDescription className="text-center">
           Manage your personal information
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="flex flex-col md:flex-row gap-6">
+        <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
           <div className="mb-6 flex flex-col items-center space-y-2">
             <Avatar className="h-24 w-24">
+              {/* Try to use user's name for avatar if available */}
               <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
                 {profile.name?.charAt(0) || profile.email?.charAt(0) || 'U'}
               </AvatarFallback>
@@ -80,7 +90,7 @@ export function ProfileSection({ profile, setProfile, sessionId }: ProfileSectio
             </Button>
           </div>
           
-          <div className="flex-1 space-y-4">
+          <div className="flex-1 space-y-4 w-full max-w-md mx-auto">
             <div className="grid gap-2">
               <Label htmlFor="name">Full Name</Label>
               <Input 
@@ -120,6 +130,7 @@ export function ProfileSection({ profile, setProfile, sessionId }: ProfileSectio
             <Button 
               onClick={handleProfileUpdate}
               disabled={isLoading}
+              className="w-full"
             >
               {isLoading ? 'Saving...' : 'Save Changes'}
             </Button>

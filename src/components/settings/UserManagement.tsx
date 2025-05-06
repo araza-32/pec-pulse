@@ -19,6 +19,7 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { 
   Select,
@@ -29,10 +30,13 @@ import {
 } from "@/components/ui/select";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export function UserManagement() {
   const { toast } = useToast();
   const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
+  const [isConfirmationDialogOpen, setIsConfirmationDialogOpen] = useState(false);
   const [users, setUsers] = useState<Array<any>>([]);
   const [workbodies, setWorkbodies] = useState<Array<any>>([]);
   const [newUser, setNewUser] = useState({
@@ -42,6 +46,11 @@ export function UserManagement() {
     role: 'secretary',
     workbodyId: ''
   });
+  const [passwordStrength, setPasswordStrength] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isAddingUser, setIsAddingUser] = useState(false);
+  const [creationSuccess, setCreationSuccess] = useState<boolean | null>(null);
+  const [creationError, setCreationError] = useState("");
 
   useEffect(() => {
     // Fetch users and workbodies
@@ -74,7 +83,49 @@ export function UserManagement() {
     }
   };
 
+  const validatePassword = (password: string) => {
+    if (password.length < 8) {
+      setPasswordStrength("weak");
+      return false;
+    } else if (password.length >= 8 && /^[a-zA-Z0-9]+$/.test(password)) {
+      setPasswordStrength("medium");
+      return true;
+    } else if (password.length >= 8 && /[!@#$%^&*(),.?":{}|<>]/.test(password) && /\d/.test(password) && /[a-zA-Z]/.test(password)) {
+      setPasswordStrength("strong");
+      return true;
+    }
+    setPasswordStrength("medium");
+    return true;
+  };
+
+  const prepareToAddUser = () => {
+    const isValid = validatePassword(newUser.password);
+    if (!isValid) {
+      toast({
+        title: 'Weak Password',
+        description: 'Password must be at least 8 characters long',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    if (!newUser.email || !newUser.name) {
+      toast({
+        title: 'Missing Fields',
+        description: 'All fields are required',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    setIsConfirmationDialogOpen(true);
+  };
+
   const handleAddUser = async () => {
+    setIsAddingUser(true);
+    setCreationSuccess(null);
+    setCreationError("");
+    
     try {
       // Create the user in auth
       const { data: authData, error: authError } = await supabase.auth.admin.createUser({
@@ -95,43 +146,49 @@ export function UserManagement() {
       
       if (profileError) throw profileError;
       
-      toast({
-        title: 'Success',
-        description: 'User has been added successfully',
-      });
+      setCreationSuccess(true);
       
-      setIsAddUserDialogOpen(false);
-      fetchUsers(); // Refresh the users list
-      
-      // Reset form
-      setNewUser({
-        email: '',
-        password: '',
-        name: '',
-        role: 'secretary',
-        workbodyId: ''
-      });
+      // Wait a moment before closing dialogs and refreshing
+      setTimeout(() => {
+        fetchUsers(); // Refresh the users list
+        setIsConfirmationDialogOpen(false);
+        setIsAddUserDialogOpen(false);
+        
+        // Reset form
+        setNewUser({
+          email: '',
+          password: '',
+          name: '',
+          role: 'secretary',
+          workbodyId: ''
+        });
+        
+        toast({
+          title: 'Success',
+          description: 'User has been added successfully',
+        });
+      }, 1500);
     } catch (error: any) {
       console.error('Error adding user:', error);
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to add user',
-        variant: 'destructive',
-      });
+      setCreationSuccess(false);
+      setCreationError(error.message || 'Failed to add user');
+    } finally {
+      setIsAddingUser(false);
     }
   };
 
   const handleDeleteUser = async (userId: string) => {
+    setIsLoading(true);
     try {
-      // Delete the user from auth
-      const { error: authError } = await supabase.auth.admin.deleteUser(userId);
-      
-      if (authError) throw authError;
-      
       // Delete from profiles
       const { error: profileError } = await supabase.from('profiles').delete().eq('id', userId);
       
       if (profileError) throw profileError;
+      
+      // Delete the user from auth
+      const { error: authError } = await supabase.auth.admin.deleteUser(userId);
+      
+      if (authError) throw authError;
       
       toast({
         title: 'Success',
@@ -146,13 +203,24 @@ export function UserManagement() {
         description: error.message || 'Failed to delete user',
         variant: 'destructive',
       });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getPasswordStrengthClass = () => {
+    switch (passwordStrength) {
+      case "weak": return "bg-red-500";
+      case "medium": return "bg-yellow-500";
+      case "strong": return "bg-green-500";
+      default: return "bg-gray-200";
     }
   };
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>User Management</CardTitle>
+        <CardTitle className="text-center flex-1">User Management</CardTitle>
         <Dialog open={isAddUserDialogOpen} onOpenChange={setIsAddUserDialogOpen}>
           <DialogTrigger asChild>
             <Button>Add New User</Button>
@@ -160,6 +228,7 @@ export function UserManagement() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Add New User</DialogTitle>
+              <DialogDescription>Create a new user account with specific role permissions.</DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
@@ -185,8 +254,22 @@ export function UserManagement() {
                   id="password" 
                   type="password"
                   value={newUser.password}
-                  onChange={(e) => setNewUser({...newUser, password: e.target.value})}
+                  onChange={(e) => {
+                    setNewUser({...newUser, password: e.target.value});
+                    validatePassword(e.target.value);
+                  }}
                 />
+                {newUser.password && (
+                  <div className="w-full bg-gray-200 rounded-full h-2.5">
+                    <div 
+                      className={`h-2.5 rounded-full ${getPasswordStrengthClass()}`} 
+                      style={{ width: passwordStrength === "weak" ? "33%" : passwordStrength === "medium" ? "66%" : "100%" }}
+                    ></div>
+                  </div>
+                )}
+                <p className="text-xs text-gray-500">
+                  Password must be at least 8 characters. Adding numbers and special characters increases security.
+                </p>
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="role">Role</Label>
@@ -230,7 +313,83 @@ export function UserManagement() {
               <Button variant="outline" onClick={() => setIsAddUserDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleAddUser}>Add User</Button>
+              <Button onClick={prepareToAddUser}>Add User</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        
+        {/* Confirmation Dialog */}
+        <Dialog open={isConfirmationDialogOpen} onOpenChange={setIsConfirmationDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Confirm User Creation</DialogTitle>
+            </DialogHeader>
+            
+            {creationSuccess === null && !creationError && (
+              <div className="py-6">
+                <p>Are you sure you want to create a new user with the following details?</p>
+                <div className="mt-4 space-y-2 text-sm">
+                  <p><strong>Name:</strong> {newUser.name}</p>
+                  <p><strong>Email:</strong> {newUser.email}</p>
+                  <p><strong>Role:</strong> {newUser.role}</p>
+                  {newUser.role === 'secretary' && newUser.workbodyId && (
+                    <p><strong>Workbody:</strong> {workbodies.find(w => w.id === newUser.workbodyId)?.name || newUser.workbodyId}</p>
+                  )}
+                </div>
+              </div>
+            )}
+            
+            {isAddingUser && (
+              <div className="flex flex-col items-center justify-center py-6">
+                <Loader2 className="h-8 w-8 animate-spin text-pec-green mb-4" />
+                <p>Creating user account...</p>
+              </div>
+            )}
+            
+            {creationSuccess === true && (
+              <div className="flex flex-col items-center justify-center py-6">
+                <CheckCircle className="h-12 w-12 text-green-500 mb-4" />
+                <p className="text-lg font-medium">User Created Successfully!</p>
+                <p className="text-sm text-gray-500 mt-2">
+                  User account has been created and added to the system.
+                </p>
+              </div>
+            )}
+            
+            {creationSuccess === false && (
+              <Alert variant="destructive" className="my-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{creationError || "Failed to create user."}</AlertDescription>
+              </Alert>
+            )}
+            
+            <DialogFooter>
+              {creationSuccess === null && !isAddingUser && (
+                <>
+                  <Button variant="outline" onClick={() => setIsConfirmationDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleAddUser}>
+                    Confirm Creation
+                  </Button>
+                </>
+              )}
+              
+              {(creationSuccess !== null || isAddingUser) && (
+                <Button 
+                  onClick={() => {
+                    if (creationSuccess) {
+                      setIsConfirmationDialogOpen(false);
+                      setIsAddUserDialogOpen(false);
+                    } else {
+                      setIsConfirmationDialogOpen(false);
+                    }
+                  }}
+                  disabled={isAddingUser}
+                >
+                  {creationSuccess ? "Close" : "Try Again"}
+                </Button>
+              )}
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -256,8 +415,9 @@ export function UserManagement() {
                     variant="destructive"
                     size="sm"
                     onClick={() => handleDeleteUser(user.id)}
+                    disabled={isLoading}
                   >
-                    Delete
+                    {isLoading ? 'Deleting...' : 'Delete'}
                   </Button>
                 </TableCell>
               </TableRow>

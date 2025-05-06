@@ -6,19 +6,21 @@ import { ProfileSection } from './ProfileSection';
 import { PasswordSection } from './PasswordSection';
 
 export function ProfileSettings() {
-  const { session } = useAuth();
+  const { session, updateUserProfile } = useAuth();
   const [profile, setProfile] = useState({
     name: '',
     email: session?.email || '',
     phone: '',
     title: ''
   });
+  const [isLoading, setIsLoading] = useState(false);
 
   // Fetch user profile data on component mount
   useEffect(() => {
     async function fetchProfile() {
       if (!session?.id) return;
       
+      setIsLoading(true);
       try {
         const { data, error } = await supabase
           .from('profiles')
@@ -38,11 +40,31 @@ export function ProfileSettings() {
         }
       } catch (error) {
         console.error('Error fetching profile:', error);
+      } finally {
+        setIsLoading(false);
       }
     }
     
     fetchProfile();
   }, [session?.id, session?.name, session?.email]);
+
+  const handleProfileUpdate = async (updatedProfile) => {
+    if (!session?.id) return;
+    
+    try {
+      // Update both the Supabase profile and the auth context
+      await updateUserProfile({ name: updatedProfile.name });
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      return { success: false, error };
+    }
+  };
+
+  if (isLoading) {
+    return <div className="text-center py-10">Loading profile data...</div>;
+  }
 
   return (
     <>
@@ -50,6 +72,7 @@ export function ProfileSettings() {
         profile={profile} 
         setProfile={setProfile} 
         sessionId={session?.id}
+        onProfileUpdate={handleProfileUpdate}
       />
       <PasswordSection />
     </>

@@ -18,7 +18,6 @@ export function LoginForm({ onLogin }: LoginFormProps) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isAdminLoading, setIsAdminLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -39,40 +38,6 @@ export function LoginForm({ onLogin }: LoginFormProps) {
       setError("Failed to login. Please check your credentials and try again.");
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleAdminClick = async () => {
-    setIsAdminLoading(true);
-    try {
-      await onLogin("admin@pec.org.pk", "Coord@pec!@#123");
-      toast({
-        title: "Admin Login Successful",
-        description: "You are now logged in as admin with full access.",
-      });
-      navigate('/dashboard');
-    } catch (err) {
-      console.error('Admin login error:', err);
-      setError('Failed to login as admin');
-    } finally {
-      setIsAdminLoading(false);
-    }
-  };
-  
-  const handleCoordinationClick = async () => {
-    setIsAdminLoading(true);
-    try {
-      await onLogin("coordination@pec.org.pk", "Coord@123!@#@");
-      toast({
-        title: "Coordination Login Successful",
-        description: "You are now logged in as coordination with full access.",
-      });
-      navigate('/dashboard');
-    } catch (err) {
-      console.error('Coordination login error:', err);
-      setError('Failed to login as coordination');
-    } finally {
-      setIsAdminLoading(false);
     }
   };
 
@@ -156,39 +121,6 @@ export function LoginForm({ onLogin }: LoginFormProps) {
               <p className="text-center text-sm text-gray-600">
                 Trouble logging in? <a href="mailto:support@pec.org.pk" className="text-pec-green hover:text-pec-green-600">Contact PEC IT Support</a>
               </p>
-              
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t"></span>
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-white px-2 text-gray-500">
-                    Development Options
-                  </span>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleAdminClick}
-                  disabled={isAdminLoading}
-                  className="transition-all duration-300 rounded-lg"
-                >
-                  Login as Admin
-                </Button>
-                
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleCoordinationClick}
-                  disabled={isAdminLoading}
-                  className="transition-all duration-300 rounded-lg"
-                >
-                  Login as Coordination
-                </Button>
-              </div>
             </form>
           </CardContent>
         </Card>

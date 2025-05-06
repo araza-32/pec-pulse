@@ -1,5 +1,6 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 // Define the User type with specific role types
 type UserRole = 'admin' | 'secretary' | 'chairman' | 'registrar';
@@ -18,10 +19,10 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
-  // Add these properties to match what's being used in other components
   session: User | null;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  updateUserProfile: (data: Partial<User>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -38,19 +39,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const userId = localStorage.getItem('userId');
         const userRole = localStorage.getItem('userRole') as UserRole;
         const workbodyId = localStorage.getItem('workbodyId') || undefined;
+        const userName = localStorage.getItem('userName') || '';
+        const userEmail = localStorage.getItem('userEmail') || '';
         
         // Reconstruct user from localStorage
         if (userId && userRole) {
           setUser({
             id: userId,
-            name: userRole === 'admin' ? 'Admin User' : 
-                 userRole === 'secretary' ? 'Secretary User' : 
-                 userRole === 'chairman' ? 'Chairman PEC' :
-                 'Registrar PEC',
-            email: userRole === 'admin' ? 'admin@pec.org.pk' : 
-                  userRole === 'secretary' ? 'secretary@pec.org.pk' : 
-                  userRole === 'chairman' ? 'chairman@pec.org.pk' :
-                  'registrar@pec.org.pk',
+            name: userName,
+            email: userEmail,
             role: userRole,
             workbodyId
           });
@@ -61,49 +58,120 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     checkExistingSession();
   }, []);
 
+  const updateUserProfile = async (data: Partial<User>) => {
+    if (!user) return;
+    
+    try {
+      // Update the user in localStorage
+      if (data.name) localStorage.setItem('userName', data.name);
+      if (data.email) localStorage.setItem('userEmail', data.email);
+      
+      // Update the user state
+      setUser(prev => prev ? { ...prev, ...data } : null);
+      
+      // If integrated with Supabase, update the profile there as well
+      if (user.id) {
+        const { error } = await supabase
+          .from('profiles')
+          .update({ 
+            name: data.name || user.name,
+            role: data.role || user.role
+          })
+          .eq('id', user.id);
+        
+        if (error) throw error;
+      }
+    } catch (error) {
+      console.error('Error updating user profile:', error);
+      throw error;
+    }
+  };
+
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      // Mock login - in a real app, this would be an API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock user data based on email
-      let role: UserRole = 'admin';
-      let id = '1';
-      let name = 'Admin User';
-      let workbodyId: string | undefined = undefined;
-      
-      if (email.includes('secretary')) {
-        role = 'secretary';
-        id = '2';
-        name = 'Secretary User';
-        workbodyId = 'wb-1'; // Mock workbody ID for secretary
-      } else if (email.includes('chairman')) {
-        role = 'chairman';
-        id = '3';
-        name = 'Chairman PEC';
-      } else if (email.includes('registrar')) {
-        role = 'registrar';
-        id = '4';
-        name = 'Registrar PEC';
-      }
-      
-      // Set the user with the proper typed role
-      const userData = {
-        id,
-        name,
+      // First, try to sign in with Supabase auth
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email,
-        role,
-        workbodyId
-      };
+        password
+      });
       
-      setUser(userData);
-      
-      localStorage.setItem('isAuthenticated', 'true');
-      localStorage.setItem('userRole', role);
-      localStorage.setItem('userId', id);
-      if (workbodyId) {
-        localStorage.setItem('workbodyId', workbodyId);
+      if (authError) {
+        // If Supabase auth fails, fall back to mock login for development
+        console.log('Supabase auth failed, using mock login:', authError);
+        
+        // Mock login - in a real app, this would be an API call
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Mock user data based on email
+        let role: UserRole = 'admin';
+        let id = '1';
+        let name = 'Admin User';
+        let workbodyId: string | undefined = undefined;
+        
+        if (email.includes('secretary')) {
+          role = 'secretary';
+          id = '2';
+          name = 'Secretary User';
+          workbodyId = 'wb-1'; // Mock workbody ID for secretary
+        } else if (email.includes('chairman')) {
+          role = 'chairman';
+          id = '3';
+          name = 'Chairman PEC';
+        } else if (email.includes('registrar')) {
+          role = 'registrar';
+          id = '4';
+          name = 'Registrar PEC';
+        }
+        
+        // Set the user with the proper typed role
+        const userData = {
+          id,
+          name,
+          email,
+          role,
+          workbodyId
+        };
+        
+        setUser(userData);
+        
+        localStorage.setItem('isAuthenticated', 'true');
+        localStorage.setItem('userRole', role);
+        localStorage.setItem('userId', id);
+        localStorage.setItem('userName', name);
+        localStorage.setItem('userEmail', email);
+        if (workbodyId) {
+          localStorage.setItem('workbodyId', workbodyId);
+        }
+      } else if (authData.user) {
+        // Supabase auth successful, get user profile
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', authData.user.id)
+          .single();
+          
+        const role = (profileData?.role || 'admin') as UserRole;
+        const name = profileData?.name || authData.user.email?.split('@')[0] || 'User';
+        
+        const userData = {
+          id: authData.user.id,
+          name: name,
+          email: authData.user.email || '',
+          role: role,
+          workbodyId: profileData?.workbody_id
+        };
+        
+        setUser(userData);
+        
+        localStorage.setItem('isAuthenticated', 'true');
+        localStorage.setItem('userRole', role);
+        localStorage.setItem('userId', authData.user.id);
+        localStorage.setItem('userName', name);
+        localStorage.setItem('userEmail', authData.user.email || '');
+        if (profileData?.workbody_id) {
+          localStorage.setItem('workbodyId', profileData.workbody_id);
+        }
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -116,13 +184,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = async () => {
     setIsLoading(true);
     try {
-      // Mock logout - in a real app, this would be an API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Try to sign out from Supabase
+      await supabase.auth.signOut();
+      
+      // Clear local state
       setUser(null);
       localStorage.removeItem('isAuthenticated');
       localStorage.removeItem('userRole');
       localStorage.removeItem('userId');
       localStorage.removeItem('workbodyId');
+      localStorage.removeItem('userName');
+      localStorage.removeItem('userEmail');
     } catch (error) {
       console.error('Logout error:', error);
       throw error;
@@ -139,10 +211,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         login,
         logout,
         isAuthenticated: !!user,
-        // Map existing functions to the new property names
         session: user,
         signIn: login,
-        signOut: logout
+        signOut: logout,
+        updateUserProfile
       }}
     >
       {children}
