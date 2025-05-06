@@ -46,9 +46,7 @@ export function Layout({ children }: LayoutProps) {
     return <Loading />;
   }
   
-  // Don't render the sidebar on the chairman dashboard to avoid duplication
-  const isChairmanDashboard = location.pathname === "/chairman-dashboard";
-  
+  // Remove the condition that hides the sidebar on chairman-dashboard
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">
       <Header 
@@ -58,7 +56,7 @@ export function Layout({ children }: LayoutProps) {
       />
       
       <div className="flex flex-1 overflow-hidden">
-        {currentUser && !isChairmanDashboard && (
+        {currentUser && (
           <Sidebar 
             isOpen={sidebarOpen} 
             onClose={closeSidebar} 
