@@ -154,26 +154,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const role = (profileData?.role || 'admin') as UserRole;
         const name = profileData?.name || authData.user.email?.split('@')[0] || 'User';
         
-        // Store workbodyId separately since it's not in the profiles table
-        // We'll use a custom metadata approach or separate storage
+        // For secretary roles, we'll hardcode the workbody ID for now
+        // In a real application, you would store this in a separate table
         let workbodyId: string | undefined;
         
-        // For secretary roles, we might want to fetch their workbody assignment
-        // from a separate table or use another approach
         if (role === 'secretary') {
-          try {
-            // Example: Check if there's a workbody assignment in a separate table
-            // This is just a placeholder - implement according to your data model
-            const { data: assignmentData } = await supabase
-              .from('workbody_assignments') // This table would need to be created
-              .select('workbody_id')
-              .eq('user_id', authData.user.id)
-              .maybeSingle();
-            
-            workbodyId = assignmentData?.workbody_id;
-          } catch (error) {
-            console.error('Error fetching workbody assignment:', error);
-          }
+          // For now, just use a hardcoded value or something from the session
+          // In the future, you can create a proper workbody_assignments table
+          workbodyId = 'wb-1'; // Default workbody ID for secretaries
         }
         
         const userData = {
