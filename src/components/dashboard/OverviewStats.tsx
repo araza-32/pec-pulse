@@ -40,7 +40,7 @@ export const OverviewStats = ({ stats, onStatClick }: OverviewStatsProps) => {
   };
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 animate-fade-in">
+    <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 animate-fade-in">
       <StatCard
         title="Total Workbodies"
         value={stats.totalWorkbodies}

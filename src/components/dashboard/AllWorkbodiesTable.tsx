@@ -58,9 +58,9 @@ export function AllWorkbodiesTable({ workbodies }: WorkbodyTableProps) {
   };
 
   return (
-    <div className="rounded-md border bg-white">
+    <div className="rounded-md border bg-white overflow-hidden">
       <div className="p-4 flex flex-col sm:flex-row gap-4 justify-between items-center border-b">
-        <h3 className="text-lg font-semibold">All Workbodies</h3>
+        <h3 className="text-lg font-semibold text-left w-full sm:w-auto">All Workbodies</h3>
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <Input
             placeholder="Search workbodies..."
@@ -69,7 +69,7 @@ export function AllWorkbodiesTable({ workbodies }: WorkbodyTableProps) {
             className="sm:w-[200px]"
           />
           <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue placeholder="Select type" />
             </SelectTrigger>
             <SelectContent>
@@ -86,11 +86,11 @@ export function AllWorkbodiesTable({ workbodies }: WorkbodyTableProps) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[300px]">Name</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead className="text-center">Members</TableHead>
-              <TableHead className="text-center">Total Meetings</TableHead>
-              <TableHead className="text-center">Completion Rate</TableHead>
+              <TableHead className="w-[300px] text-left">Name</TableHead>
+              <TableHead className="text-left">Type</TableHead>
+              <TableHead className="text-right">Members</TableHead>
+              <TableHead className="text-right">Total Meetings</TableHead>
+              <TableHead className="text-right">Completion Rate</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -102,8 +102,8 @@ export function AllWorkbodiesTable({ workbodies }: WorkbodyTableProps) {
                   className="hover:bg-gray-50 cursor-pointer"
                   onClick={() => handleRowClick(wb.id)}
                 >
-                  <TableCell className="font-medium">{wb.name}</TableCell>
-                  <TableCell>
+                  <TableCell className="font-medium text-left">{wb.name}</TableCell>
+                  <TableCell className="text-left">
                     <Badge
                       className={`${getTypeBadgeColor(
                         wb.type
@@ -113,9 +113,9 @@ export function AllWorkbodiesTable({ workbodies }: WorkbodyTableProps) {
                       {wb.type.replace("-", " ")}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-center">{wb.members.length}</TableCell>
-                  <TableCell className="text-center">{wb.totalMeetings}</TableCell>
-                  <TableCell className="text-center">
+                  <TableCell className="text-right">{wb.members.length}</TableCell>
+                  <TableCell className="text-right">{wb.totalMeetings}</TableCell>
+                  <TableCell className="text-right">
                     {wb.actionsAgreed ? (
                       <span>
                         {Math.round((wb.actionsCompleted / wb.actionsAgreed) * 100)}

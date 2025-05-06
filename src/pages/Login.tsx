@@ -28,5 +28,11 @@ export default function Login() {
     }
   };
 
-  return <LoginForm onLogin={handleLogin} />;
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
+      <div className="w-full max-w-md">
+        <LoginForm onLogin={handleLogin} />
+      </div>
+    </div>
+  );
 }

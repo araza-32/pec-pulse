@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { ProfileSection } from './ProfileSection';
 import { PasswordSection } from './PasswordSection';
+import { Card, CardContent } from '@/components/ui/card';
 
 export function ProfileSettings() {
   const { session, updateUserProfile } = useAuth();
@@ -63,18 +64,33 @@ export function ProfileSettings() {
   };
 
   if (isLoading) {
-    return <div className="text-center py-10">Loading profile data...</div>;
+    return (
+      <Card className="mb-6">
+        <CardContent className="p-6">
+          <div className="text-center py-10">Loading profile data...</div>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
-    <>
-      <ProfileSection 
-        profile={profile} 
-        setProfile={setProfile} 
-        sessionId={session?.id}
-        onProfileUpdate={handleProfileUpdate}
-      />
-      <PasswordSection />
-    </>
+    <div className="space-y-8">
+      <Card>
+        <CardContent className="p-6">
+          <ProfileSection 
+            profile={profile} 
+            setProfile={setProfile} 
+            sessionId={session?.id}
+            onProfileUpdate={handleProfileUpdate}
+          />
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardContent className="p-6">
+          <PasswordSection />
+        </CardContent>
+      </Card>
+    </div>
   );
 }

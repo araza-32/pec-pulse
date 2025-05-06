@@ -26,17 +26,17 @@ export const DetailDialogs = ({
   return (
     <>
       <Dialog open={activeDialog === 'totalWorkbodies'} onOpenChange={() => setActiveDialog(null)}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-3xl max-h-[90vh] w-[90vw] md:w-auto">
           <DialogHeader>
-            <DialogTitle>Workbodies Overview</DialogTitle>
+            <DialogTitle className="text-left">Workbodies Overview</DialogTitle>
           </DialogHeader>
           <div className="max-h-[70vh] overflow-y-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Created Date</TableHead>
+                  <TableHead className="text-left">Name</TableHead>
+                  <TableHead className="text-left">Type</TableHead>
+                  <TableHead className="text-left">Created Date</TableHead>
                   <TableHead className="text-right">Members</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -46,9 +46,9 @@ export const DetailDialogs = ({
                   .sort((a, b) => a.name.localeCompare(b.name))
                   .map(workbody => (
                     <TableRow key={workbody.id}>
-                      <TableCell className="font-medium">{workbody.name}</TableCell>
-                      <TableCell>{formatWorkbodyType(workbody.type)}</TableCell>
-                      <TableCell>{new Date(workbody.createdDate).toLocaleDateString()}</TableCell>
+                      <TableCell className="font-medium text-left">{workbody.name}</TableCell>
+                      <TableCell className="text-left">{formatWorkbodyType(workbody.type)}</TableCell>
+                      <TableCell className="text-left">{new Date(workbody.createdDate).toLocaleDateString()}</TableCell>
                       <TableCell className="text-right">{workbody.members.length}</TableCell>
                       <TableCell className="text-right">
                         <Button 
@@ -69,15 +69,15 @@ export const DetailDialogs = ({
       </Dialog>
 
       <Dialog open={activeDialog === 'meetingsThisYear'} onOpenChange={() => setActiveDialog(null)}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-3xl max-h-[90vh] w-[90vw] md:w-auto">
           <DialogHeader>
-            <DialogTitle>Meetings This Year</DialogTitle>
+            <DialogTitle className="text-left">Meetings This Year</DialogTitle>
           </DialogHeader>
           <div className="max-h-[70vh] overflow-y-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Workbody</TableHead>
+                  <TableHead className="text-left">Workbody</TableHead>
                   <TableHead className="text-right">Meetings This Year</TableHead>
                   <TableHead className="text-right">Total Meetings</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -89,7 +89,7 @@ export const DetailDialogs = ({
                   .sort((a, b) => b.meetingsThisYear - a.meetingsThisYear)
                   .map(workbody => (
                     <TableRow key={workbody.id}>
-                      <TableCell className="font-medium">{workbody.name}</TableCell>
+                      <TableCell className="font-medium text-left">{workbody.name}</TableCell>
                       <TableCell className="text-right">{workbody.meetingsThisYear}</TableCell>
                       <TableCell className="text-right">{workbody.totalMeetings}</TableCell>
                       <TableCell className="text-right">

@@ -19,14 +19,14 @@ export function StatCard({ title, value, icon: Icon, colorClass, onClick, clicka
 
   return (
     <Card className={cardClasses} onClick={onClick}>
-      <CardContent className="p-6">
+      <CardContent className="p-4 sm:p-6">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-sm text-muted-foreground">{title}</p>
-            <p className="text-2xl font-bold mt-1">{value}</p>
+            <p className="text-sm font-medium text-muted-foreground">{title}</p>
+            <p className="text-xl sm:text-2xl font-bold mt-1">{value}</p>
           </div>
-          <div className={`${colorClass} p-3 rounded-lg`}>
-            <Icon className="text-white h-5 w-5" />
+          <div className={`${colorClass} p-2 sm:p-3 rounded-lg`}>
+            <Icon className="text-white h-4 w-4 sm:h-5 sm:w-5" />
           </div>
         </div>
       </CardContent>
