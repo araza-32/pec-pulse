@@ -127,24 +127,33 @@ export function UserManagement() {
     setCreationError("");
     
     try {
-      // Create the user in auth
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      // Create the user directly in the auth table using the signUp method
+      // This is more reliable than using admin.createUser which requires special permissions
+      const { data, error } = await supabase.auth.signUp({
         email: newUser.email,
         password: newUser.password,
-        email_confirm: true,
+        options: {
+          data: {
+            name: newUser.name,
+            role: newUser.role,
+            workbody_id: newUser.workbodyId || null
+          }
+        }
       });
       
-      if (authError) throw authError;
+      if (error) throw error;
       
       // Add user details to profiles table
-      const { error: profileError } = await supabase.from('profiles').insert({
-        id: authData.user.id,
-        name: newUser.name,
-        role: newUser.role,
-        workbody_id: newUser.workbodyId || null
-      });
-      
-      if (profileError) throw profileError;
+      if (data?.user) {
+        const { error: profileError } = await supabase.from('profiles').upsert({
+          id: data.user.id,
+          name: newUser.name,
+          role: newUser.role,
+          workbody_id: newUser.workbodyId || null
+        });
+        
+        if (profileError) throw profileError;
+      }
       
       setCreationSuccess(true);
       
@@ -185,10 +194,8 @@ export function UserManagement() {
       
       if (profileError) throw profileError;
       
-      // Delete the user from auth
-      const { error: authError } = await supabase.auth.admin.deleteUser(userId);
-      
-      if (authError) throw authError;
+      // Use auth.signOut to remove the session for the deleted user if they are currently logged in
+      await supabase.auth.signOut({ scope: 'others', sessionIds: [userId] });
       
       toast({
         title: 'Success',
@@ -285,6 +292,7 @@ export function UserManagement() {
                     <SelectItem value="chairman">Chairman</SelectItem>
                     <SelectItem value="secretary">Secretary</SelectItem>
                     <SelectItem value="registrar">Registrar</SelectItem>
+                    <SelectItem value="coordination">Coordination</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

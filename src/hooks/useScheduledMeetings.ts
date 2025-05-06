@@ -31,19 +31,26 @@ export const useScheduledMeetings = () => {
 
       console.log("Fetched meetings:", data?.length || 0);
 
-      const formattedMeetings = data ? data.map(meeting => ({
-        id: meeting.id,
-        workbodyId: meeting.workbody_id,
-        workbodyName: meeting.workbody_name,
-        date: meeting.date,
-        time: meeting.time,
-        location: meeting.location,
-        agendaItems: meeting.agenda_items,
-        notificationFile: meeting.notification_file_name,
-        notificationFilePath: meeting.notification_file_path,
-        agendaFile: meeting.agenda_file_name || null,
-        agendaFilePath: meeting.agenda_file_path || null
-      })) : [];
+      const formattedMeetings = data ? data.map(meeting => {
+        // Format time to remove seconds (HH:MM format)
+        const timeWithoutSeconds = meeting.time ? 
+          meeting.time.substring(0, 5) : 
+          meeting.time;
+          
+        return {
+          id: meeting.id,
+          workbodyId: meeting.workbody_id,
+          workbodyName: meeting.workbody_name,
+          date: meeting.date,
+          time: timeWithoutSeconds, // Use formatted time without seconds
+          location: meeting.location,
+          agendaItems: meeting.agenda_items,
+          notificationFile: meeting.notification_file_name,
+          notificationFilePath: meeting.notification_file_path,
+          agendaFile: meeting.agenda_file_name || null,
+          agendaFilePath: meeting.agenda_file_path || null
+        };
+      }) : [];
 
       setMeetings(formattedMeetings);
     } catch (error) {

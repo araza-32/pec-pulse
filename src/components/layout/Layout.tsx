@@ -5,6 +5,7 @@ import { Sidebar } from "./Sidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { Toaster } from "@/components/ui/toaster";
 import { Loading } from "@/components/ui/loading";
+import { useLocation } from "react-router-dom";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -14,6 +15,7 @@ export function Layout({ children }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { session, logout } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
+  const location = useLocation();
   
   const currentUser = session ? {
     name: session.name || 'User',
@@ -44,6 +46,9 @@ export function Layout({ children }: LayoutProps) {
     return <Loading />;
   }
   
+  // Don't render the sidebar on the chairman dashboard to avoid duplication
+  const isChairmanDashboard = location.pathname === "/chairman-dashboard";
+  
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">
       <Header 
@@ -53,7 +58,7 @@ export function Layout({ children }: LayoutProps) {
       />
       
       <div className="flex flex-1 overflow-hidden">
-        {currentUser && (
+        {currentUser && !isChairmanDashboard && (
           <Sidebar 
             isOpen={sidebarOpen} 
             onClose={closeSidebar} 

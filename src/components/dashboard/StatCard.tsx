@@ -23,6 +23,12 @@ export function StatCard({ title, value, icon: Icon, colorClass, onClick, clicka
       onClick={onClick}
       role={clickable ? "button" : undefined}
       tabIndex={clickable ? 0 : undefined}
+      onKeyDown={clickable && onClick ? (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick();
+        }
+      } : undefined}
     >
       <CardContent className="p-4 sm:p-6">
         <div className="flex items-start justify-between">
