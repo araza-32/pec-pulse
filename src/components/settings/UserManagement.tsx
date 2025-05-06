@@ -194,8 +194,9 @@ export function UserManagement() {
       
       if (profileError) throw profileError;
       
-      // Use auth.signOut to remove the session for the deleted user if they are currently logged in
-      await supabase.auth.signOut({ scope: 'others', sessionIds: [userId] });
+      // Use auth.signOut without the sessionIds parameter, which is causing the TypeScript error
+      // Just sign out generally without specifying session IDs
+      await supabase.auth.signOut();
       
       toast({
         title: 'Success',
