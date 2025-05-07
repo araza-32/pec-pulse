@@ -2,6 +2,7 @@
 import { ReactNode } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { LucideIcon } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface StatCardProps {
   title: string;
@@ -13,6 +14,34 @@ interface StatCardProps {
 }
 
 export function StatCard({ title, value, icon: Icon, colorClass, onClick, clickable = false }: StatCardProps) {
+  const navigate = useNavigate();
+  
+  const handleClick = () => {
+    if (onClick) {
+      onClick();
+    } else if (clickable) {
+      // Default navigation based on title if no onClick provided
+      switch (title) {
+        case "Total Workbodies":
+          navigate("/workbodies/list");
+          break;
+        case "Meetings This Year":
+          navigate("/meetings/year");
+          break;
+        case "Action Completion Rate":
+        case "Action Completion":
+          navigate("/reports");
+          break;
+        case "Upcoming Meetings":
+          navigate("/calendar");
+          break;
+        default:
+          // No default navigation
+          break;
+      }
+    }
+  };
+
   const cardClasses = clickable 
     ? "transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer border-2 hover:border-gray-300" 
     : "transition-shadow duration-300 hover:shadow-md";
@@ -20,13 +49,13 @@ export function StatCard({ title, value, icon: Icon, colorClass, onClick, clicka
   return (
     <Card 
       className={cardClasses} 
-      onClick={onClick}
+      onClick={clickable ? handleClick : undefined}
       role={clickable ? "button" : undefined}
       tabIndex={clickable ? 0 : undefined}
-      onKeyDown={clickable && onClick ? (e) => {
+      onKeyDown={clickable ? (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
-          onClick();
+          handleClick();
         }
       } : undefined}
     >

@@ -1,255 +1,173 @@
 
 import { useState, useEffect } from "react";
-import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, sub } from "date-fns";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Download, Filter, RefreshCw } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { useWorkbodies } from "@/hooks/useWorkbodies";
-import { useScheduledMeetings } from "@/hooks/useScheduledMeetings";
-import { useToast } from "@/hooks/use-toast";
+import { 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle 
+} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { WorkbodiesOverview } from "@/components/chairman-dashboard/WorkbodiesOverview";
-import { MeetingsDecisions } from "@/components/chairman-dashboard/MeetingsDecisions";
-import { PerformanceMetrics } from "@/components/chairman-dashboard/PerformanceMetrics";
-import { AlertsQuickAccess } from "@/components/chairman-dashboard/AlertsQuickAccess";
-import { Separator } from "@/components/ui/separator";
-import { OverviewStats } from "@/components/chairman-dashboard/OverviewStats";
-import { exportToExcel, exportToPDF } from "@/utils/exportUtils";
+import { ChairmanStatCards } from "@/components/chairman/ChairmanStatCards";
+import { WorkbodyDistributionChart } from "@/components/chairman/WorkbodyDistributionChart";
+import { MonthlyMeetingsChart } from "@/components/chairman/MonthlyMeetingsChart";
+import { ActionCompletionChart } from "@/components/chairman/ActionCompletionChart";
+import { RecentMeetingMinutes } from "@/components/chairman/RecentMeetingMinutes";
+import { ExpiringTaskForces } from "@/components/chairman/ExpiringTaskForces";
+import { ChairmanUpcomingMeetings } from "@/components/chairman/ChairmanUpcomingMeetings";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2 } from "lucide-react";
 
 export default function ChairmanExecutiveDashboard() {
-  const { workbodies, isLoading: workbodiesLoading, refetch: refetchWorkbodies } = useWorkbodies();
-  const { meetings, isLoading: meetingsLoading, refetchMeetings } = useScheduledMeetings();
+  const [activeTab, setActiveTab] = useState("overview");
+  const [isLoading, setIsLoading] = useState(true);
+  const [dashboardData, setDashboardData] = useState({
+    totalWorkbodies: 0,
+    meetingsThisYear: 0,
+    completionRate: 0,
+    upcomingMeetingsCount: 0
+  });
   const { toast } = useToast();
   
-  const [timeFilter, setTimeFilter] = useState<"30days" | "quarter" | "year">("30days");
-  const [workbodyTypeFilter, setWorkbodyTypeFilter] = useState<"all" | "committee" | "working-group" | "task-force">("all");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
-  
-  // Calculate filtered data based on time filter
-  const getFilteredData = () => {
-    const today = new Date();
-    let startDate: Date;
-    
-    switch(timeFilter) {
-      case "30days":
-        startDate = sub(today, { days: 30 });
-        break;
-      case "quarter":
-        startDate = sub(today, { months: 3 });
-        break;
-      case "year":
-        startDate = sub(today, { years: 1 });
-        break;
-      default:
-        startDate = sub(today, { days: 30 });
-    }
-    
-    // Filter workbodies by type if needed
-    const filteredWorkbodies = workbodies.filter(wb => {
-      const matchesType = workbodyTypeFilter === "all" || wb.type === workbodyTypeFilter;
-      const matchesSearch = searchQuery === "" || 
-        wb.name.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchesType && matchesSearch;
-    });
-    
-    // Filter meetings by date range
-    const filteredMeetings = meetings.filter(meeting => {
-      const meetingDate = parseISO(meeting.date);
-      return meetingDate >= startDate && meetingDate <= today;
-    });
-    
-    return {
-      workbodies: filteredWorkbodies,
-      meetings: filteredMeetings
-    };
-  };
-  
-  const { workbodies: filteredWorkbodies, meetings: filteredMeetings } = getFilteredData();
-  
-  // Calculate high-level stats
-  const calculatedStats = {
-    totalWorkbodies: filteredWorkbodies.length,
-    activeMeetings: filteredMeetings.length,
-    completionRate: calculateCompletionRate(filteredWorkbodies),
-    upcomingDeadlines: calculateUpcomingDeadlines(filteredWorkbodies)
-  };
-  
-  // Helper function to calculate completion rate
-  function calculateCompletionRate(workbodies: any[]) {
-    const totalActions = workbodies.reduce((sum, wb) => sum + (wb.actionsAgreed || 0), 0);
-    const completedActions = workbodies.reduce((sum, wb) => sum + (wb.actionsCompleted || 0), 0);
-    return totalActions > 0 ? Math.round((completedActions / totalActions) * 100) : 0;
-  }
-  
-  // Helper function to calculate upcoming deadlines
-  function calculateUpcomingDeadlines(workbodies: any[]) {
-    const thirtyDaysFromNow = new Date();
-    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-    
-    return workbodies.filter(wb => 
-      wb.type === "task-force" && 
-      wb.endDate && 
-      new Date(wb.endDate) <= thirtyDaysFromNow
-    ).length;
-  }
-  
-  // Refresh all data
-  const handleRefresh = async () => {
-    try {
-      await Promise.all([
-        refetchWorkbodies(),
-        refetchMeetings()
-      ]);
-      
-      setLastRefreshed(new Date());
-      
-      toast({
-        title: "Dashboard Refreshed",
-        description: "Latest data has been loaded",
-      });
-    } catch (error) {
-      toast({
-        title: "Refresh Failed",
-        description: "Unable to load latest data",
-        variant: "destructive"
-      });
-    }
-  };
-  
-  // Export dashboard data
-  const handleExport = (format: 'excel' | 'pdf') => {
-    const dashboardData = {
-      workbodies: filteredWorkbodies,
-      meetings: filteredMeetings,
-      stats: calculatedStats
-    };
-    
-    if (format === 'excel') {
-      exportToExcel(dashboardData, 'Chairman_Dashboard_Export');
-    } else {
-      exportToPDF(dashboardData, 'Chairman_Dashboard_Export');
-    }
-    
-    toast({
-      title: "Export Successful",
-      description: `Dashboard data exported as ${format.toUpperCase()}`,
-    });
-  };
-  
-  // Auto-refresh effect (every 15 mins)
   useEffect(() => {
-    const refreshInterval = setInterval(() => {
-      handleRefresh();
-    }, 15 * 60 * 1000); // 15 minutes
+    const fetchDashboardData = async () => {
+      try {
+        setIsLoading(true);
+        
+        // Fetch workbodies count
+        const { data: workbodiesData, error: workbodiesError } = await supabase
+          .from('workbodies')
+          .select('*', { count: 'exact' });
+          
+        if (workbodiesError) throw workbodiesError;
+        
+        // Fetch meetings from current year
+        const currentYear = new Date().getFullYear();
+        const startOfYear = `${currentYear}-01-01`;
+        const endOfYear = `${currentYear}-12-31`;
+        
+        const { count: meetingsCount, error: meetingsError } = await supabase
+          .from('scheduled_meetings')
+          .select('*', { count: 'exact' })
+          .gte('date', startOfYear)
+          .lte('date', endOfYear);
+          
+        if (meetingsError) throw meetingsError;
+        
+        // Fetch upcoming meetings (next 30 days)
+        const today = new Date().toISOString().split('T')[0];
+        const thirtyDaysLater = new Date();
+        thirtyDaysLater.setDate(thirtyDaysLater.getDate() + 30);
+        const thirtyDaysDate = thirtyDaysLater.toISOString().split('T')[0];
+        
+        const { count: upcomingCount, error: upcomingError } = await supabase
+          .from('scheduled_meetings')
+          .select('*', { count: 'exact' })
+          .gte('date', today)
+          .lte('date', thirtyDaysDate);
+          
+        if (upcomingError) throw upcomingError;
+        
+        // For now using mock data for completion rate (would ideally come from action items)
+        const completionRate = 78;
+        
+        setDashboardData({
+          totalWorkbodies: workbodiesData?.length || 0,
+          meetingsThisYear: meetingsCount || 0,
+          completionRate,
+          upcomingMeetingsCount: upcomingCount || 0
+        });
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+        toast({
+          title: "Dashboard Error",
+          description: "Failed to load dashboard data",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
     
-    return () => clearInterval(refreshInterval);
-  }, []);
-  
-  // Loading state
-  const isLoading = workbodiesLoading || meetingsLoading;
-  
+    fetchDashboardData();
+  }, [toast]);
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Chairman's Executive Dashboard</h1>
-          <p className="text-muted-foreground">
-            PEC Pulse: Performance visibility and operational oversight
-          </p>
+    <>
+      {isLoading ? (
+        <div className="flex items-center justify-center h-40">
+          <Loader2 className="h-8 w-8 animate-spin text-pec-green" />
         </div>
-        
-        <div className="flex flex-col xs:flex-row gap-2 w-full md:w-auto">
-          <div className="flex items-center text-xs text-muted-foreground">
-            Last refreshed: {format(lastRefreshed, 'MMM d, yyyy HH:mm')}
-          </div>
-          <Button variant="outline" size="sm" onClick={handleRefresh} className="ml-2">
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh
-          </Button>
-        </div>
-      </div>
-      
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4 pb-4">
-        <div className="flex-1">
-          <Input 
-            placeholder="Search workbodies..." 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="max-w-xs"
+      ) : (
+        <>
+          <ChairmanStatCards 
+            totalWorkbodies={dashboardData.totalWorkbodies}
+            meetingsThisYear={dashboardData.meetingsThisYear}
+            completionRate={dashboardData.completionRate}
+            upcomingMeetingsCount={dashboardData.upcomingMeetingsCount}
           />
-        </div>
-        
-        <div className="flex flex-row gap-2">
-          <Select value={timeFilter} onValueChange={(value: any) => setTimeFilter(value)}>
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="Time period" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="30days">Last 30 Days</SelectItem>
-              <SelectItem value="quarter">This Quarter</SelectItem>
-              <SelectItem value="year">This Year</SelectItem>
-            </SelectContent>
-          </Select>
           
-          <Select value={workbodyTypeFilter} onValueChange={(value: any) => setWorkbodyTypeFilter(value)}>
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="Workbody Type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="committee">Committees</SelectItem>
-              <SelectItem value="working-group">Working Groups</SelectItem>
-              <SelectItem value="task-force">Task Forces</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          <div className="flex gap-2">
-            <Button variant="outline" size="icon" onClick={() => handleExport('excel')}>
-              <Download className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="icon" onClick={() => handleExport('pdf')}>
-              <Download className="h-4 w-4" />
-            </Button>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Workbody Distribution</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <WorkbodyDistributionChart />
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Monthly Meetings</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <MonthlyMeetingsChart />
+              </CardContent>
+            </Card>
           </div>
-        </div>
-      </div>
-      
-      {/* Overview Statistics */}
-      <OverviewStats stats={calculatedStats} />
-      
-      {/* Main Dashboard Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <WorkbodiesOverview 
-          workbodies={filteredWorkbodies} 
-          isLoading={isLoading} 
-        />
-        
-        <MeetingsDecisions 
-          meetings={filteredMeetings}
-          workbodies={filteredWorkbodies}
-          isLoading={isLoading}
-        />
-      </div>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <PerformanceMetrics 
-          workbodies={filteredWorkbodies}
-          meetings={filteredMeetings}
-          timeFilter={timeFilter}
-          isLoading={isLoading}
-        />
-        
-        <AlertsQuickAccess 
-          workbodies={filteredWorkbodies}
-          meetings={filteredMeetings}
-          isLoading={isLoading}
-        />
-      </div>
-    </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle>Upcoming Meetings</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ChairmanUpcomingMeetings />
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Task Forces Expiring Soon</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ExpiringTaskForces />
+              </CardContent>
+            </Card>
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Action Completion</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ActionCompletionChart />
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Meeting Minutes</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <RecentMeetingMinutes />
+              </CardContent>
+            </Card>
+          </div>
+        </>
+      )}
+    </>
   );
 }

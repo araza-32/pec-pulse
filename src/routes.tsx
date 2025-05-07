@@ -1,3 +1,4 @@
+
 import { Layout } from "./components/layout/Layout";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -114,6 +115,10 @@ export const protectedRoutes = [
     element: <RoleBasedRoute roles={['admin']}>
       <Settings />
     </RoleBasedRoute>
+  },
+  {
+    path: "/meetings/year",
+    element: <MeetingsThisYear />
   }
 ];
 
@@ -130,10 +135,6 @@ export const router = [
       </ProtectedRoute>
     )
   })),
-  {
-    path: "/meetings/year",
-    element: <MeetingsThisYear />,
-  },
   {
     path: "*",
     element: (

@@ -1,138 +1,136 @@
 
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { supabase } from "@/integrations/supabase/client";
+import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
-import { Skeleton } from "@/components/ui/skeleton";
+import { 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle 
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, MapPin } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2, FileText, ChevronLeft } from "lucide-react";
+
+interface Meeting {
+  id: string;
+  workbody_name: string;
+  date: string;
+  time: string;
+  location: string;
+}
 
 export default function MeetingsThisYear() {
-  const [meetings, setMeetings] = useState<any[]>([]);
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-
+  const { toast } = useToast();
+  
   useEffect(() => {
     const fetchMeetings = async () => {
-      setIsLoading(true);
       try {
-        const currentYear = new Date().getFullYear();
-        const startDate = `${currentYear}-01-01`;
-        const endDate = `${currentYear}-12-31`;
+        setIsLoading(true);
         
-        // Fetch meetings for the current year
+        // Get meetings from current year
+        const currentYear = new Date().getFullYear();
+        const startOfYear = `${currentYear}-01-01`;
+        const endOfYear = `${currentYear}-12-31`;
+        
         const { data, error } = await supabase
           .from('scheduled_meetings')
           .select('*')
-          .gte('date', startDate)
-          .lte('date', endDate)
+          .gte('date', startOfYear)
+          .lte('date', endOfYear)
           .order('date', { ascending: false });
-        
+          
         if (error) throw error;
         
         setMeetings(data || []);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error fetching meetings:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load meetings data",
+          variant: "destructive"
+        });
       } finally {
         setIsLoading(false);
       }
     };
     
     fetchMeetings();
-  }, []);
-  
-  const filteredMeetings = meetings.filter(meeting => 
-    meeting.workbody_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    meeting.location.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  }, [toast]);
+
+  const formatTime = (timeString: string) => {
+    if (!timeString) return '';
+    // Return time without seconds (HH:MM format)
+    return timeString.substring(0, 5);
+  };
 
   return (
     <Layout>
       <div className="space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <h1 className="text-3xl font-bold">Meetings This Year</h1>
-          <Input 
-            className="w-full md:w-64" 
-            placeholder="Search meetings..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold">Meetings in {new Date().getFullYear()}</h1>
+          <Link to="/chairman-dashboard">
+            <Button variant="outline" className="flex items-center gap-2">
+              <ChevronLeft className="h-4 w-4" />
+              Back to Dashboard
+            </Button>
+          </Link>
         </div>
-
+        
         <Card>
-          <CardHeader>
-            <CardTitle>
-              {new Date().getFullYear()} Meetings
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 md:p-6">
             {isLoading ? (
-              <div className="space-y-4">
-                {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-16 w-full" />
-                ))}
+              <div className="flex items-center justify-center h-40">
+                <Loader2 className="h-8 w-8 animate-spin text-pec-green" />
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Workbody</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Time</TableHead>
-                      <TableHead>Location</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredMeetings.length > 0 ? (
-                      filteredMeetings.map((meeting) => {
-                        const meetingDate = new Date(meeting.date);
-                        const isPast = meetingDate < new Date();
-                        
-                        return (
-                          <TableRow key={meeting.id}>
-                            <TableCell className="font-medium">{meeting.workbody_name}</TableCell>
-                            <TableCell className="flex items-center gap-1">
-                              <Calendar className="h-4 w-4 text-muted-foreground" />
-                              {format(meetingDate, "MMM dd, yyyy")}
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-1">
-                                <Clock className="h-4 w-4 text-muted-foreground" />
-                                {meeting.time}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-1">
-                                <MapPin className="h-4 w-4 text-muted-foreground" />
-                                {meeting.location}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge
-                                variant={isPast ? "outline" : "default"}
-                                className={isPast ? "bg-gray-100 text-gray-800" : "bg-green-100 text-green-800"}
-                              >
-                                {isPast ? "Completed" : "Upcoming"}
-                              </Badge>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center py-8">
-                          No meetings found for this year.
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Workbody</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Time</TableHead>
+                    <TableHead>Location</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {meetings.length > 0 ? (
+                    meetings.map((meeting) => (
+                      <TableRow key={meeting.id}>
+                        <TableCell className="font-medium">{meeting.workbody_name}</TableCell>
+                        <TableCell>{format(new Date(meeting.date), 'MMM d, yyyy')}</TableCell>
+                        <TableCell>{formatTime(meeting.time)}</TableCell>
+                        <TableCell>{meeting.location}</TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="outline" size="sm" className="flex items-center gap-1">
+                            <FileText className="h-4 w-4" />
+                            View
+                          </Button>
                         </TableCell>
                       </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
+                        No meetings found for the current year.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
             )}
           </CardContent>
         </Card>

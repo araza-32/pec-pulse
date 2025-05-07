@@ -44,7 +44,7 @@ export const useScheduledMeetings = () => {
           date: meeting.date,
           time: timeWithoutSeconds, // Use formatted time without seconds
           location: meeting.location,
-          agendaItems: meeting.agenda_items,
+          agendaItems: meeting.agenda_items || [],
           notificationFile: meeting.notification_file_name,
           notificationFilePath: meeting.notification_file_path,
           agendaFile: meeting.agenda_file_name || null,

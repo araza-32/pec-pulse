@@ -1,10 +1,10 @@
 
-import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FileText } from "lucide-react";
-import { CalendarIcon, Clock, MapPin } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 import { ScheduledMeeting } from "@/types";
-import { format, parseISO } from "date-fns";
+import { format } from "date-fns";
+import { FileText } from "lucide-react";
 
 interface MeetingDetailsProps {
   meeting: ScheduledMeeting;
@@ -12,64 +12,62 @@ interface MeetingDetailsProps {
 }
 
 export function MeetingDetails({ meeting, onViewNotification }: MeetingDetailsProps) {
+  // Ensure agendaItems is an array
+  const safeAgendaItems = Array.isArray(meeting.agendaItems) ? meeting.agendaItems : [];
+
   return (
-    <Card>
-      <CardContent className="pt-6">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium">
-              {meeting.workbodyName}
-            </h3>
-          </div>
-
-          <div className="flex items-center text-sm text-muted-foreground">
-            <CalendarIcon className="mr-1 h-4 w-4" />
-            <span>
-              {format(parseISO(meeting.date), "EEEE, MMMM d, yyyy")}
-            </span>
-            <Clock className="ml-3 mr-1 h-4 w-4" />
-            <span>{meeting.time}</span>
-          </div>
-
-          <div className="flex items-center text-sm text-muted-foreground">
-            <MapPin className="mr-1 h-4 w-4" />
-            <span>{meeting.location}</span>
-          </div>
-
-          <div className="pt-2">
-            <h4 className="text-sm font-medium mb-2 flex items-center">
-              <FileText className="mr-1 h-4 w-4" />
-              Agenda Items
-            </h4>
-            <ul className="space-y-1 text-sm">
-              {meeting.agendaItems.map((item, index) => (
-                <li key={index} className="flex items-start gap-2">
-                  <span className="mt-1.5 h-1 w-1 rounded-full bg-primary" />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-          
-          {meeting.notificationFile && (
-            <div className="pt-2">
-              <h4 className="text-sm font-medium mb-2 flex items-center">
-                <FileText className="mr-1 h-4 w-4" />
-                Attached Notification
-              </h4>
-              <p className="text-sm text-muted-foreground mb-2">{meeting.notificationFile}</p>
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="gap-2"
-                onClick={onViewNotification}
-              >
-                <FileText className="h-4 w-4" /> View Notification
-              </Button>
-            </div>
-          )}
+    <div className="space-y-4">
+      <div>
+        <h3 className="text-lg font-semibold">{meeting.workbodyName}</h3>
+        <div className="flex flex-wrap gap-2 mt-2">
+          <Badge variant="outline" className="flex items-center gap-1">
+            <span className="text-xs">Date:</span>
+            <span>{format(new Date(meeting.date), 'MMM dd, yyyy')}</span>
+          </Badge>
+          <Badge variant="outline" className="flex items-center gap-1">
+            <span className="text-xs">Time:</span>
+            <span>{meeting.time || 'TBD'}</span>
+          </Badge>
+          <Badge variant="outline" className="flex items-center gap-1">
+            <span className="text-xs">Location:</span>
+            <span>{meeting.location || 'TBD'}</span>
+          </Badge>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+      
+      <Separator />
+      
+      <div>
+        <h4 className="text-sm font-semibold mb-2">Agenda Items</h4>
+        {safeAgendaItems.length > 0 ? (
+          <ul className="list-disc list-inside space-y-1">
+            {safeAgendaItems.map((item, index) => (
+              <li key={index} className="text-sm text-muted-foreground">{item}</li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-muted-foreground">No agenda items have been added yet.</p>
+        )}
+      </div>
+      
+      <Separator />
+      
+      <div>
+        <h4 className="text-sm font-semibold mb-2">Documents</h4>
+        {meeting.notificationFile ? (
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2"
+            onClick={onViewNotification}
+          >
+            <FileText className="h-4 w-4" />
+            <span>Notification Letter</span>
+          </Button>
+        ) : (
+          <p className="text-sm text-muted-foreground">No documents have been uploaded yet.</p>
+        )}
+      </div>
+    </div>
   );
 }
