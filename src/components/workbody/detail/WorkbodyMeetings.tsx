@@ -12,9 +12,11 @@ interface WorkbodyMeetingsProps {
 }
 
 export function WorkbodyMeetings({ minutes, isLoadingMinutes }: WorkbodyMeetingsProps) {
-  const sortedMinutes = [...minutes].sort((a, b) => 
-    new Date(b.date).getTime() - new Date(a.date).getTime()
-  );
+  const sortedMinutes = [...minutes].sort((a, b) => {
+    const dateA = new Date(a.meetingDate || a.date).getTime();
+    const dateB = new Date(b.meetingDate || b.date).getTime();
+    return dateB - dateA;
+  });
 
   if (isLoadingMinutes) {
     return (
@@ -48,13 +50,13 @@ export function WorkbodyMeetings({ minutes, isLoadingMinutes }: WorkbodyMeetings
                     <div className="text-left">
                       <h3 className="font-semibold">
                         Meeting on{" "}
-                        {new Date(meeting.date).toLocaleDateString("en-US", {
+                        {new Date(meeting.meetingDate || meeting.date).toLocaleDateString("en-US", {
                           year: "numeric",
                           month: "long",
                           day: "numeric",
                         })}
                       </h3>
-                      <p className="text-sm text-muted-foreground">{meeting.location}</p>
+                      <p className="text-sm text-muted-foreground">{meeting.venue || meeting.location}</p>
                     </div>
                     <Link to={`/minutes/${meeting.id}`}>
                       <Button variant="outline" size="sm" className="bg-white hover:bg-gray-50">

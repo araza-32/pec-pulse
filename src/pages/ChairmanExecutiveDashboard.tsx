@@ -17,6 +17,7 @@ import { ChairmanUpcomingMeetings } from "@/components/chairman/ChairmanUpcoming
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { Workbody, MeetingMinutes, ScheduledMeeting } from "@/types";
 
 export default function ChairmanExecutiveDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -27,6 +28,41 @@ export default function ChairmanExecutiveDashboard() {
     completionRate: 0,
     upcomingMeetingsCount: 0
   });
+  const [workbodies, setWorkbodies] = useState<Workbody[]>([]);
+  const [upcomingMeetings, setUpcomingMeetings] = useState<ScheduledMeeting[]>([]);
+  const [expiringTaskForces, setExpiringTaskForces] = useState<Workbody[]>([]);
+  const [recentMinutes, setRecentMinutes] = useState<MeetingMinutes[]>([]);
+  const [timeframe, setTimeframe] = useState<"month" | "quarter" | "year">("month");
+  const currentYear = new Date().getFullYear();
+  
+  // Mock data for charts
+  const typeDistribution = [
+    { type: 'Committee', count: 12 },
+    { type: 'Working Group', count: 8 },
+    { type: 'Task Force', count: 5 }
+  ];
+
+  const monthlyMeetings = [
+    { month: "Jan", meetings: 5 },
+    { month: "Feb", meetings: 7 },
+    { month: "Mar", meetings: 10 },
+    { month: "Apr", meetings: 8 },
+    { month: "May", meetings: 12 },
+    { month: "Jun", meetings: 9 },
+    { month: "Jul", meetings: 6 },
+    { month: "Aug", meetings: 8 },
+    { month: "Sep", meetings: 11 },
+    { month: "Oct", meetings: 9 },
+    { month: "Nov", meetings: 7 },
+    { month: "Dec", meetings: 3 }
+  ];
+
+  const completionByType = [
+    { name: "Committee", agreed: 45, completed: 38 },
+    { name: "Working Group", agreed: 32, completed: 25 },
+    { name: "Task Force", agreed: 28, completed: 22 }
+  ];
+
   const { toast } = useToast();
   
   useEffect(() => {
@@ -37,7 +73,7 @@ export default function ChairmanExecutiveDashboard() {
         // Fetch workbodies count
         const { data: workbodiesData, error: workbodiesError } = await supabase
           .from('workbodies')
-          .select('*', { count: 'exact' });
+          .select('*');
           
         if (workbodiesError) throw workbodiesError;
         
@@ -60,13 +96,36 @@ export default function ChairmanExecutiveDashboard() {
         thirtyDaysLater.setDate(thirtyDaysLater.getDate() + 30);
         const thirtyDaysDate = thirtyDaysLater.toISOString().split('T')[0];
         
-        const { count: upcomingCount, error: upcomingError } = await supabase
+        const { data: upcomingData, count: upcomingCount, error: upcomingError } = await supabase
           .from('scheduled_meetings')
-          .select('*', { count: 'exact' })
+          .select('*')
           .gte('date', today)
           .lte('date', thirtyDaysDate);
           
         if (upcomingError) throw upcomingError;
+        setUpcomingMeetings(upcomingData || []);
+        
+        // Fetch task forces expiring in next 60 days
+        const sixtyDaysLater = new Date();
+        sixtyDaysLater.setDate(sixtyDaysLater.getDate() + 60);
+        const sixtyDaysDate = sixtyDaysLater.toISOString();
+        
+        // Just use mock data for now
+        const mockExpiringForces = workbodiesData?.filter(wb => 
+          wb.type === 'task-force' && wb.end_date && new Date(wb.end_date) < sixtyDaysLater
+        ) || [];
+        setExpiringTaskForces(mockExpiringForces);
+        
+        // Fetch recent meeting minutes
+        const { data: minutesData, error: minutesError } = await supabase
+          .from('meeting_minutes')
+          .select('*')
+          .order('date', { ascending: false })
+          .limit(5);
+          
+        if (minutesError) throw minutesError;
+        setRecentMinutes(minutesData || []);
+        setWorkbodies(workbodiesData || []);
         
         // For now using mock data for completion rate (would ideally come from action items)
         const completionRate = 78;
@@ -113,7 +172,7 @@ export default function ChairmanExecutiveDashboard() {
                 <CardTitle>Workbody Distribution</CardTitle>
               </CardHeader>
               <CardContent>
-                <WorkbodyDistributionChart />
+                <WorkbodyDistributionChart typeDistribution={typeDistribution} />
               </CardContent>
             </Card>
             
@@ -122,7 +181,12 @@ export default function ChairmanExecutiveDashboard() {
                 <CardTitle>Monthly Meetings</CardTitle>
               </CardHeader>
               <CardContent>
-                <MonthlyMeetingsChart />
+                <MonthlyMeetingsChart 
+                  monthlyMeetings={monthlyMeetings} 
+                  timeframe={timeframe} 
+                  setTimeframe={setTimeframe} 
+                  currentYear={currentYear}
+                />
               </CardContent>
             </Card>
           </div>
@@ -133,7 +197,7 @@ export default function ChairmanExecutiveDashboard() {
                 <CardTitle>Upcoming Meetings</CardTitle>
               </CardHeader>
               <CardContent>
-                <ChairmanUpcomingMeetings />
+                <ChairmanUpcomingMeetings upcomingMeetings={upcomingMeetings} />
               </CardContent>
             </Card>
             
@@ -142,7 +206,7 @@ export default function ChairmanExecutiveDashboard() {
                 <CardTitle>Task Forces Expiring Soon</CardTitle>
               </CardHeader>
               <CardContent>
-                <ExpiringTaskForces />
+                <ExpiringTaskForces expiringTaskForces={expiringTaskForces} />
               </CardContent>
             </Card>
           </div>
@@ -153,7 +217,7 @@ export default function ChairmanExecutiveDashboard() {
                 <CardTitle>Action Completion</CardTitle>
               </CardHeader>
               <CardContent>
-                <ActionCompletionChart />
+                <ActionCompletionChart completionByType={completionByType} />
               </CardContent>
             </Card>
             
@@ -162,7 +226,7 @@ export default function ChairmanExecutiveDashboard() {
                 <CardTitle>Recent Meeting Minutes</CardTitle>
               </CardHeader>
               <CardContent>
-                <RecentMeetingMinutes />
+                <RecentMeetingMinutes recentMeetings={recentMinutes} workbodies={workbodies} />
               </CardContent>
             </Card>
           </div>

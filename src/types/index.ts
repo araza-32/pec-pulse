@@ -44,7 +44,9 @@ export interface MeetingMinutes {
   workbodyId: string;
   workbodyName: string;
   meetingDate: string;
+  date: string;  // Adding this for backward compatibility
   venue: string;
+  location: string; // Adding this for backward compatibility
   attendees: Attendee[];
   agenda: string[];
   minutes: MinuteItem[];
@@ -52,6 +54,11 @@ export interface MeetingMinutes {
   decisions: string[];
   createdAt: string;
   updatedAt: string;
+  documentUrl?: string;
+  uploadedAt?: string;
+  uploadedBy?: string;
+  agendaItems?: string[];
+  actionsAgreed?: string[];
 }
 
 export interface Attendee {
@@ -73,6 +80,9 @@ export interface ActionItem {
   assignedTo: string;
   dueDate: string;
   status: 'pending' | 'in-progress' | 'completed' | 'delayed';
+  action?: string; // For backward compatibility
+  progress?: number; // Adding this for trackers that use progress
+  isPrevious?: boolean; // For tracking previous action items
 }
 
 export interface User {
@@ -90,4 +100,12 @@ export interface Report {
   generatedDate: string;
   type: string;
   filePath: string;
+}
+
+export interface AttendanceRecord {
+  memberId?: string;
+  memberName: string;
+  present: boolean;
+  organization?: string;
+  attendanceStatus: 'absent' | 'present-physical' | 'present-virtual';
 }

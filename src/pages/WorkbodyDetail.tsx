@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useWorkbodies } from "@/hooks/useWorkbodies";
@@ -13,6 +14,7 @@ import { WorkbodyMembers } from "@/components/workbody/detail/WorkbodyMembers";
 import { WorkbodyMeetings } from "@/components/workbody/detail/WorkbodyMeetings";
 import { useAuth } from "@/contexts/AuthContext";
 import type { MeetingMinutes } from "@/types";
+import { v4 as uuidv4 } from 'uuid';
 
 export default function WorkbodyDetail() {
   const { id } = useParams<{ id: string }>();
@@ -45,13 +47,23 @@ export default function WorkbodyDetail() {
         
         if (data) {
           console.log("Meeting minutes fetched:", data);
-          const formattedMinutes = data.map(item => ({
+          const formattedMinutes: MeetingMinutes[] = data.map(item => ({
             id: item.id,
             workbodyId: item.workbody_id,
+            workbodyName: workbody?.name || "",
+            meetingDate: item.date,
             date: item.date,
+            venue: item.location,
             location: item.location,
-            agendaItems: item.agenda_items,
-            actionsAgreed: item.actions_agreed,
+            attendees: [],
+            agenda: item.agenda_items || [],
+            agendaItems: item.agenda_items || [],
+            minutes: [],
+            actionItems: [],
+            actionsAgreed: item.actions_agreed || [],
+            decisions: [],
+            createdAt: item.uploaded_at,
+            updatedAt: item.uploaded_at,
             documentUrl: item.file_url,
             uploadedAt: item.uploaded_at,
             uploadedBy: item.uploaded_by || ""
@@ -73,7 +85,7 @@ export default function WorkbodyDetail() {
     if (id) {
       fetchMinutes();
     }
-  }, [id, toast]);
+  }, [id, toast, workbody]);
 
   if (isLoading) {
     return (

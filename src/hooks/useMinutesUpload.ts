@@ -5,6 +5,7 @@ import { useWorkbodies } from "@/hooks/useWorkbodies";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { AttendanceRecord, ActionItem } from "@/types";
+import { v4 as uuidv4 } from 'uuid';
 
 export const useMinutesUpload = () => {
   const navigate = useNavigate();
@@ -55,7 +56,9 @@ export const useMinutesUpload = () => {
       // If there are actions agreed in the previous minutes, add them to the form
       if (data.actions_agreed && data.actions_agreed.length > 0) {
         const previousActionItems: ActionItem[] = data.actions_agreed.map((action: string) => ({
-          action,
+          id: uuidv4(),
+          description: action,
+          action: action, // For backward compatibility
           assignedTo: '',
           dueDate: '',
           status: 'pending' as const,
@@ -171,7 +174,7 @@ export const useMinutesUpload = () => {
         
         // Update any completed previous actions
         const completedPreviousActions = actionItems.filter(
-          item => item.isPrevious && item.status === 'completed'
+          item => item.isPrevious === true && item.status === 'completed'
         );
         
         if (completedPreviousActions.length > 0) {

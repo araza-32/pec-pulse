@@ -10,7 +10,7 @@ interface RecentMeetingMinutesProps {
   workbodies: Workbody[];
 }
 
-export function RecentMeetingMinutes({ recentMeetings, workbodies }: RecentMeetingMinutesProps) {
+export function RecentMeetingMinutes({ recentMeetings, workbodies = [] }: RecentMeetingMinutesProps) {
   return (
     <Card>
       <CardHeader>
@@ -29,14 +29,14 @@ export function RecentMeetingMinutes({ recentMeetings, workbodies }: RecentMeeti
                     <FileText className="h-5 w-5" />
                   </div>
                   <div>
-                    <div className="font-medium">{workbody?.name}</div>
+                    <div className="font-medium">{workbody?.name || minutes.workbodyName}</div>
                     <div className="text-sm text-muted-foreground">
-                      Meeting on {format(new Date(minutes.date), "MMMM d, yyyy")}
+                      Meeting on {format(new Date(minutes.meetingDate || minutes.date), "MMMM d, yyyy")}
                     </div>
                     <div className="text-sm text-muted-foreground mt-1">
                       <span className="inline-flex items-center">
                         <MapPin className="h-3 w-3 mr-1" />
-                        {minutes.location}
+                        {minutes.venue || minutes.location}
                       </span>
                     </div>
                     <Button variant="link" className="h-auto p-0 text-sm mt-1">

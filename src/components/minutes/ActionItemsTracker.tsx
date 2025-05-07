@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { v4 as uuidv4 } from 'uuid';
 
 interface ActionItemsTrackerProps {
   actionsAgreed: string[];
@@ -26,7 +27,9 @@ export function ActionItemsTracker({
     if (actionsAgreed.length > 0) {
       // Initialize action items for each action agreed
       const initialActionItems: ActionItem[] = actionsAgreed.map((action, index) => ({
-        action,
+        id: uuidv4(),
+        description: action,
+        action: action, // For backward compatibility 
         assignedTo: '',
         dueDate: '',
         status: 'pending', // Explicitly using the union type value
@@ -57,7 +60,7 @@ export function ActionItemsTracker({
     updatedActionItems[index].status = status;
     
     // If completed, set progress to 100%
-    if (status === 'completed') {
+    if (status === 'completed' && 'progress' in updatedActionItems[index]) {
       updatedActionItems[index].progress = 100;
     }
     
@@ -85,7 +88,7 @@ export function ActionItemsTracker({
                 <div className="grid gap-4">
                   <div>
                     <Label className="font-medium">Action</Label>
-                    <p className="mt-1">{item.action}</p>
+                    <p className="mt-1">{item.description || item.action}</p>
                   </div>
                   
                   <div className="grid grid-cols-2 gap-4">
@@ -119,22 +122,24 @@ export function ActionItemsTracker({
                     </Select>
                   </div>
                   
-                  <div>
-                    <Label>Progress (%)</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={item.progress}
-                      onChange={(e) => handleActionItemChange(index + actionsAgreed.length, 'progress', parseInt(e.target.value) || 0)}
-                    />
-                    <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
-                      <div
-                        className="bg-green-600 h-2.5 rounded-full"
-                        style={{ width: `${item.progress}%` }}
-                      ></div>
+                  {item.progress !== undefined && (
+                    <div>
+                      <Label>Progress (%)</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={item.progress}
+                        onChange={(e) => handleActionItemChange(index + actionsAgreed.length, 'progress', parseInt(e.target.value) || 0)}
+                      />
+                      <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+                        <div
+                          className="bg-green-600 h-2.5 rounded-full"
+                          style={{ width: `${item.progress}%` }}
+                        ></div>
+                      </div>
                     </div>
-                  </div>
+                  )}
                   
                   <div className="flex items-center space-x-2">
                     <Checkbox
