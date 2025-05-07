@@ -124,8 +124,18 @@ export const meetingMinutes: MeetingMinutes[] = [
   {
     id: 'minutes-1',
     workbodyId: 'committee-1',
-    date: '2023-10-15',
-    location: 'PEC Headquarters, Islamabad',
+    workbodyName: 'Education Committee',
+    meetingDate: '2023-10-15',
+    date: '2023-10-15', // for backward compatibility
+    venue: 'PEC Headquarters, Islamabad',
+    location: 'PEC Headquarters, Islamabad', // for backward compatibility
+    attendees: [],
+    agenda: [],
+    minutes: [],
+    actionItems: [],
+    decisions: [],
+    createdAt: '2023-10-17',
+    updatedAt: '2023-10-17',
     agendaItems: [
       'Review of previous meeting minutes',
       'Updates on accreditation visits',
@@ -143,8 +153,18 @@ export const meetingMinutes: MeetingMinutes[] = [
   {
     id: 'minutes-2',
     workbodyId: 'committee-1',
-    date: '2023-12-05',
-    location: 'Virtual Meeting',
+    workbodyName: 'Education Committee',
+    meetingDate: '2023-12-05',
+    date: '2023-12-05', // for backward compatibility
+    venue: 'Virtual Meeting',
+    location: 'Virtual Meeting', // for backward compatibility
+    attendees: [],
+    agenda: [],
+    minutes: [],
+    actionItems: [],
+    decisions: [],
+    createdAt: '2023-12-08',
+    updatedAt: '2023-12-08',
     agendaItems: [
       'Status of ongoing accreditation visits',
       'Review of draft curriculum guidelines',
@@ -162,8 +182,18 @@ export const meetingMinutes: MeetingMinutes[] = [
   {
     id: 'minutes-3',
     workbodyId: 'workgroup-1',
-    date: '2024-01-22',
-    location: 'PEC Regional Office, Lahore',
+    workbodyName: 'Digital Transformation Working Group',
+    meetingDate: '2024-01-22',
+    date: '2024-01-22', // for backward compatibility
+    venue: 'PEC Regional Office, Lahore',
+    location: 'PEC Regional Office, Lahore', // for backward compatibility
+    attendees: [],
+    agenda: [],
+    minutes: [],
+    actionItems: [],
+    decisions: [],
+    createdAt: '2024-01-25',
+    updatedAt: '2024-01-25',
     agendaItems: [
       'Status of online registration system',
       'Integration of payment gateway',
@@ -181,8 +211,18 @@ export const meetingMinutes: MeetingMinutes[] = [
   {
     id: 'minutes-4',
     workbodyId: 'taskforce-1',
-    date: '2024-03-18',
-    location: 'PEC Headquarters, Islamabad',
+    workbodyName: 'CPD Framework Task Force',
+    meetingDate: '2024-03-18',
+    date: '2024-03-18', // for backward compatibility
+    venue: 'PEC Headquarters, Islamabad',
+    location: 'PEC Headquarters, Islamabad', // for backward compatibility
+    attendees: [],
+    agenda: [],
+    minutes: [],
+    actionItems: [],
+    decisions: [],
+    createdAt: '2024-03-20',
+    updatedAt: '2024-03-20',
     agendaItems: [
       'Review of CPD point allocation system',
       'Discussion on online CPD tracking platform',

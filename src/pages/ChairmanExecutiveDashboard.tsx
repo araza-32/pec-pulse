@@ -17,7 +17,8 @@ import { ChairmanUpcomingMeetings } from "@/components/chairman/ChairmanUpcoming
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
-import { Workbody, MeetingMinutes, ScheduledMeeting } from "@/types";
+import { Workbody, MeetingMinutes, ScheduledMeeting, WorkbodyType } from "@/types";
+import { v4 as uuidv4 } from 'uuid';
 
 export default function ChairmanExecutiveDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -37,9 +38,9 @@ export default function ChairmanExecutiveDashboard() {
   
   // Mock data for charts
   const typeDistribution = [
-    { type: 'Committee', count: 12 },
-    { type: 'Working Group', count: 8 },
-    { type: 'Task Force', count: 5 }
+    { name: 'Committee', value: 12 },
+    { name: 'Working Group', value: 8 },
+    { name: 'Task Force', value: 5 }
   ];
 
   const monthlyMeetings = [
@@ -103,18 +104,52 @@ export default function ChairmanExecutiveDashboard() {
           .lte('date', thirtyDaysDate);
           
         if (upcomingError) throw upcomingError;
-        setUpcomingMeetings(upcomingData || []);
+        
+        // Map upcoming meetings to our ScheduledMeeting type
+        const mappedUpcomingMeetings: ScheduledMeeting[] = (upcomingData || []).map(meeting => ({
+          id: meeting.id,
+          workbodyId: meeting.workbody_id,
+          workbodyName: meeting.workbody_name,
+          date: meeting.date,
+          time: meeting.time,
+          location: meeting.location,
+          agendaItems: meeting.agenda_items || [],
+          notificationFile: meeting.notification_file_name,
+          notificationFilePath: meeting.notification_file_path,
+          agendaFile: meeting.agenda_file_name || null,
+          agendaFilePath: meeting.agenda_file_path || null
+        }));
+        
+        setUpcomingMeetings(mappedUpcomingMeetings);
         
         // Fetch task forces expiring in next 60 days
         const sixtyDaysLater = new Date();
         sixtyDaysLater.setDate(sixtyDaysLater.getDate() + 60);
         const sixtyDaysDate = sixtyDaysLater.toISOString();
         
+        // Map workbody data to our Workbody type
+        const mappedWorkbodies: Workbody[] = (workbodiesData || []).map(wb => ({
+          id: wb.id,
+          name: wb.name,
+          type: wb.type as WorkbodyType,
+          description: wb.description || undefined,
+          createdDate: wb.created_date,
+          endDate: wb.end_date || undefined,
+          termsOfReference: wb.terms_of_reference || undefined,
+          totalMeetings: wb.total_meetings || 0,
+          meetingsThisYear: wb.meetings_this_year || 0,
+          actionsAgreed: wb.actions_agreed || 0,
+          actionsCompleted: wb.actions_completed || 0,
+          members: [] // We'll fetch members separately if needed
+        }));
+        
         // Just use mock data for now
-        const mockExpiringForces = workbodiesData?.filter(wb => 
-          wb.type === 'task-force' && wb.end_date && new Date(wb.end_date) < sixtyDaysLater
-        ) || [];
+        const mockExpiringForces = mappedWorkbodies.filter(wb => 
+          wb.type === 'task-force' && wb.endDate && new Date(wb.endDate) < sixtyDaysLater
+        );
+        
         setExpiringTaskForces(mockExpiringForces);
+        setWorkbodies(mappedWorkbodies);
         
         // Fetch recent meeting minutes
         const { data: minutesData, error: minutesError } = await supabase
@@ -124,8 +159,31 @@ export default function ChairmanExecutiveDashboard() {
           .limit(5);
           
         if (minutesError) throw minutesError;
-        setRecentMinutes(minutesData || []);
-        setWorkbodies(workbodiesData || []);
+        
+        // Map minutes data to our MeetingMinutes type
+        const mappedMinutes: MeetingMinutes[] = (minutesData || []).map(item => ({
+          id: item.id,
+          workbodyId: item.workbody_id,
+          workbodyName: getWorkbodyName(item.workbody_id, mappedWorkbodies),
+          meetingDate: item.date,
+          date: item.date,
+          venue: item.location,
+          location: item.location,
+          attendees: [],
+          agenda: item.agenda_items || [],
+          agendaItems: item.agenda_items || [],
+          minutes: [],
+          actionItems: [],
+          actionsAgreed: item.actions_agreed || [],
+          decisions: [],
+          createdAt: item.uploaded_at,
+          updatedAt: item.uploaded_at,
+          documentUrl: item.file_url,
+          uploadedAt: item.uploaded_at,
+          uploadedBy: item.uploaded_by || ""
+        }));
+        
+        setRecentMinutes(mappedMinutes);
         
         // For now using mock data for completion rate (would ideally come from action items)
         const completionRate = 78;
@@ -150,6 +208,12 @@ export default function ChairmanExecutiveDashboard() {
     
     fetchDashboardData();
   }, [toast]);
+
+  // Helper function to get workbody name
+  const getWorkbodyName = (workbodyId: string, workbodies: Workbody[]): string => {
+    const workbody = workbodies.find(wb => wb.id === workbodyId);
+    return workbody?.name || "Unknown Workbody";
+  };
 
   return (
     <>
