@@ -22,24 +22,28 @@ export function ChairmanStatCards({
         value={totalWorkbodies}
         icon={Users}
         colorClass="bg-pec-green"
+        clickable={true}
       />
       <StatCard
         title="Meetings This Year"
         value={meetingsThisYear}
         icon={CalendarClock}
         colorClass="bg-pec-gold"
+        clickable={true}
       />
       <StatCard
         title="Action Completion Rate"
         value={`${completionRate}%`}
         icon={CheckSquare}
         colorClass="bg-blue-500"
+        clickable={true}
       />
       <StatCard
         title="Upcoming Meetings"
         value={upcomingMeetingsCount}
         icon={BookOpen}
         colorClass="bg-purple-500"
+        clickable={true}
       />
     </div>
   );
