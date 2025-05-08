@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useEffect } from "react";
 import { useWorkbodies } from "@/hooks/useWorkbodies";
 import { OverviewStats } from "@/components/dashboard/OverviewStats";
@@ -212,9 +211,7 @@ export default function Dashboard() {
       </div>
 
       <WorkbodyTables 
-        workbodiesWithMostMembers={workbodiesWithMostMembers}
-        workbodiesWithMostMeetings={workbodiesWithMostMeetings}
-        handleWorkbodyClick={handleWorkbodyClick}
+        workbodies={sortedFilteredWorkbodies}
       />
 
       <ActionCompletionProgress workbodies={sortedFilteredWorkbodies} />

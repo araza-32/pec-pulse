@@ -6,6 +6,20 @@ interface WorkbodyTablesProps {
   workbodies: Workbody[];
 }
 
+// Helper function to format workbody type strings
+export const formatWorkbodyType = (type: string): string => {
+  switch (type) {
+    case 'committee':
+      return 'Committee';
+    case 'working-group':
+      return 'Working Group';
+    case 'task-force':
+      return 'Task Force';
+    default:
+      return type;
+  }
+};
+
 export const WorkbodyTables = ({ workbodies }: WorkbodyTablesProps) => {
   // Sort workbodies by member count and meeting count
   const sortedByMembers = [...workbodies]

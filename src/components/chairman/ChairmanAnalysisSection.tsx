@@ -68,7 +68,7 @@ export function ChairmanAnalysisSection() {
         text: newComment,
         createdAt: new Date().toISOString(),
         createdBy: session?.id || "unknown",
-        authorName: session?.user.email || "Current User"
+        authorName: session?.email || "Current User"  // Changed from session?.user.email to session?.email
       };
       
       setComments([newCommentObj, ...comments]);
