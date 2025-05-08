@@ -28,11 +28,11 @@ export function ChairmanStatCards({
         title="Meetings This Year"
         value={meetingsThisYear}
         icon={CalendarClock}
-        colorClass="bg-pec-gold"
+        colorClass="bg-amber-500"
         clickable={true}
       />
       <StatCard
-        title="Action Completion Rate"
+        title="Action Completion"
         value={`${completionRate}%`}
         icon={CheckSquare}
         colorClass="bg-blue-500"

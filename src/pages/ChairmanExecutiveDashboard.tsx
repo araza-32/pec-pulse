@@ -4,21 +4,23 @@ import {
   Card, 
   CardContent, 
   CardHeader, 
-  CardTitle 
+  CardTitle,
+  CardDescription
 } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChairmanStatCards } from "@/components/chairman/ChairmanStatCards";
-import { WorkbodyDistributionChart } from "@/components/chairman/WorkbodyDistributionChart";
-import { MonthlyMeetingsChart } from "@/components/chairman/MonthlyMeetingsChart";
 import { ActionCompletionChart } from "@/components/chairman/ActionCompletionChart";
 import { RecentMeetingMinutes } from "@/components/chairman/RecentMeetingMinutes";
 import { ExpiringTaskForces } from "@/components/chairman/ExpiringTaskForces";
-import { ChairmanUpcomingMeetings } from "@/components/chairman/ChairmanUpcomingMeetings";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus, CalendarClock } from "lucide-react";
 import { Workbody, MeetingMinutes, ScheduledMeeting, WorkbodyType } from "@/types";
-import { v4 as uuidv4 } from 'uuid';
+import { WorkbodyTypeNumbers } from "@/components/chairman/WorkbodyTypeNumbers";
+import { ChairmanAnalysisSection } from "@/components/chairman/ChairmanAnalysisSection";
+import { useNavigate } from "react-router-dom";
+import { format, parseISO } from "date-fns";
 
 export default function ChairmanExecutiveDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -34,30 +36,16 @@ export default function ChairmanExecutiveDashboard() {
   const [expiringTaskForces, setExpiringTaskForces] = useState<Workbody[]>([]);
   const [recentMinutes, setRecentMinutes] = useState<MeetingMinutes[]>([]);
   const [timeframe, setTimeframe] = useState<"month" | "quarter" | "year">("month");
+  const [workbodyCounts, setWorkbodyCounts] = useState({
+    committees: 0,
+    workingGroups: 0,
+    taskForces: 0
+  });
+  const navigate = useNavigate();
+  
   const currentYear = new Date().getFullYear();
   
   // Mock data for charts
-  const typeDistribution = [
-    { name: 'Committee', value: 12 },
-    { name: 'Working Group', value: 8 },
-    { name: 'Task Force', value: 5 }
-  ];
-
-  const monthlyMeetings = [
-    { month: "Jan", meetings: 5 },
-    { month: "Feb", meetings: 7 },
-    { month: "Mar", meetings: 10 },
-    { month: "Apr", meetings: 8 },
-    { month: "May", meetings: 12 },
-    { month: "Jun", meetings: 9 },
-    { month: "Jul", meetings: 6 },
-    { month: "Aug", meetings: 8 },
-    { month: "Sep", meetings: 11 },
-    { month: "Oct", meetings: 9 },
-    { month: "Nov", meetings: 7 },
-    { month: "Dec", meetings: 3 }
-  ];
-
   const completionByType = [
     { name: "Committee", agreed: 45, completed: 38 },
     { name: "Working Group", agreed: 32, completed: 25 },
@@ -77,6 +65,33 @@ export default function ChairmanExecutiveDashboard() {
           .select('*');
           
         if (workbodiesError) throw workbodiesError;
+        
+        // Map workbody data to our Workbody type
+        const mappedWorkbodies: Workbody[] = (workbodiesData || []).map(wb => ({
+          id: wb.id,
+          name: wb.name,
+          type: wb.type as WorkbodyType,
+          description: wb.description || undefined,
+          createdDate: wb.created_date,
+          endDate: wb.end_date || undefined,
+          termsOfReference: wb.terms_of_reference || undefined,
+          totalMeetings: wb.total_meetings || 0,
+          meetingsThisYear: wb.meetings_this_year || 0,
+          actionsAgreed: wb.actions_agreed || 0,
+          actionsCompleted: wb.actions_completed || 0,
+          members: [] // We'll fetch members separately if needed
+        }));
+        
+        // Calculate workbody type counts
+        const committees = mappedWorkbodies.filter(wb => wb.type === 'committee').length;
+        const workingGroups = mappedWorkbodies.filter(wb => wb.type === 'working-group').length;
+        const taskForces = mappedWorkbodies.filter(wb => wb.type === 'task-force').length;
+        
+        setWorkbodyCounts({
+          committees,
+          workingGroups,
+          taskForces
+        });
         
         // Fetch meetings from current year
         const currentYear = new Date().getFullYear();
@@ -101,7 +116,8 @@ export default function ChairmanExecutiveDashboard() {
           .from('scheduled_meetings')
           .select('*')
           .gte('date', today)
-          .lte('date', thirtyDaysDate);
+          .lte('date', thirtyDaysDate)
+          .order('date', { ascending: true });
           
         if (upcomingError) throw upcomingError;
         
@@ -121,35 +137,19 @@ export default function ChairmanExecutiveDashboard() {
         }));
         
         setUpcomingMeetings(mappedUpcomingMeetings);
+        setWorkbodies(mappedWorkbodies);
         
         // Fetch task forces expiring in next 60 days
         const sixtyDaysLater = new Date();
         sixtyDaysLater.setDate(sixtyDaysLater.getDate() + 60);
         const sixtyDaysDate = sixtyDaysLater.toISOString();
         
-        // Map workbody data to our Workbody type
-        const mappedWorkbodies: Workbody[] = (workbodiesData || []).map(wb => ({
-          id: wb.id,
-          name: wb.name,
-          type: wb.type as WorkbodyType,
-          description: wb.description || undefined,
-          createdDate: wb.created_date,
-          endDate: wb.end_date || undefined,
-          termsOfReference: wb.terms_of_reference || undefined,
-          totalMeetings: wb.total_meetings || 0,
-          meetingsThisYear: wb.meetings_this_year || 0,
-          actionsAgreed: wb.actions_agreed || 0,
-          actionsCompleted: wb.actions_completed || 0,
-          members: [] // We'll fetch members separately if needed
-        }));
-        
-        // Just use mock data for now
-        const mockExpiringForces = mappedWorkbodies.filter(wb => 
+        // Just use filter for expiring task forces
+        const expiringTaskForces = mappedWorkbodies.filter(wb => 
           wb.type === 'task-force' && wb.endDate && new Date(wb.endDate) < sixtyDaysLater
         );
         
-        setExpiringTaskForces(mockExpiringForces);
-        setWorkbodies(mappedWorkbodies);
+        setExpiringTaskForces(expiringTaskForces);
         
         // Fetch recent meeting minutes
         const { data: minutesData, error: minutesError } = await supabase
@@ -166,9 +166,9 @@ export default function ChairmanExecutiveDashboard() {
           workbodyId: item.workbody_id,
           workbodyName: getWorkbodyName(item.workbody_id, mappedWorkbodies),
           meetingDate: item.date,
-          date: item.date,
+          date: item.date,  // For backward compatibility
           venue: item.location,
-          location: item.location,
+          location: item.location,  // For backward compatibility
           attendees: [],
           agenda: item.agenda_items || [],
           agendaItems: item.agenda_items || [],
@@ -215,6 +215,11 @@ export default function ChairmanExecutiveDashboard() {
     return workbody?.name || "Unknown Workbody";
   };
 
+  // Function to handle scheduling a new meeting
+  const handleScheduleMeeting = () => {
+    navigate('/calendar');
+  };
+
   return (
     <>
       {isLoading ? (
@@ -232,42 +237,88 @@ export default function ChairmanExecutiveDashboard() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
             <Card>
-              <CardHeader>
+              <CardHeader className="text-left">
                 <CardTitle>Workbody Distribution</CardTitle>
+                <CardDescription>Breakdown of workbody types</CardDescription>
               </CardHeader>
               <CardContent>
-                <WorkbodyDistributionChart typeDistribution={typeDistribution} />
+                <WorkbodyTypeNumbers counts={workbodyCounts} />
               </CardContent>
             </Card>
             
             <Card>
-              <CardHeader>
-                <CardTitle>Monthly Meetings</CardTitle>
+              <CardHeader className="text-left">
+                <CardTitle>Action Completion</CardTitle>
+                <CardDescription>Performance by workbody type</CardDescription>
               </CardHeader>
               <CardContent>
-                <MonthlyMeetingsChart 
-                  monthlyMeetings={monthlyMeetings} 
-                  timeframe={timeframe} 
-                  setTimeframe={setTimeframe} 
-                  currentYear={currentYear}
-                />
+                <ActionCompletionChart completionByType={completionByType} />
               </CardContent>
             </Card>
           </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
             <Card className="lg:col-span-2">
-              <CardHeader>
-                <CardTitle>Upcoming Meetings</CardTitle>
+              <CardHeader className="flex flex-row items-center justify-between pb-2 text-left">
+                <div>
+                  <CardTitle>Upcoming Meetings</CardTitle>
+                  <CardDescription>Next scheduled workbody meetings</CardDescription>
+                </div>
+                <Button 
+                  onClick={handleScheduleMeeting}
+                  className="bg-pec-green hover:bg-pec-green/90"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Schedule Meeting
+                </Button>
               </CardHeader>
               <CardContent>
-                <ChairmanUpcomingMeetings upcomingMeetings={upcomingMeetings} />
+                {upcomingMeetings.length > 0 ? (
+                  <div className="space-y-4">
+                    {upcomingMeetings.map(meeting => (
+                      <div 
+                        key={meeting.id} 
+                        className="flex items-start space-x-4 border-b pb-4 last:border-0 hover:bg-gray-50 p-2 rounded-lg transition-colors animate-fade-in"
+                      >
+                        <div className="bg-blue-100 rounded p-2 text-blue-700 flex-shrink-0">
+                          <CalendarClock className="h-5 w-5" />
+                        </div>
+                        <div className="flex-grow text-left">
+                          <div className="font-medium">{meeting.workbodyName || "Unnamed Meeting"}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {format(parseISO(meeting.date), 'MMMM d, yyyy')} at {meeting.time.substring(0, 5)}
+                          </div>
+                          <div className="text-sm text-muted-foreground mt-1">
+                            Location: {meeting.location}
+                          </div>
+                          {meeting.agendaItems && meeting.agendaItems.length > 0 && (
+                            <div className="mt-2 text-sm">
+                              <span className="font-medium">Agenda:</span> {meeting.agendaItems.join(', ')}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-left text-muted-foreground py-6">
+                    <p>No upcoming meetings in the next 30 days.</p>
+                    <Button 
+                      variant="link" 
+                      onClick={handleScheduleMeeting}
+                      className="mt-2 p-0"
+                    >
+                      Schedule a new meeting
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
             
             <Card>
-              <CardHeader>
+              <CardHeader className="text-left">
                 <CardTitle>Task Forces Expiring Soon</CardTitle>
+                <CardDescription>Task forces ending within 60 days</CardDescription>
               </CardHeader>
               <CardContent>
                 <ExpiringTaskForces expiringTaskForces={expiringTaskForces} />
@@ -277,20 +328,22 @@ export default function ChairmanExecutiveDashboard() {
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
             <Card>
-              <CardHeader>
-                <CardTitle>Action Completion</CardTitle>
+              <CardHeader className="text-left">
+                <CardTitle>Recent Meeting Minutes</CardTitle>
+                <CardDescription>Latest workbody meeting records</CardDescription>
               </CardHeader>
               <CardContent>
-                <ActionCompletionChart completionByType={completionByType} />
+                <RecentMeetingMinutes recentMeetings={recentMinutes} workbodies={workbodies} />
               </CardContent>
             </Card>
             
             <Card>
-              <CardHeader>
-                <CardTitle>Recent Meeting Minutes</CardTitle>
+              <CardHeader className="text-left">
+                <CardTitle>Analysis & Comments</CardTitle>
+                <CardDescription>Admin/Coordination notes for Chairman's review</CardDescription>
               </CardHeader>
               <CardContent>
-                <RecentMeetingMinutes recentMeetings={recentMinutes} workbodies={workbodies} />
+                <ChairmanAnalysisSection />
               </CardContent>
             </Card>
           </div>

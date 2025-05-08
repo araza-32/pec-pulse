@@ -1,54 +1,103 @@
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { CalendarClock, MapPin } from "lucide-react";
-import { ScheduledMeeting } from "@/types";
 import { format, parseISO } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { Eye, FileText } from "lucide-react";
+import { ScheduledMeeting } from "@/types";
+import { useNavigate } from "react-router-dom";
 
 interface ChairmanUpcomingMeetingsProps {
-  upcomingMeetings: ScheduledMeeting[] | undefined;
+  upcomingMeetings: ScheduledMeeting[];
 }
 
 export function ChairmanUpcomingMeetings({ upcomingMeetings }: ChairmanUpcomingMeetingsProps) {
+  const navigate = useNavigate();
+
+  const formatDate = (dateStr: string) => {
+    try {
+      return format(parseISO(dateStr), 'MMMM d, yyyy');
+    } catch (e) {
+      return dateStr;
+    }
+  };
+  
+  const handleViewAllMeetings = () => {
+    navigate('/calendar');
+  };
+
+  if (upcomingMeetings.length === 0) {
+    return (
+      <div className="text-left py-6">
+        <p className="text-muted-foreground">No upcoming meetings scheduled in the next 30 days.</p>
+        <Button 
+          variant="outline" 
+          onClick={handleViewAllMeetings}
+          className="mt-4"
+        >
+          View Calendar
+        </Button>
+      </div>
+    );
+  }
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg font-medium">
-          Upcoming Meetings
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {upcomingMeetings && upcomingMeetings.length > 0 ? (
-          <div className="space-y-4">
-            {upcomingMeetings.slice(0, 5).map(meeting => (
-              <div key={meeting.id} className="flex items-start space-x-4 border-b pb-4 last:border-0">
-                <div className="bg-blue-100 rounded p-2 text-blue-700">
-                  <CalendarClock className="h-5 w-5" />
-                </div>
-                <div>
-                  <div className="font-medium">{meeting.workbodyName}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {format(parseISO(meeting.date), "EEEE, MMM d")} at {meeting.time}
-                  </div>
-                  <div className="text-sm text-muted-foreground mt-1">
-                    <span className="inline-flex items-center">
-                      <MapPin className="h-3 w-3 mr-1" />
-                      {meeting.location}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-            {upcomingMeetings.length > 5 && (
-              <Button variant="link" className="mt-2">
-                View all {upcomingMeetings.length} upcoming meetings
+    <div className="space-y-4">
+      {upcomingMeetings.map((meeting) => (
+        <div 
+          key={meeting.id} 
+          className="flex flex-col border rounded-lg p-4 hover:bg-gray-50 transition-colors text-left"
+        >
+          <div className="flex justify-between items-start gap-4">
+            <div>
+              <h4 className="font-medium">{meeting.workbodyName || "Unnamed Meeting"}</h4>
+              <p className="text-sm text-muted-foreground">
+                {formatDate(meeting.date)} at {meeting.time.substring(0, 5)}
+              </p>
+            </div>
+            <div className="flex shrink-0">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="h-8 mr-2"
+                onClick={() => navigate(`/calendar`)}
+              >
+                <Eye className="h-3.5 w-3.5 mr-1.5" />
+                Details
               </Button>
-            )}
+              
+              {meeting.notificationFilePath && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
+                >
+                  <FileText className="h-3.5 w-3.5 mr-1.5" />
+                  Notification
+                </Button>
+              )}
+            </div>
           </div>
-        ) : (
-          <p>No upcoming meetings scheduled in the next 30 days.</p>
-        )}
-      </CardContent>
-    </Card>
+          
+          <div className="mt-2">
+            <p className="text-sm font-medium">Location: <span className="font-normal">{meeting.location}</span></p>
+          </div>
+          
+          {meeting.agendaItems && meeting.agendaItems.length > 0 && (
+            <div className="mt-2">
+              <p className="text-sm font-medium">Agenda:</p>
+              <ul className="list-disc list-inside text-sm ml-2 text-muted-foreground">
+                {meeting.agendaItems.slice(0, 3).map((item, index) => (
+                  <li key={index}>{item}</li>
+                ))}
+                {meeting.agendaItems.length > 3 && (
+                  <li className="list-none text-sm font-medium">
+                    +{meeting.agendaItems.length - 3} more items
+                  </li>
+                )}
+              </ul>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
   );
 }

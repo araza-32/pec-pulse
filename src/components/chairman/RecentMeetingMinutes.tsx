@@ -1,61 +1,74 @@
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { format, parseISO } from "date-fns";
+import { FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { FileText, MapPin } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { MeetingMinutes, Workbody } from "@/types";
-import { format } from "date-fns";
 
 interface RecentMeetingMinutesProps {
   recentMeetings: MeetingMinutes[];
   workbodies: Workbody[];
 }
 
-export function RecentMeetingMinutes({ recentMeetings, workbodies = [] }: RecentMeetingMinutesProps) {
+export function RecentMeetingMinutes({ recentMeetings, workbodies }: RecentMeetingMinutesProps) {
+  const navigate = useNavigate();
+  
+  const formatDate = (date: string) => {
+    try {
+      return format(parseISO(date), 'MMMM d, yyyy');
+    } catch (e) {
+      return date;
+    }
+  };
+
+  if (recentMeetings.length === 0) {
+    return (
+      <div className="text-left py-8">
+        <p className="text-muted-foreground">No recent meeting minutes available.</p>
+      </div>
+    );
+  }
+
+  const handleViewMinutes = (meeting: MeetingMinutes) => {
+    // Navigate to meeting minutes viewer
+    navigate(`/minutes/${meeting.id}`);
+  };
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg font-medium">
-          Recent Meeting Minutes
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {recentMeetings.length > 0 ? (
-          <div className="space-y-4">
-            {recentMeetings.slice(0, 5).map(minutes => {
-              const workbody = workbodies.find(wb => wb.id === minutes.workbodyId);
-              return (
-                <div key={minutes.id} className="flex items-start space-x-4 border-b pb-4 last:border-0">
-                  <div className="bg-green-100 rounded p-2 text-green-700">
-                    <FileText className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <div className="font-medium">{workbody?.name || minutes.workbodyName}</div>
-                    <div className="text-sm text-muted-foreground">
-                      Meeting on {format(new Date(minutes.meetingDate || minutes.date), "MMMM d, yyyy")}
-                    </div>
-                    <div className="text-sm text-muted-foreground mt-1">
-                      <span className="inline-flex items-center">
-                        <MapPin className="h-3 w-3 mr-1" />
-                        {minutes.venue || minutes.location}
-                      </span>
-                    </div>
-                    <Button variant="link" className="h-auto p-0 text-sm mt-1">
-                      View Minutes
-                    </Button>
-                  </div>
-                </div>
-              );
-            })}
-            {recentMeetings.length > 5 && (
-              <Button variant="link" className="mt-2">
-                View all {recentMeetings.length} recent meetings
-              </Button>
-            )}
+    <div className="space-y-4">
+      {recentMeetings.map((meeting) => (
+        <div 
+          key={meeting.id}
+          className="flex items-start space-x-4 border-b pb-4 last:border-0 hover:bg-gray-50 p-2 rounded-lg transition-colors"
+        >
+          <div className="bg-green-100 rounded p-2 text-green-700 flex-shrink-0">
+            <FileText className="h-5 w-5" />
           </div>
-        ) : (
-          <p>No meeting minutes uploaded in the last 30 days.</p>
-        )}
-      </CardContent>
-    </Card>
+          <div className="flex-grow text-left">
+            <div className="font-medium">
+              {meeting.workbodyName || getWorkbodyName(meeting.workbodyId, workbodies)}
+            </div>
+            <div className="text-sm text-muted-foreground">
+              Meeting on {formatDate(meeting.date)}
+            </div>
+            <div className="text-sm text-muted-foreground">
+              {meeting.location}
+            </div>
+            <Button 
+              variant="link" 
+              className="px-0 h-8"
+              onClick={() => handleViewMinutes(meeting)}
+            >
+              View Minutes
+            </Button>
+          </div>
+        </div>
+      ))}
+    </div>
   );
+}
+
+function getWorkbodyName(workbodyId: string, workbodies: Workbody[]): string {
+  const workbody = workbodies.find(w => w.id === workbodyId);
+  return workbody?.name || "Unknown Workbody";
 }
