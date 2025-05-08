@@ -17,6 +17,15 @@ export const useMeetingMutations = (
       // First validate the meeting for duplicates
       await checkForDuplicates(newMeeting);
       
+      // Ensure agendaItems is an array
+      const agendaItemsArray = Array.isArray(newMeeting.agendaItems) 
+        ? newMeeting.agendaItems 
+        : typeof newMeeting.agendaItems === 'string'
+          ? newMeeting.agendaItems.split('\n').filter(item => item.trim() !== '')
+          : [];
+      
+      console.log("Inserting meeting with agendaItems:", agendaItemsArray);
+      
       const { data, error } = await supabase
         .from('scheduled_meetings')
         .insert({
@@ -25,7 +34,7 @@ export const useMeetingMutations = (
           date: newMeeting.date,
           time: newMeeting.time,
           location: newMeeting.location,
-          agenda_items: newMeeting.agendaItems,
+          agenda_items: agendaItemsArray,
           notification_file_name: newMeeting.notificationFile,
           notification_file_path: newMeeting.notificationFilePath,
           agenda_file_name: newMeeting.agendaFile,

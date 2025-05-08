@@ -27,9 +27,13 @@ export const useScheduledMeetings = () => {
         .order('date', { ascending: true })
         .order('time', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching meetings:", error);
+        throw error;
+      }
 
-      console.log("Fetched meetings:", data?.length || 0);
+      console.log("Fetched meetings data:", data);
+      console.log("Fetched meetings count:", data?.length || 0);
 
       const formattedMeetings = data ? data.map(meeting => {
         // Format time to remove seconds (HH:MM format)
@@ -52,6 +56,7 @@ export const useScheduledMeetings = () => {
         };
       }) : [];
 
+      console.log("Formatted meetings:", formattedMeetings);
       setMeetings(formattedMeetings);
     } catch (error) {
       console.error('Error fetching meetings:', error);

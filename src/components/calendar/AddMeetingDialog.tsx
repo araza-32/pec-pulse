@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { WorkbodySelection } from "@/components/minutes/WorkbodySelection";
 import { useToast } from "@/hooks/use-toast";
 import { Workbody } from "@/types";
-import { supabase } from "@/integrations/supabase/client"; // Added missing supabase import
+import { supabase } from "@/integrations/supabase/client";
 
 interface AddMeetingDialogProps {
   isOpen: boolean;
@@ -86,6 +86,7 @@ export function AddMeetingDialog({
 
     try {
       setIsSubmitting(true);
+      console.log("Starting meeting submission process...");
       
       // Upload files if they exist
       let notificationFilePath = null;
@@ -96,17 +97,23 @@ export function AddMeetingDialog({
         const fileName = `${Date.now()}-notification.${fileExt}`;
         const filePath = `meeting-notifications/${fileName}`;
         
+        console.log("Uploading notification file:", fileName);
+        
         const { error: uploadError } = await supabase.storage
           .from('workbody-documents')
           .upload(filePath, notificationFile);
           
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          console.error("Error uploading notification file:", uploadError);
+          throw uploadError;
+        }
         
         const { data: { publicUrl } } = supabase.storage
           .from('workbody-documents')
           .getPublicUrl(filePath);
           
         notificationFilePath = publicUrl;
+        console.log("Notification file uploaded successfully:", notificationFilePath);
       }
       
       if (agendaFile) {
@@ -114,31 +121,46 @@ export function AddMeetingDialog({
         const fileName = `${Date.now()}-agenda.${fileExt}`;
         const filePath = `meeting-agendas/${fileName}`;
         
+        console.log("Uploading agenda file:", fileName);
+        
         const { error: uploadError } = await supabase.storage
           .from('workbody-documents')
           .upload(filePath, agendaFile);
           
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          console.error("Error uploading agenda file:", uploadError);
+          throw uploadError;
+        }
         
         const { data: { publicUrl } } = supabase.storage
           .from('workbody-documents')
           .getPublicUrl(filePath);
           
         agendaFilePath = publicUrl;
+        console.log("Agenda file uploaded successfully:", agendaFilePath);
       }
       
-      await onAddMeeting({
+      const agendaItemsArray = newMeeting.agendaItems
+        .split('\n')
+        .filter(item => item.trim() !== '');
+        
+      console.log("Agenda items prepared:", agendaItemsArray);
+      
+      const meetingData = {
         workbodyId: selectedWorkbodyId,
         workbodyName: selectedWorkbody.name,
         date: newMeeting.date,
         time: newMeeting.time,
         location: newMeeting.location,
-        agendaItems: newMeeting.agendaItems.split('\n').filter(item => item.trim() !== ''),
+        agendaItems: agendaItemsArray,
         notificationFile: notificationFile ? notificationFile.name : null,
         notificationFilePath: notificationFilePath,
         agendaFile: agendaFile ? agendaFile.name : null,
         agendaFilePath: agendaFilePath
-      });
+      };
+      
+      console.log("Submitting meeting data:", meetingData);
+      await onAddMeeting(meetingData);
 
       toast({
         title: "Success",
