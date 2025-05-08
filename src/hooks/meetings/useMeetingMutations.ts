@@ -18,11 +18,18 @@ export const useMeetingMutations = (
       await checkForDuplicates(newMeeting);
       
       // Ensure agendaItems is an array
-      const agendaItemsArray = Array.isArray(newMeeting.agendaItems) 
-        ? newMeeting.agendaItems 
-        : typeof newMeeting.agendaItems === 'string'
-          ? newMeeting.agendaItems.split('\n').filter(item => item.trim() !== '')
-          : [];
+      let agendaItemsArray: string[] = [];
+      
+      // Check if agendaItems exists and determine its type
+      if (newMeeting.agendaItems) {
+        if (Array.isArray(newMeeting.agendaItems)) {
+          // If it's already an array, use it directly
+          agendaItemsArray = newMeeting.agendaItems;
+        } else if (typeof newMeeting.agendaItems === 'string') {
+          // If it's a string, split it into an array
+          agendaItemsArray = newMeeting.agendaItems.split('\n').filter(item => item.trim() !== '');
+        }
+      }
       
       console.log("Inserting meeting with agendaItems:", agendaItemsArray);
       
