@@ -7,7 +7,6 @@ import {
   CardTitle,
   CardDescription
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChairmanStatCards } from "@/components/chairman/ChairmanStatCards";
 import { ActionCompletionChart } from "@/components/chairman/ActionCompletionChart";
@@ -15,12 +14,13 @@ import { RecentMeetingMinutes } from "@/components/chairman/RecentMeetingMinutes
 import { ExpiringTaskForces } from "@/components/chairman/ExpiringTaskForces";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, CalendarClock } from "lucide-react";
+import { Loader2, Clock } from "lucide-react";
 import { Workbody, MeetingMinutes, ScheduledMeeting, WorkbodyType } from "@/types";
 import { WorkbodyTypeNumbers } from "@/components/chairman/WorkbodyTypeNumbers";
 import { ChairmanAnalysisSection } from "@/components/chairman/ChairmanAnalysisSection";
 import { useNavigate } from "react-router-dom";
 import { format, parseISO } from "date-fns";
+import { LowCompletionWorkbodies } from "@/components/chairman/LowCompletionWorkbodies";
 
 export default function ChairmanExecutiveDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -215,11 +215,6 @@ export default function ChairmanExecutiveDashboard() {
     return workbody?.name || "Unknown Workbody";
   };
 
-  // Function to handle scheduling a new meeting
-  const handleScheduleMeeting = () => {
-    navigate('/calendar');
-  };
-
   return (
     <>
       {isLoading ? (
@@ -235,18 +230,19 @@ export default function ChairmanExecutiveDashboard() {
             upcomingMeetingsCount={dashboardData.upcomingMeetingsCount}
           />
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-            <Card>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+            {/* Reduced size workbody distribution card */}
+            <Card className="md:col-span-1">
               <CardHeader className="text-left">
-                <CardTitle>Workbody Distribution</CardTitle>
-                <CardDescription>Breakdown of workbody types</CardDescription>
+                <CardTitle>Workbody Types</CardTitle>
+                <CardDescription>Distribution by category</CardDescription>
               </CardHeader>
               <CardContent>
                 <WorkbodyTypeNumbers counts={workbodyCounts} />
               </CardContent>
             </Card>
             
-            <Card>
+            <Card className="md:col-span-2">
               <CardHeader className="text-left">
                 <CardTitle>Action Completion</CardTitle>
                 <CardDescription>Performance by workbody type</CardDescription>
@@ -264,13 +260,6 @@ export default function ChairmanExecutiveDashboard() {
                   <CardTitle>Upcoming Meetings</CardTitle>
                   <CardDescription>Next scheduled workbody meetings</CardDescription>
                 </div>
-                <Button 
-                  onClick={handleScheduleMeeting}
-                  className="bg-pec-green hover:bg-pec-green/90"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Schedule Meeting
-                </Button>
               </CardHeader>
               <CardContent>
                 {upcomingMeetings.length > 0 ? (
@@ -281,7 +270,7 @@ export default function ChairmanExecutiveDashboard() {
                         className="flex items-start space-x-4 border-b pb-4 last:border-0 hover:bg-gray-50 p-2 rounded-lg transition-colors animate-fade-in"
                       >
                         <div className="bg-blue-100 rounded p-2 text-blue-700 flex-shrink-0">
-                          <CalendarClock className="h-5 w-5" />
+                          <Clock className="h-5 w-5" />
                         </div>
                         <div className="flex-grow text-left">
                           <div className="font-medium">{meeting.workbodyName || "Unnamed Meeting"}</div>
@@ -303,13 +292,6 @@ export default function ChairmanExecutiveDashboard() {
                 ) : (
                   <div className="text-left text-muted-foreground py-6">
                     <p>No upcoming meetings in the next 30 days.</p>
-                    <Button 
-                      variant="link" 
-                      onClick={handleScheduleMeeting}
-                      className="mt-2 p-0"
-                    >
-                      Schedule a new meeting
-                    </Button>
                   </div>
                 )}
               </CardContent>
@@ -324,6 +306,14 @@ export default function ChairmanExecutiveDashboard() {
                 <ExpiringTaskForces expiringTaskForces={expiringTaskForces} />
               </CardContent>
             </Card>
+          </div>
+          
+          {/* Add the new Low Completion Workbodies card */}
+          <div className="mt-6">
+            <LowCompletionWorkbodies 
+              workbodies={workbodies} 
+              isLoading={isLoading} 
+            />
           </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">

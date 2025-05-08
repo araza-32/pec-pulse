@@ -15,22 +15,7 @@ interface Comment {
 }
 
 export function ChairmanAnalysisSection() {
-  const [comments, setComments] = useState<Comment[]>([
-    {
-      id: "1",
-      text: "Task forces need to increase their action completion rate. Current rate is below target by 15%.",
-      createdAt: "2025-05-05T10:30:00Z",
-      createdBy: "admin-1",
-      authorName: "Admin User"
-    },
-    {
-      id: "2",
-      text: "Education Committee has shown significant improvement in meeting attendance. All members attended the last 3 meetings.",
-      createdAt: "2025-05-03T14:45:00Z",
-      createdBy: "coord-1",
-      authorName: "Coordination Officer"
-    }
-  ]);
+  const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
@@ -68,7 +53,7 @@ export function ChairmanAnalysisSection() {
         text: newComment,
         createdAt: new Date().toISOString(),
         createdBy: session?.id || "unknown",
-        authorName: session?.email || "Current User"  // Changed from session?.user.email to session?.email
+        authorName: session?.email || "Current User"
       };
       
       setComments([newCommentObj, ...comments]);
