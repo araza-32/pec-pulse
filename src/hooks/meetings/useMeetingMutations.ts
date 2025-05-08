@@ -1,4 +1,3 @@
-
 import { ScheduledMeeting } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useMeetingValidation } from './useMeetingValidation';
@@ -27,7 +26,9 @@ export const useMeetingMutations = (
           agendaItemsArray = newMeeting.agendaItems;
         } else if (typeof newMeeting.agendaItems === 'string') {
           // If it's a string, split it into an array
-          agendaItemsArray = newMeeting.agendaItems.split('\n').filter(item => item.trim() !== '');
+          // Using type assertion to tell TypeScript this is definitely a string
+          const agendaItemsString = newMeeting.agendaItems as string;
+          agendaItemsArray = agendaItemsString.split('\n').filter(item => item.trim() !== '');
         }
       }
       
