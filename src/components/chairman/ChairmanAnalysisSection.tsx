@@ -82,14 +82,14 @@ export function ChairmanAnalysisSection() {
       <CardHeader className="border-b">
         <CardTitle className="flex items-center gap-2">
           <MessageSquare className="h-5 w-5 text-pec-green" />
-          <span>Chairman's Analysis & Comments</span>
+          <span>Analysis & Comments</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="p-5 space-y-6">
         {canAddComments && (
           <div className="space-y-4 text-left">
             <Textarea
-              placeholder="Add your analysis or comments for the Chairman's review..."
+              placeholder="Add your analysis or comments for review..."
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               className="min-h-[120px] text-left resize-none border-gray-200 focus-visible:ring-1 focus-visible:ring-pec-green"

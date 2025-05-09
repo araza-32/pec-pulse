@@ -2,6 +2,7 @@
 import { ScheduledMeeting } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useMeetingValidation } from './useMeetingValidation';
+import { useToast } from '@/hooks/use-toast';
 
 export const useMeetingMutations = (
   meetings: ScheduledMeeting[], 
@@ -9,6 +10,7 @@ export const useMeetingMutations = (
   refetchMeetings: () => Promise<void>
 ) => {
   const { checkForDuplicates } = useMeetingValidation(meetings);
+  const { toast } = useToast();
 
   const addMeeting = async (newMeeting: Omit<ScheduledMeeting, 'id'>) => {
     console.log("Adding new meeting:", newMeeting);
@@ -27,28 +29,33 @@ export const useMeetingMutations = (
           agendaItemsArray = newMeeting.agendaItems;
         } else if (typeof newMeeting.agendaItems === 'string') {
           // If it's a string, split it into an array
-          // Type assertion here to avoid TypeScript error
-          const agendaItemsString = newMeeting.agendaItems as string;
+          const agendaItemsString = newMeeting.agendaItems as unknown as string;
           agendaItemsArray = agendaItemsString.split('\n').filter(item => item.trim() !== '');
         }
       }
       
       console.log("Inserting meeting with agendaItems:", agendaItemsArray);
       
+      // Prepare meeting data for database insertion
+      const meetingData = {
+        workbody_id: newMeeting.workbodyId,
+        workbody_name: newMeeting.workbodyName,
+        date: newMeeting.date,
+        time: newMeeting.time,
+        location: newMeeting.location,
+        agenda_items: agendaItemsArray,
+        notification_file_name: newMeeting.notificationFile,
+        notification_file_path: newMeeting.notificationFilePath,
+        agenda_file_name: newMeeting.agendaFile,
+        agenda_file_path: newMeeting.agendaFilePath
+      };
+      
+      // Debug log before insertion
+      console.log("Meeting data to be inserted:", meetingData);
+      
       const { data, error } = await supabase
         .from('scheduled_meetings')
-        .insert({
-          workbody_id: newMeeting.workbodyId,
-          workbody_name: newMeeting.workbodyName,
-          date: newMeeting.date,
-          time: newMeeting.time,
-          location: newMeeting.location,
-          agenda_items: agendaItemsArray,
-          notification_file_name: newMeeting.notificationFile,
-          notification_file_path: newMeeting.notificationFilePath,
-          agenda_file_name: newMeeting.agendaFile,
-          agenda_file_path: newMeeting.agendaFilePath
-        })
+        .insert(meetingData)
         .select()
         .single();
 
@@ -62,6 +69,7 @@ export const useMeetingMutations = (
       // Force a refetch to ensure data consistency
       await refetchMeetings();
       
+      // Create a correctly formatted meeting object to return
       const addedMeeting: ScheduledMeeting = {
         id: data.id,
         workbodyId: data.workbody_id,
@@ -76,9 +84,23 @@ export const useMeetingMutations = (
         agendaFilePath: data.agenda_file_path || null
       };
 
+      // Show success toast
+      toast({
+        title: "Meeting Scheduled",
+        description: `${addedMeeting.workbodyName} meeting has been scheduled for ${addedMeeting.date} at ${addedMeeting.time}`,
+      });
+
       return addedMeeting;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding meeting:', error);
+      
+      // Show error toast with specific message
+      toast({
+        title: "Failed to Schedule Meeting",
+        description: error.message || "An unexpected error occurred",
+        variant: "destructive",
+      });
+      
       throw error;
     }
   };
@@ -114,8 +136,20 @@ export const useMeetingMutations = (
       
       // Force a refetch to ensure data consistency
       await refetchMeetings();
-    } catch (error) {
+      
+      toast({
+        title: "Meeting Updated",
+        description: "The meeting has been updated successfully",
+      });
+    } catch (error: any) {
       console.error('Error updating meeting:', error);
+      
+      toast({
+        title: "Update Failed", 
+        description: error.message || "Failed to update meeting",
+        variant: "destructive",
+      });
+      
       throw error;
     }
   };
@@ -163,8 +197,20 @@ export const useMeetingMutations = (
       
       // Force a refetch rather than manipulating the local state directly
       await refetchMeetings();
-    } catch (error) {
+      
+      toast({
+        title: "Meeting Deleted",
+        description: "The meeting has been deleted successfully",
+      });
+    } catch (error: any) {
       console.error('Error deleting meeting:', error);
+      
+      toast({
+        title: "Delete Failed",
+        description: error.message || "Failed to delete meeting",
+        variant: "destructive",
+      });
+      
       // Force a refresh to make sure UI is in sync with actual data
       await refetchMeetings();
       throw error;

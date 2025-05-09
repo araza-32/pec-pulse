@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +9,8 @@ import { WorkbodySelection } from "@/components/minutes/WorkbodySelection";
 import { useToast } from "@/hooks/use-toast";
 import { Workbody } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
+import { Calendar, FileText, Clock, MapPin, ListChecks } from "lucide-react";
+import { Spinner } from "@/components/ui/loading";
 
 interface AddMeetingDialogProps {
   isOpen: boolean;
@@ -32,6 +34,7 @@ export function AddMeetingDialog({
   const [agendaFile, setAgendaFile] = useState<File | null>(null);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [newMeeting, setNewMeeting] = useState({
     date: new Date().toISOString().split('T')[0],
     time: "10:00",
@@ -87,6 +90,7 @@ export function AddMeetingDialog({
     try {
       setIsSubmitting(true);
       console.log("Starting meeting submission process...");
+      setUploadProgress(10);
       
       // Upload files if they exist
       let notificationFilePath = null;
@@ -98,6 +102,7 @@ export function AddMeetingDialog({
         const filePath = `meeting-notifications/${fileName}`;
         
         console.log("Uploading notification file:", fileName);
+        setUploadProgress(20);
         
         const { error: uploadError } = await supabase.storage
           .from('workbody-documents')
@@ -108,6 +113,7 @@ export function AddMeetingDialog({
           throw uploadError;
         }
         
+        setUploadProgress(40);
         const { data: { publicUrl } } = supabase.storage
           .from('workbody-documents')
           .getPublicUrl(filePath);
@@ -115,6 +121,8 @@ export function AddMeetingDialog({
         notificationFilePath = publicUrl;
         console.log("Notification file uploaded successfully:", notificationFilePath);
       }
+      
+      setUploadProgress(60);
       
       if (agendaFile) {
         const fileExt = agendaFile.name.split('.').pop();
@@ -132,6 +140,7 @@ export function AddMeetingDialog({
           throw uploadError;
         }
         
+        setUploadProgress(80);
         const { data: { publicUrl } } = supabase.storage
           .from('workbody-documents')
           .getPublicUrl(filePath);
@@ -145,6 +154,7 @@ export function AddMeetingDialog({
         .filter(item => item.trim() !== '');
         
       console.log("Agenda items prepared:", agendaItemsArray);
+      setUploadProgress(90);
       
       const meetingData = {
         workbodyId: selectedWorkbodyId,
@@ -161,6 +171,7 @@ export function AddMeetingDialog({
       
       console.log("Submitting meeting data:", meetingData);
       await onAddMeeting(meetingData);
+      setUploadProgress(100);
 
       toast({
         title: "Success",
@@ -189,6 +200,7 @@ export function AddMeetingDialog({
       });
     } finally {
       setIsSubmitting(false);
+      setUploadProgress(0);
     }
   };
 
@@ -221,7 +233,10 @@ export function AddMeetingDialog({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="date">Date <span className="text-destructive">*</span></Label>
+              <Label htmlFor="date" className="flex items-center gap-1">
+                <Calendar className="h-4 w-4" />
+                Date <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="date"
                 name="date"
@@ -229,10 +244,14 @@ export function AddMeetingDialog({
                 value={newMeeting.date}
                 onChange={(e) => setNewMeeting({ ...newMeeting, date: e.target.value })}
                 required
+                className="focus-visible:ring-pec-green"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="time">Time <span className="text-destructive">*</span></Label>
+              <Label htmlFor="time" className="flex items-center gap-1">
+                <Clock className="h-4 w-4" />
+                Time <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="time"
                 name="time"
@@ -240,12 +259,16 @@ export function AddMeetingDialog({
                 value={newMeeting.time}
                 onChange={(e) => setNewMeeting({ ...newMeeting, time: e.target.value })}
                 required
+                className="focus-visible:ring-pec-green"
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="location">Location <span className="text-destructive">*</span></Label>
+            <Label htmlFor="location" className="flex items-center gap-1">
+              <MapPin className="h-4 w-4" />
+              Location <span className="text-destructive">*</span>
+            </Label>
             <Input
               id="location"
               name="location"
@@ -253,11 +276,15 @@ export function AddMeetingDialog({
               value={newMeeting.location}
               onChange={(e) => setNewMeeting({ ...newMeeting, location: e.target.value })}
               required
+              className="focus-visible:ring-pec-green"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="agendaItems">Agenda Items (one per line) <span className="text-destructive">*</span></Label>
+            <Label htmlFor="agendaItems" className="flex items-center gap-1">
+              <ListChecks className="h-4 w-4" />
+              Agenda Items (one per line) <span className="text-destructive">*</span>
+            </Label>
             <Textarea
               id="agendaItems"
               name="agendaItems"
@@ -266,11 +293,13 @@ export function AddMeetingDialog({
               value={newMeeting.agendaItems}
               onChange={(e) => setNewMeeting({ ...newMeeting, agendaItems: e.target.value })}
               required
+              className="focus-visible:ring-pec-green resize-none"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="agendaFile">
+            <Label htmlFor="agendaFile" className="flex items-center gap-1">
+              <FileText className="h-4 w-4" />
               Upload Meeting Agenda (PDF)
             </Label>
             <Input 
@@ -278,6 +307,7 @@ export function AddMeetingDialog({
               type="file" 
               accept=".pdf"
               onChange={(e) => setAgendaFile(e.target.files?.[0] || null)}
+              className="focus-visible:ring-pec-green"
             />
             <p className="text-xs text-muted-foreground">
               Upload the detailed agenda document in PDF format
@@ -285,17 +315,19 @@ export function AddMeetingDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="notificationFile">
+            <Label htmlFor="notificationFile" className="flex items-center gap-1">
+              <FileText className="h-4 w-4" />
               Upload Meeting Notification
             </Label>
             <Input 
               id="notificationFile" 
               type="file" 
               onChange={(e) => setNotificationFile(e.target.files?.[0] || null)}
+              className="focus-visible:ring-pec-green"
             />
           </div>
 
-          <div className="flex justify-end space-x-4 pt-4">
+          <DialogFooter className="pt-4">
             <Button
               type="button"
               variant="outline"
@@ -304,10 +336,19 @@ export function AddMeetingDialog({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Scheduling..." : "Schedule Meeting"}
+            <Button 
+              type="submit" 
+              disabled={isSubmitting}
+              className="bg-pec-green hover:bg-pec-green/90"
+            >
+              {isSubmitting ? (
+                <>
+                  <Spinner className="mr-2 h-4 w-4" /> 
+                  {uploadProgress < 100 ? `Scheduling... ${uploadProgress}%` : "Finalizing..."}
+                </>
+              ) : "Schedule Meeting"}
             </Button>
-          </div>
+          </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>

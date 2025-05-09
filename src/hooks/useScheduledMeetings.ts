@@ -16,14 +16,20 @@ export const useScheduledMeetings = () => {
     console.log("Fetching meetings...");
     setIsLoading(true);
     try {
+      // Get meetings from today onwards (no past meetings)
       const today = new Date();
-      const twoWeeksFromNow = addWeeks(today, 2);
+      const twoWeeksFromNow = addWeeks(today, 4); // Extended to 4 weeks for more visibility
+      
+      const todayStr = format(today, 'yyyy-MM-dd');
+      const futureStr = format(twoWeeksFromNow, 'yyyy-MM-dd');
+      
+      console.log(`Fetching meetings from ${todayStr} to ${futureStr}`);
       
       const { data, error } = await supabase
         .from('scheduled_meetings')
         .select('*')
-        .gte('date', format(today, 'yyyy-MM-dd'))
-        .lte('date', format(twoWeeksFromNow, 'yyyy-MM-dd'))
+        .gte('date', todayStr)
+        .lte('date', futureStr)
         .order('date', { ascending: true })
         .order('time', { ascending: true });
 

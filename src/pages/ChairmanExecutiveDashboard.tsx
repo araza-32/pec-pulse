@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { 
   Card, 
@@ -13,7 +14,7 @@ import { RecentMeetingMinutes } from "@/components/chairman/RecentMeetingMinutes
 import { ExpiringTaskForces } from "@/components/chairman/ExpiringTaskForces";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Clock, TrendingUp, AlertTriangle } from "lucide-react";
+import { Loader2, TrendingUp, AlertTriangle } from "lucide-react";
 import { Workbody, MeetingMinutes, ScheduledMeeting, WorkbodyType } from "@/types";
 import { WorkbodyTypeNumbers } from "@/components/chairman/WorkbodyTypeNumbers";
 import { ChairmanAnalysisSection } from "@/components/chairman/ChairmanAnalysisSection";
@@ -22,7 +23,8 @@ import { format, parseISO, subMonths } from "date-fns";
 import { LowCompletionWorkbodies } from "@/components/chairman/LowCompletionWorkbodies";
 import { MeetingsDecisions } from "@/components/chairman-dashboard/MeetingsDecisions";
 import { AlertsQuickAccess } from "@/components/chairman-dashboard/AlertsQuickAccess";
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
+import { EngagementTrendsChart } from "@/components/chairman/EngagementTrendsChart";
+import { useScheduledMeetings } from "@/hooks/useScheduledMeetings";
 
 export default function ChairmanExecutiveDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -34,8 +36,9 @@ export default function ChairmanExecutiveDashboard() {
     upcomingMeetingsCount: 0
   });
   const [workbodies, setWorkbodies] = useState<Workbody[]>([]);
-  const [upcomingMeetings, setUpcomingMeetings] = useState<ScheduledMeeting[]>([]);
+  const { meetings: upcomingMeetings, isLoading: isLoadingMeetings } = useScheduledMeetings();
   const [expiringTaskForces, setExpiringTaskForces] = useState<Workbody[]>([]);
+  const [endedTaskForces, setEndedTaskForces] = useState<Workbody[]>([]);
   const [recentMinutes, setRecentMinutes] = useState<MeetingMinutes[]>([]);
   const [timeframe, setTimeframe] = useState<"month" | "quarter" | "year">("month");
   const [workbodyCounts, setWorkbodyCounts] = useState({
@@ -43,31 +46,16 @@ export default function ChairmanExecutiveDashboard() {
     workingGroups: 0,
     taskForces: 0
   });
-  // New state for monthly activity metrics
-  const [monthlyActivity, setMonthlyActivity] = useState([]);
+  
   const navigate = useNavigate();
+  const { toast } = useToast();
   
-  const currentYear = new Date().getFullYear();
-  
-  // Mock data for charts
   const completionByType = [
     { name: "Committee", agreed: 45, completed: 38 },
     { name: "Working Group", agreed: 32, completed: 25 },
     { name: "Task Force", agreed: 28, completed: 22 }
   ];
 
-  // Mock data for engagement trends (we'd replace this with real data)
-  const mockEngagementTrends = [
-    { month: 'Jan', attendance: 85, participation: 65, completion: 75 },
-    { month: 'Feb', attendance: 82, participation: 68, completion: 73 },
-    { month: 'Mar', attendance: 86, participation: 70, completion: 78 },
-    { month: 'Apr', attendance: 89, participation: 72, completion: 80 },
-    { month: 'May', attendance: 88, participation: 75, completion: 82 },
-    { month: 'Jun', attendance: 92, participation: 80, completion: 85 },
-  ];
-
-  const { toast } = useToast();
-  
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
@@ -120,50 +108,36 @@ export default function ChairmanExecutiveDashboard() {
           
         if (meetingsError) throw meetingsError;
         
-        // Fetch upcoming meetings (next 30 days)
-        const today = new Date().toISOString().split('T')[0];
-        const thirtyDaysLater = new Date();
-        thirtyDaysLater.setDate(thirtyDaysLater.getDate() + 30);
-        const thirtyDaysDate = thirtyDaysLater.toISOString().split('T')[0];
-        
-        const { data: upcomingData, count: upcomingCount, error: upcomingError } = await supabase
-          .from('scheduled_meetings')
-          .select('*')
-          .gte('date', today)
-          .lte('date', thirtyDaysDate)
-          .order('date', { ascending: true });
-          
-        if (upcomingError) throw upcomingError;
-        
-        // Map upcoming meetings to our ScheduledMeeting type
-        const mappedUpcomingMeetings: ScheduledMeeting[] = (upcomingData || []).map(meeting => ({
-          id: meeting.id,
-          workbodyId: meeting.workbody_id,
-          workbodyName: meeting.workbody_name,
-          date: meeting.date,
-          time: meeting.time,
-          location: meeting.location,
-          agendaItems: meeting.agenda_items || [],
-          notificationFile: meeting.notification_file_name,
-          notificationFilePath: meeting.notification_file_path,
-          agendaFile: meeting.agenda_file_name || null,
-          agendaFilePath: meeting.agenda_file_path || null
-        }));
-        
-        setUpcomingMeetings(mappedUpcomingMeetings);
-        setWorkbodies(mappedWorkbodies);
-        
-        // Fetch task forces expiring in next 60 days
+        // Find task forces expiring in next 60 days
+        const today = new Date();
         const sixtyDaysLater = new Date();
         sixtyDaysLater.setDate(sixtyDaysLater.getDate() + 60);
         const sixtyDaysDate = sixtyDaysLater.toISOString();
         
-        // Just use filter for expiring task forces
-        const expiringTaskForces = mappedWorkbodies.filter(wb => 
-          wb.type === 'task-force' && wb.endDate && new Date(wb.endDate) < sixtyDaysLater
+        // Filter for expiring task forces
+        const expiringTFs = mappedWorkbodies.filter(wb => 
+          wb.type === 'task-force' && 
+          wb.endDate && 
+          new Date(wb.endDate) > today &&
+          new Date(wb.endDate) <= sixtyDaysLater
         );
         
-        setExpiringTaskForces(expiringTaskForces);
+        setExpiringTaskForces(expiringTFs);
+        
+        // Filter for ended task forces (within the last 60 days)
+        const sixtyDaysAgo = new Date();
+        sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+        
+        const endedTFs = mappedWorkbodies.filter(wb => 
+          wb.type === 'task-force' && 
+          wb.endDate && 
+          new Date(wb.endDate) <= today &&
+          new Date(wb.endDate) >= sixtyDaysAgo
+        );
+        
+        setEndedTaskForces(endedTFs);
+        
+        setWorkbodies(mappedWorkbodies);
         
         // Fetch recent meeting minutes
         const { data: minutesData, error: minutesError } = await supabase
@@ -206,7 +180,7 @@ export default function ChairmanExecutiveDashboard() {
           totalWorkbodies: workbodiesData?.length || 0,
           meetingsThisYear: meetingsCount || 0,
           completionRate,
-          upcomingMeetingsCount: upcomingCount || 0
+          upcomingMeetingsCount: upcomingMeetings?.length || 0
         });
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
@@ -221,7 +195,7 @@ export default function ChairmanExecutiveDashboard() {
     };
     
     fetchDashboardData();
-  }, [toast]);
+  }, [toast, upcomingMeetings]);
 
   // Helper function to get workbody name
   const getWorkbodyName = (workbodyId: string, workbodies: Workbody[]): string => {
@@ -268,60 +242,35 @@ export default function ChairmanExecutiveDashboard() {
           </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-            {/* Reduced column span for upcoming meetings */}
-            <Card>
+            {/* Task Force section with tabs for expired and expiring */}
+            <Card className="lg:col-span-1">
               <CardHeader className="flex flex-row items-center justify-between pb-2 text-left">
                 <div>
                   <CardTitle className="flex items-center gap-2">
-                    <Clock className="h-5 w-5 text-pec-green-600" />
-                    Upcoming Meetings
+                    <AlertTriangle className="h-5 w-5 text-amber-500" />
+                    Task Force Status
                   </CardTitle>
-                  <CardDescription>Next scheduled workbody meetings</CardDescription>
+                  <CardDescription>Task forces requiring attention</CardDescription>
                 </div>
               </CardHeader>
-              <CardContent className="max-h-[300px] overflow-y-auto">
-                {upcomingMeetings.length > 0 ? (
-                  <div className="space-y-3">
-                    {upcomingMeetings.slice(0, 4).map(meeting => (
-                      <div 
-                        key={meeting.id} 
-                        className="flex items-start space-x-3 border-b pb-3 last:border-0 hover:bg-gray-50 p-2 rounded-lg transition-colors animate-fade-in"
-                      >
-                        <div className="bg-blue-100 rounded-full p-2 text-blue-700 flex-shrink-0">
-                          <Clock className="h-4 w-4" />
-                        </div>
-                        <div className="flex-grow text-left">
-                          <div className="font-medium text-sm">{meeting.workbodyName || "Unnamed Meeting"}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {format(parseISO(meeting.date), 'MMMM d, yyyy')} at {meeting.time.substring(0, 5)}
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-0.5 truncate">
-                            {meeting.location}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                    {upcomingMeetings.length > 4 && (
-                      <div className="text-center text-sm">
-                        <button 
-                          onClick={() => navigate('/calendar')}
-                          className="text-blue-600 hover:text-blue-800 font-medium"
-                        >
-                          + {upcomingMeetings.length - 4} more meetings
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="text-left text-muted-foreground py-6">
-                    <p className="text-sm">No upcoming meetings in the next 30 days.</p>
-                  </div>
-                )}
+              <CardContent>
+                <Tabs defaultValue="expiring">
+                  <TabsList className="w-full mb-4">
+                    <TabsTrigger value="expiring" className="flex-1">Expiring Soon ({expiringTaskForces.length})</TabsTrigger>
+                    <TabsTrigger value="ended" className="flex-1">Recently Ended ({endedTaskForces.length})</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="expiring" className="mt-0">
+                    <ExpiringTaskForces expiringTaskForces={expiringTaskForces} />
+                  </TabsContent>
+                  <TabsContent value="ended" className="mt-0">
+                    <ExpiringTaskForces expiringTaskForces={endedTaskForces} showEnded={true} />
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
             
-            {/* Add Alerts & Quick Access */}
-            <Card>
+            {/* Alerts & Quick Access */}
+            <Card className="lg:col-span-1">
               <CardHeader className="text-left">
                 <CardTitle className="flex items-center gap-2">
                   <AlertTriangle className="h-5 w-5 text-amber-500" />
@@ -338,47 +287,10 @@ export default function ChairmanExecutiveDashboard() {
               </CardContent>
             </Card>
             
-            <Card>
-              <CardHeader className="text-left">
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-emerald-500" />
-                  Engagement Trends
-                </CardTitle>
-                <CardDescription>Member participation metrics</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[240px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={mockEngagementTrends} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                      <XAxis dataKey="month" stroke="#888" fontSize={12} />
-                      <YAxis stroke="#888" fontSize={12} />
-                      <Tooltip />
-                      <Line 
-                        type="monotone" 
-                        dataKey="attendance" 
-                        name="Attendance %" 
-                        stroke="#007A33" 
-                        activeDot={{ r: 8 }} 
-                        strokeWidth={2} 
-                      />
-                      <Line 
-                        type="monotone" 
-                        dataKey="participation" 
-                        name="Discussion %" 
-                        stroke="#3B82F6" 
-                        strokeWidth={2} 
-                      />
-                      <Line 
-                        type="monotone" 
-                        dataKey="completion" 
-                        name="Action Rate" 
-                        stroke="#F97316" 
-                        strokeWidth={2} 
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
+            {/* Enhanced Engagement Trends */}
+            <Card className="lg:col-span-1">
+              <CardContent className="p-0">
+                <EngagementTrendsChart workbodies={workbodies} isLoading={isLoading} />
               </CardContent>
             </Card>
           </div>
@@ -394,7 +306,7 @@ export default function ChairmanExecutiveDashboard() {
                 <MeetingsDecisions 
                   meetings={upcomingMeetings} 
                   workbodies={workbodies} 
-                  isLoading={isLoading} 
+                  isLoading={isLoading || isLoadingMeetings} 
                 />
               </CardContent>
             </Card>
@@ -419,15 +331,7 @@ export default function ChairmanExecutiveDashboard() {
           </div>
           
           <div className="grid grid-cols-1 gap-6 mt-6">
-            <Card>
-              <CardHeader className="text-left">
-                <CardTitle>Analysis & Comments</CardTitle>
-                <CardDescription>Admin/Coordination notes for Chairman's review</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ChairmanAnalysisSection />
-              </CardContent>
-            </Card>
+            <ChairmanAnalysisSection />
           </div>
         </>
       )}
