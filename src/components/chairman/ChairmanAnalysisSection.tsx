@@ -5,6 +5,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { MessageSquare, Send } from "lucide-react";
 
 interface Comment {
   id: string;
@@ -76,41 +78,61 @@ export function ChairmanAnalysisSection() {
   };
 
   return (
-    <div className="space-y-6">
-      {canAddComments && (
-        <div className="space-y-2 text-left">
-          <Textarea
-            placeholder="Add your analysis or comments for the Chairman's review..."
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            className="min-h-[100px] text-left"
-          />
-          <Button 
-            onClick={handleAddComment}
-            disabled={isSubmitting || !newComment.trim()}
-            className="bg-pec-green hover:bg-pec-green/90"
-          >
-            Add Comment
-          </Button>
-        </div>
-      )}
-      
-      <div className="space-y-4">
-        {comments.map((comment) => (
-          <div key={comment.id} className="bg-gray-50 p-4 rounded-lg border text-left">
-            <p className="text-sm text-muted-foreground">
-              {new Date(comment.createdAt).toLocaleDateString()} by {comment.authorName}
-            </p>
-            <p className="mt-2">{comment.text}</p>
-          </div>
-        ))}
-        
-        {comments.length === 0 && (
-          <div className="text-center text-muted-foreground py-4">
-            <p>No analysis or comments have been added yet.</p>
+    <Card className="shadow-card">
+      <CardHeader className="border-b">
+        <CardTitle className="flex items-center gap-2">
+          <MessageSquare className="h-5 w-5 text-pec-green" />
+          <span>Chairman's Analysis & Comments</span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-5 space-y-6">
+        {canAddComments && (
+          <div className="space-y-4 text-left">
+            <Textarea
+              placeholder="Add your analysis or comments for the Chairman's review..."
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              className="min-h-[120px] text-left resize-none border-gray-200 focus-visible:ring-1 focus-visible:ring-pec-green"
+            />
+            <div className="flex justify-end">
+              <Button 
+                onClick={handleAddComment}
+                disabled={isSubmitting || !newComment.trim()}
+                className="bg-pec-green hover:bg-pec-green/90 flex items-center gap-2"
+                size="sm"
+              >
+                <Send className="h-4 w-4" />
+                <span>Add Comment</span>
+              </Button>
+            </div>
           </div>
         )}
-      </div>
-    </div>
+        
+        <div className="space-y-4">
+          {comments.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="bg-gray-100 rounded-full p-4 mb-4">
+                <MessageSquare className="h-6 w-6 text-gray-500" />
+              </div>
+              <h4 className="text-lg font-medium mb-2">No Comments Yet</h4>
+              <p className="text-muted-foreground text-center max-w-md">
+                {canAddComments 
+                  ? "Start the discussion by adding your analysis or comments above."
+                  : "No analysis or comments have been added yet."}
+              </p>
+            </div>
+          ) : (
+            comments.map((comment) => (
+              <div key={comment.id} className="bg-gray-50 p-5 rounded-lg border text-left">
+                <p className="text-sm text-muted-foreground mb-2 flex items-center justify-between">
+                  <span>{new Date(comment.createdAt).toLocaleDateString()} by {comment.authorName}</span>
+                </p>
+                <p className="text-base">{comment.text}</p>
+              </div>
+            ))
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
