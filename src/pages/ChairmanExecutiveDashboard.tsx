@@ -14,7 +14,7 @@ import { RecentMeetingMinutes } from "@/components/chairman/RecentMeetingMinutes
 import { ExpiringTaskForces } from "@/components/chairman/ExpiringTaskForces";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, TrendingUp, AlertTriangle } from "lucide-react";
+import { Loader2, TrendingUp } from "lucide-react";
 import { Workbody, MeetingMinutes, ScheduledMeeting, WorkbodyType } from "@/types";
 import { WorkbodyTypeNumbers } from "@/components/chairman/WorkbodyTypeNumbers";
 import { ChairmanAnalysisSection } from "@/components/chairman/ChairmanAnalysisSection";
@@ -22,9 +22,9 @@ import { useNavigate } from "react-router-dom";
 import { format, parseISO, subMonths } from "date-fns";
 import { LowCompletionWorkbodies } from "@/components/chairman/LowCompletionWorkbodies";
 import { MeetingsDecisions } from "@/components/chairman-dashboard/MeetingsDecisions";
-import { AlertsQuickAccess } from "@/components/chairman-dashboard/AlertsQuickAccess";
 import { EngagementTrendsChart } from "@/components/chairman/EngagementTrendsChart";
 import { useScheduledMeetings } from "@/hooks/useScheduledMeetings";
+import { ChairmanUpcomingMeetings } from "@/components/chairman/ChairmanUpcomingMeetings";
 
 export default function ChairmanExecutiveDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -241,15 +241,12 @@ export default function ChairmanExecutiveDashboard() {
             </Card>
           </div>
           
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
             {/* Task Force section with tabs for expired and expiring */}
             <Card className="lg:col-span-1">
-              <CardHeader className="flex flex-row items-center justify-between pb-2 text-left">
+              <CardHeader className="text-left">
                 <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <AlertTriangle className="h-5 w-5 text-amber-500" />
-                    Task Force Status
-                  </CardTitle>
+                  <CardTitle>Task Force Status</CardTitle>
                   <CardDescription>Task forces requiring attention</CardDescription>
                 </div>
               </CardHeader>
@@ -269,24 +266,6 @@ export default function ChairmanExecutiveDashboard() {
               </CardContent>
             </Card>
             
-            {/* Alerts & Quick Access */}
-            <Card className="lg:col-span-1">
-              <CardHeader className="text-left">
-                <CardTitle className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-amber-500" />
-                  Alerts & Quick Access
-                </CardTitle>
-                <CardDescription>Important items requiring attention</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <AlertsQuickAccess 
-                  workbodies={workbodies} 
-                  meetings={upcomingMeetings} 
-                  isLoading={isLoading} 
-                />
-              </CardContent>
-            </Card>
-            
             {/* Enhanced Engagement Trends */}
             <Card className="lg:col-span-1">
               <CardContent className="p-0">
@@ -295,7 +274,7 @@ export default function ChairmanExecutiveDashboard() {
             </Card>
           </div>
           
-          {/* Meetings & Decisions Card */}
+          {/* Meetings & Decisions Card and Upcoming Meetings */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
             <Card>
               <CardHeader className="text-left">
@@ -313,11 +292,11 @@ export default function ChairmanExecutiveDashboard() {
             
             <Card>
               <CardHeader className="text-left">
-                <CardTitle>Recent Meeting Minutes</CardTitle>
-                <CardDescription>Latest workbody meeting records</CardDescription>
+                <CardTitle>Upcoming Meetings</CardTitle>
+                <CardDescription>Next scheduled meetings</CardDescription>
               </CardHeader>
               <CardContent>
-                <RecentMeetingMinutes recentMeetings={recentMinutes} workbodies={workbodies} />
+                <ChairmanUpcomingMeetings upcomingMeetings={upcomingMeetings.slice(0, 3)} />
               </CardContent>
             </Card>
           </div>

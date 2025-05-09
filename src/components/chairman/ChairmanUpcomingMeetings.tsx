@@ -24,10 +24,10 @@ export function ChairmanUpcomingMeetings({ upcomingMeetings }: ChairmanUpcomingM
     navigate('/calendar');
   };
 
-  if (upcomingMeetings.length === 0) {
+  if (!upcomingMeetings || upcomingMeetings.length === 0) {
     return (
       <div className="text-left py-6">
-        <p className="text-muted-foreground">No upcoming meetings scheduled in the next 30 days.</p>
+        <p className="text-muted-foreground">No upcoming meetings scheduled.</p>
         <Button 
           variant="outline" 
           onClick={handleViewAllMeetings}
@@ -69,6 +69,7 @@ export function ChairmanUpcomingMeetings({ upcomingMeetings }: ChairmanUpcomingM
                   variant="outline"
                   size="sm"
                   className="h-8 bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
+                  onClick={() => window.open(meeting.notificationFilePath, '_blank')}
                 >
                   <FileText className="h-3.5 w-3.5 mr-1.5" />
                   Notification
@@ -98,6 +99,15 @@ export function ChairmanUpcomingMeetings({ upcomingMeetings }: ChairmanUpcomingM
           )}
         </div>
       ))}
+      {upcomingMeetings.length > 0 && (
+        <Button 
+          variant="outline"
+          onClick={handleViewAllMeetings}
+          className="w-full mt-2"
+        >
+          View All Meetings
+        </Button>
+      )}
     </div>
   );
 }
