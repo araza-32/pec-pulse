@@ -9,8 +9,7 @@ import { WorkbodySelection } from "@/components/minutes/WorkbodySelection";
 import { useToast } from "@/hooks/use-toast";
 import { Workbody } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, FileText, Clock, MapPin, ListChecks } from "lucide-react";
-import { Spinner } from "@/components/ui/loading";
+import { Calendar, FileText, Clock, MapPin, ListChecks, Loader2 } from "lucide-react";
 
 interface AddMeetingDialogProps {
   isOpen: boolean;
@@ -343,7 +342,7 @@ export function AddMeetingDialog({
             >
               {isSubmitting ? (
                 <>
-                  <Spinner className="mr-2 h-4 w-4" /> 
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
                   {uploadProgress < 100 ? `Scheduling... ${uploadProgress}%` : "Finalizing..."}
                 </>
               ) : "Schedule Meeting"}
