@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { 
   Card, 
@@ -14,13 +13,16 @@ import { RecentMeetingMinutes } from "@/components/chairman/RecentMeetingMinutes
 import { ExpiringTaskForces } from "@/components/chairman/ExpiringTaskForces";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Clock } from "lucide-react";
+import { Loader2, Clock, TrendingUp, AlertTriangle } from "lucide-react";
 import { Workbody, MeetingMinutes, ScheduledMeeting, WorkbodyType } from "@/types";
 import { WorkbodyTypeNumbers } from "@/components/chairman/WorkbodyTypeNumbers";
 import { ChairmanAnalysisSection } from "@/components/chairman/ChairmanAnalysisSection";
 import { useNavigate } from "react-router-dom";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, subMonths } from "date-fns";
 import { LowCompletionWorkbodies } from "@/components/chairman/LowCompletionWorkbodies";
+import { MeetingsDecisions } from "@/components/chairman-dashboard/MeetingsDecisions";
+import { AlertsQuickAccess } from "@/components/chairman-dashboard/AlertsQuickAccess";
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 
 export default function ChairmanExecutiveDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -41,6 +43,8 @@ export default function ChairmanExecutiveDashboard() {
     workingGroups: 0,
     taskForces: 0
   });
+  // New state for monthly activity metrics
+  const [monthlyActivity, setMonthlyActivity] = useState([]);
   const navigate = useNavigate();
   
   const currentYear = new Date().getFullYear();
@@ -50,6 +54,16 @@ export default function ChairmanExecutiveDashboard() {
     { name: "Committee", agreed: 45, completed: 38 },
     { name: "Working Group", agreed: 32, completed: 25 },
     { name: "Task Force", agreed: 28, completed: 22 }
+  ];
+
+  // Mock data for engagement trends (we'd replace this with real data)
+  const mockEngagementTrends = [
+    { month: 'Jan', attendance: 85, participation: 65, completion: 75 },
+    { month: 'Feb', attendance: 82, participation: 68, completion: 73 },
+    { month: 'Mar', attendance: 86, participation: 70, completion: 78 },
+    { month: 'Apr', attendance: 89, participation: 72, completion: 80 },
+    { month: 'May', attendance: 88, participation: 75, completion: 82 },
+    { month: 'Jun', attendance: 92, participation: 80, completion: 85 },
   ];
 
   const { toast } = useToast();
@@ -254,69 +268,137 @@ export default function ChairmanExecutiveDashboard() {
           </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-            <Card className="lg:col-span-2">
+            {/* Reduced column span for upcoming meetings */}
+            <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2 text-left">
                 <div>
-                  <CardTitle>Upcoming Meetings</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    <Clock className="h-5 w-5 text-pec-green-600" />
+                    Upcoming Meetings
+                  </CardTitle>
                   <CardDescription>Next scheduled workbody meetings</CardDescription>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="max-h-[300px] overflow-y-auto">
                 {upcomingMeetings.length > 0 ? (
-                  <div className="space-y-4">
-                    {upcomingMeetings.map(meeting => (
+                  <div className="space-y-3">
+                    {upcomingMeetings.slice(0, 4).map(meeting => (
                       <div 
                         key={meeting.id} 
-                        className="flex items-start space-x-4 border-b pb-4 last:border-0 hover:bg-gray-50 p-2 rounded-lg transition-colors animate-fade-in"
+                        className="flex items-start space-x-3 border-b pb-3 last:border-0 hover:bg-gray-50 p-2 rounded-lg transition-colors animate-fade-in"
                       >
-                        <div className="bg-blue-100 rounded p-2 text-blue-700 flex-shrink-0">
-                          <Clock className="h-5 w-5" />
+                        <div className="bg-blue-100 rounded-full p-2 text-blue-700 flex-shrink-0">
+                          <Clock className="h-4 w-4" />
                         </div>
                         <div className="flex-grow text-left">
-                          <div className="font-medium">{meeting.workbodyName || "Unnamed Meeting"}</div>
-                          <div className="text-sm text-muted-foreground">
+                          <div className="font-medium text-sm">{meeting.workbodyName || "Unnamed Meeting"}</div>
+                          <div className="text-xs text-muted-foreground">
                             {format(parseISO(meeting.date), 'MMMM d, yyyy')} at {meeting.time.substring(0, 5)}
                           </div>
-                          <div className="text-sm text-muted-foreground mt-1">
-                            Location: {meeting.location}
+                          <div className="text-xs text-muted-foreground mt-0.5 truncate">
+                            {meeting.location}
                           </div>
-                          {meeting.agendaItems && meeting.agendaItems.length > 0 && (
-                            <div className="mt-2 text-sm">
-                              <span className="font-medium">Agenda:</span> {meeting.agendaItems.join(', ')}
-                            </div>
-                          )}
                         </div>
                       </div>
                     ))}
+                    {upcomingMeetings.length > 4 && (
+                      <div className="text-center text-sm">
+                        <button 
+                          onClick={() => navigate('/calendar')}
+                          className="text-blue-600 hover:text-blue-800 font-medium"
+                        >
+                          + {upcomingMeetings.length - 4} more meetings
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="text-left text-muted-foreground py-6">
-                    <p>No upcoming meetings in the next 30 days.</p>
+                    <p className="text-sm">No upcoming meetings in the next 30 days.</p>
                   </div>
                 )}
               </CardContent>
             </Card>
             
+            {/* Add Alerts & Quick Access */}
             <Card>
               <CardHeader className="text-left">
-                <CardTitle>Task Forces Expiring Soon</CardTitle>
-                <CardDescription>Task forces ending within 60 days</CardDescription>
+                <CardTitle className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-amber-500" />
+                  Alerts & Quick Access
+                </CardTitle>
+                <CardDescription>Important items requiring attention</CardDescription>
               </CardHeader>
               <CardContent>
-                <ExpiringTaskForces expiringTaskForces={expiringTaskForces} />
+                <AlertsQuickAccess 
+                  workbodies={workbodies} 
+                  meetings={upcomingMeetings} 
+                  isLoading={isLoading} 
+                />
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="text-left">
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-emerald-500" />
+                  Engagement Trends
+                </CardTitle>
+                <CardDescription>Member participation metrics</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[240px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={mockEngagementTrends} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis dataKey="month" stroke="#888" fontSize={12} />
+                      <YAxis stroke="#888" fontSize={12} />
+                      <Tooltip />
+                      <Line 
+                        type="monotone" 
+                        dataKey="attendance" 
+                        name="Attendance %" 
+                        stroke="#007A33" 
+                        activeDot={{ r: 8 }} 
+                        strokeWidth={2} 
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="participation" 
+                        name="Discussion %" 
+                        stroke="#3B82F6" 
+                        strokeWidth={2} 
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="completion" 
+                        name="Action Rate" 
+                        stroke="#F97316" 
+                        strokeWidth={2} 
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
               </CardContent>
             </Card>
           </div>
           
-          {/* Add the new Low Completion Workbodies card */}
-          <div className="mt-6">
-            <LowCompletionWorkbodies 
-              workbodies={workbodies} 
-              isLoading={isLoading} 
-            />
-          </div>
-          
+          {/* Meetings & Decisions Card */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+            <Card>
+              <CardHeader className="text-left">
+                <CardTitle>Meetings & Decisions</CardTitle>
+                <CardDescription>Meetings by workbody type</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <MeetingsDecisions 
+                  meetings={upcomingMeetings} 
+                  workbodies={workbodies} 
+                  isLoading={isLoading} 
+                />
+              </CardContent>
+            </Card>
+            
             <Card>
               <CardHeader className="text-left">
                 <CardTitle>Recent Meeting Minutes</CardTitle>
@@ -326,7 +408,17 @@ export default function ChairmanExecutiveDashboard() {
                 <RecentMeetingMinutes recentMeetings={recentMinutes} workbodies={workbodies} />
               </CardContent>
             </Card>
-            
+          </div>
+          
+          {/* Add the Low Completion Workbodies card */}
+          <div className="mt-6">
+            <LowCompletionWorkbodies 
+              workbodies={workbodies} 
+              isLoading={isLoading} 
+            />
+          </div>
+          
+          <div className="grid grid-cols-1 gap-6 mt-6">
             <Card>
               <CardHeader className="text-left">
                 <CardTitle>Analysis & Comments</CardTitle>
