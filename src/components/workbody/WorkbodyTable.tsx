@@ -42,33 +42,42 @@ export function WorkbodyTable({
   const endIndex = startIndex + itemsPerPage;
   const currentWorkbodies = workbodies.slice(startIndex, endIndex);
 
+  const getTypeBadgeStyles = (type: string) => {
+    switch (type) {
+      case "committee":
+        return "bg-blue-100 text-blue-700 border-blue-300";
+      case "working-group":
+        return "bg-green-100 text-green-700 border-green-300";
+      case "task-force":
+        return "bg-amber-100 text-amber-700 border-amber-300";
+      default:
+        return "bg-gray-100 text-gray-700 border-gray-300";
+    }
+  };
+
   return (
     <div className="space-y-2">
       <ScrollArea className="h-[600px] rounded-md border">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Created</TableHead>
-              <TableHead>End Date</TableHead>
-              <TableHead className="w-[200px]">Actions</TableHead>
+            <TableRow className="bg-secondary">
+              <TableHead className="font-semibold text-foreground">Name</TableHead>
+              <TableHead className="font-semibold text-foreground">Type</TableHead>
+              <TableHead className="font-semibold text-foreground">Created</TableHead>
+              <TableHead className="font-semibold text-foreground">End Date</TableHead>
+              <TableHead className="w-[200px] font-semibold text-foreground">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {currentWorkbodies.map((workbody) => (
-              <TableRow key={workbody.id}>
+              <TableRow key={workbody.id} className="hover:bg-secondary/50">
                 <TableCell className="font-medium">{workbody.name}</TableCell>
                 <TableCell>
                   <Badge
                     variant="outline"
                     className={cn(
                       "capitalize",
-                      workbody.type === "committee" && "bg-blue-50 text-blue-700",
-                      workbody.type === "working-group" &&
-                        "bg-green-50 text-green-700",
-                      workbody.type === "task-force" &&
-                        "bg-amber-50 text-amber-700"
+                      getTypeBadgeStyles(workbody.type)
                     )}
                   >
                     {workbody.type.replace("-", " ")}

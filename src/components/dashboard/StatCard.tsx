@@ -64,13 +64,25 @@ export function StatCard({
     }
   };
 
+  // Determine gradient class based on colorClass
+  const getGradientClass = () => {
+    if (colorClass.includes('green') || colorClass.includes('pec-green')) return 'bg-gradient-primary';
+    if (colorClass.includes('blue')) return 'bg-gradient-blue';
+    if (colorClass.includes('amber') || colorClass.includes('yellow')) return 'bg-gradient-amber';
+    if (colorClass.includes('purple')) return 'bg-gradient-purple';
+    return colorClass;
+  };
+
   return (
     <Card 
       className={cn(
         `${clickable ? 
           'cursor-pointer transform transition-all duration-300 hover:-translate-y-1 hover:shadow-lg border-2 hover:border-accent' : 
-          'transition-shadow duration-300 hover:shadow-md'} shadow-md border overflow-hidden`,
-        "animate-fade-in"
+          'transition-shadow duration-300 hover:shadow-md'} shadow-card border overflow-hidden`,
+        "animate-fade-in colorful-card",
+        colorClass.includes('blue') ? 'blue' : 
+        colorClass.includes('amber') || colorClass.includes('yellow') ? 'amber' : 
+        colorClass.includes('purple') ? 'purple' : ''
       )}
       onClick={clickable ? handleClick : undefined}
       role={clickable ? "button" : undefined}
@@ -95,7 +107,7 @@ export function StatCard({
               <p className="text-xs text-muted-foreground mt-1">{description}</p>
             )}
             {trend && (
-              <div className={`flex items-center mt-2 text-xs font-medium ${trend.isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+              <div className={`flex items-center mt-2 text-xs font-medium ${trend.isPositive ? 'text-emerald-600' : 'text-rose-600'}`}>
                 <span className={`mr-1 ${trend.isPositive ? 'rotate-0' : 'rotate-180'}`}>
                   ↑
                 </span>
@@ -103,7 +115,7 @@ export function StatCard({
               </div>
             )}
           </div>
-          <div className={`${colorClass} p-3 rounded-lg shadow-sm`}>
+          <div className={`${getGradientClass()} p-3 rounded-lg shadow-sm`}>
             <Icon className="text-white h-5 w-5" />
           </div>
         </div>

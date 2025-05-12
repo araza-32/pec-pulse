@@ -16,11 +16,12 @@ interface WorkbodyDistributionProps {
   }[];
 }
 
-const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8"];
+// More vibrant colors
+const COLORS = ["#3B82F6", "#10B981", "#F59E0B", "#8B5CF6", "#EC4899"];
 
 export function WorkbodyDistributionChart({ typeDistribution }: WorkbodyDistributionProps) {
   return (
-    <Card className="col-span-1">
+    <Card className="col-span-1 colorful-card blue shadow-md">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-lg font-medium">
           Workbody Type Distribution
@@ -34,18 +35,38 @@ export function WorkbodyDistributionChart({ typeDistribution }: WorkbodyDistribu
                 data={typeDistribution}
                 cx="50%"
                 cy="50%"
-                labelLine={false}
+                labelLine={true}
                 label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                outerRadius={80}
+                outerRadius={100}
+                innerRadius={60}
                 fill="#8884d8"
                 dataKey="value"
+                paddingAngle={5}
               >
                 {typeDistribution.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill={COLORS[index % COLORS.length]} 
+                    stroke="#fff"
+                    strokeWidth={2}
+                  />
                 ))}
               </Pie>
-              <Tooltip />
-              <Legend />
+              <Tooltip 
+                formatter={(value: number, name: string) => [`${value} (${((value / typeDistribution.reduce((sum, item) => sum + item.value, 0)) * 100).toFixed(1)}%)`, name]}
+                contentStyle={{ 
+                  backgroundColor: 'white', 
+                  border: '1px solid #f0f0f0',
+                  borderRadius: '8px',
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                }}
+              />
+              <Legend 
+                layout="horizontal" 
+                verticalAlign="bottom" 
+                align="center" 
+                wrapperStyle={{ paddingTop: '20px' }}
+              />
             </RePieChart>
           </ResponsiveContainer>
         </div>

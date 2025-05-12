@@ -21,9 +21,10 @@ export function WorkbodyTypeCards({
         title="Committees"
         value={committees}
         icon={Briefcase}
-        colorClass="bg-pec-green"
+        colorClass="bg-blue-500"
         clickable={true}
         onClick={() => onCardClick && onCardClick('committees')}
+        description="Active standard committees"
       />
       <StatCard
         title="Working Groups"
@@ -32,14 +33,16 @@ export function WorkbodyTypeCards({
         colorClass="bg-amber-500"
         clickable={true}
         onClick={() => onCardClick && onCardClick('workingGroups')}
+        description="Specialized working groups"
       />
       <StatCard
         title="Task Forces"
         value={taskForces}
         icon={BookOpen}
-        colorClass="bg-blue-500"
+        colorClass="bg-purple-500"
         clickable={true}
         onClick={() => onCardClick && onCardClick('taskForces')}
+        description="Special purpose task forces"
       />
     </div>
   );
