@@ -1,6 +1,7 @@
 
 import { saveAs } from 'file-saver';
 import * as XLSX from 'xlsx';
+// Fix the import to use the correct typing
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
