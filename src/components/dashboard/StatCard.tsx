@@ -65,8 +65,8 @@ export function StatCard({
     <Card 
       className={cn(
         `${clickable ? 
-          'cursor-pointer transform transition-all duration-300 hover:-translate-y-1 hover:shadow-lg border-2 hover:border-gray-300' : 
-          'transition-shadow duration-300 hover:shadow-md'} shadow-md border overflow-hidden`,
+          'cursor-pointer transform transition-all duration-300 hover:-translate-y-1 hover:shadow-lg border-2 hover:border-gray-300 dark:hover:border-gray-600' : 
+          'transition-shadow duration-300 hover:shadow-md'} shadow-md border overflow-hidden dark:border-gray-700`,
         "animate-fade-in"
       )}
       onClick={clickable ? handleClick : undefined}
@@ -92,7 +92,7 @@ export function StatCard({
               <p className="text-xs text-muted-foreground mt-1">{description}</p>
             )}
             {trend && (
-              <div className={`flex items-center mt-2 text-xs font-medium ${trend.isPositive ? 'text-emerald-600' : 'text-rose-600'}`}>
+              <div className={`flex items-center mt-2 text-xs font-medium ${trend.isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                 <span className={`mr-1 ${trend.isPositive ? 'rotate-0' : 'rotate-180'}`}>
                   ↑
                 </span>

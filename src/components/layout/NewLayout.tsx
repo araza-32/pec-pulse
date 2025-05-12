@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Loading } from "@/components/ui/loading";
 import { useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -62,10 +63,13 @@ export function NewLayout({ children }: LayoutProps) {
   
   if (isPublicPage) {
     return (
-      <>
+      <div className="min-h-screen flex flex-col">
         {children}
+        <div className="fixed bottom-4 right-4">
+          <ThemeToggle />
+        </div>
         <Toaster />
-      </>
+      </div>
     );
   }
   
@@ -94,6 +98,9 @@ export function NewLayout({ children }: LayoutProps) {
           
         <footer className="border-t bg-white dark:bg-gray-800 dark:border-gray-700 py-4 text-center text-sm text-gray-600 dark:text-gray-400">
           © {new Date().getFullYear()} Pakistan Engineering Council. All rights reserved.
+          <div className="inline-flex ml-4">
+            <ThemeToggle />
+          </div>
         </footer>
       </div>
       

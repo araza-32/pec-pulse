@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useEffect } from "react";
 import { useWorkbodies } from "@/hooks/useWorkbodies";
 import { OverviewStats } from "@/components/dashboard/OverviewStats";
@@ -80,18 +81,6 @@ export default function Dashboard() {
 
   const upcomingMeetingsCount = meetings ? meetings.length : 0;
 
-  const workbodiesWithMostMembers = useMemo(() => {
-    return [...sortedFilteredWorkbodies]
-      .sort((a, b) => b.members.length - a.members.length)
-      .slice(0, 5);
-  }, [sortedFilteredWorkbodies]);
-
-  const workbodiesWithMostMeetings = useMemo(() => {
-    return [...sortedFilteredWorkbodies]
-      .sort((a, b) => b.totalMeetings - a.totalMeetings)
-      .slice(0, 5);
-  }, [sortedFilteredWorkbodies]);
-
   const stats = {
     totalWorkbodies: filteredWorkbodies.length,
     committees: filteredWorkbodies.filter(w => w.type === 'committee').length,
@@ -122,7 +111,7 @@ export default function Dashboard() {
         </div>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
-            <Card key={i} className="shadow-sm hover:shadow-md transition-shadow duration-300">
+            <Card key={i} className="shadow-sm hover:shadow-md transition-shadow duration-300 dark:border-gray-700">
               <CardContent className="p-6">
                 <div className="space-y-2">
                   <Skeleton className="h-4 w-24" />
@@ -149,7 +138,7 @@ export default function Dashboard() {
 
     return (
       <div className="space-y-6">
-        <div className="bg-white p-6 rounded-lg shadow-sm mb-6 border-l-4 border-pec-green">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm mb-6 border-l-4 border-pec-green dark:border-pec-green-500">
           <h1 className="text-3xl font-bold">{workbody.name}</h1>
           <p className="text-muted-foreground mt-2">
             Welcome to your workbody dashboard. Here you can track progress and manage all activities.
@@ -180,7 +169,7 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white p-6 rounded-lg shadow-sm mb-6 border-l-4 border-pec-green">
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm mb-6 border-l-4 border-pec-green dark:border-pec-green-500">
         <h1 className="text-3xl font-bold">PEC Pulse Dashboard</h1>
         <p className="text-muted-foreground mt-2">
           Comprehensive overview of all workbodies, meetings and action items across Pakistan Engineering Council.
