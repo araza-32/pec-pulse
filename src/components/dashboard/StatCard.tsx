@@ -42,6 +42,9 @@ export function StatCard({
       // Default navigation based on title if no onClick provided
       switch (title) {
         case "Total Workbodies":
+        case "Committees":
+        case "Working Groups":
+        case "Task Forces":
           navigate("/workbodies/list");
           break;
         case "Meetings This Year":
@@ -65,8 +68,8 @@ export function StatCard({
     <Card 
       className={cn(
         `${clickable ? 
-          'cursor-pointer transform transition-all duration-300 hover:-translate-y-1 hover:shadow-lg border-2 hover:border-gray-300 dark:hover:border-gray-600' : 
-          'transition-shadow duration-300 hover:shadow-md'} shadow-md border overflow-hidden dark:border-gray-700`,
+          'cursor-pointer transform transition-all duration-300 hover:-translate-y-1 hover:shadow-lg border-2 hover:border-accent' : 
+          'transition-shadow duration-300 hover:shadow-md'} shadow-md border overflow-hidden`,
         "animate-fade-in"
       )}
       onClick={clickable ? handleClick : undefined}

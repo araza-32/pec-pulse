@@ -1,27 +1,18 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useWorkbodies } from "@/hooks/useWorkbodies";
-import { OverviewStats } from "@/components/dashboard/OverviewStats";
-import { WorkbodyDistribution } from "@/components/dashboard/WorkbodyDistribution";
-import { ActionCompletionProgress } from "@/components/dashboard/ActionCompletionProgress";
 import { ExpiringTaskForceAlert } from "@/components/workbody/ExpiringTaskForceAlert"; 
-import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
-import { UpcomingMeetings } from "@/components/dashboard/UpcomingMeetings";
 import { useScheduledMeetings } from "@/hooks/useScheduledMeetings";
-import { WorkbodyTables } from "@/components/dashboard/WorkbodyTables";
-import { AllWorkbodiesTable } from "@/components/dashboard/AllWorkbodiesTable";
-import { DetailDialogs } from "@/components/dashboard/DetailDialogs";
-import { useNavigate } from "react-router-dom";
+import { DashboardContainer } from "@/components/dashboard/DashboardContainer";
+import { DashboardProvider } from "@/contexts/DashboardContext";
 
 export default function Dashboard() {
   const { workbodies, isLoading, refetch } = useWorkbodies();
   const { meetings, isLoading: isLoadingMeetings } = useScheduledMeetings();
   const { session } = useAuth();
-  const [activeDialog, setActiveDialog] = useState<string | null>(null);
-  const navigate = useNavigate();
   
   useEffect(() => {
     const isFirstVisit = !localStorage.getItem('dashboardVisited');
@@ -79,28 +70,105 @@ export default function Dashboard() {
       .sort((a, b) => new Date(a.endDate!).getTime() - new Date(b.endDate!).getTime());
   }, [workbodies]);
 
-  const upcomingMeetingsCount = meetings ? meetings.length : 0;
+  // Transform meetings data
+  const upcomingMeetings = useMemo(() => {
+    if (!meetings) return [];
+    
+    return meetings.map(meeting => ({
+      id: meeting.id,
+      date: new Date(meeting.date),
+      workbodyName: meeting.workbodyName,
+      type: sortedFilteredWorkbodies.find(w => w.id === meeting.workbodyId)?.type || 'unknown'
+    }));
+  }, [meetings, sortedFilteredWorkbodies]);
 
-  const stats = {
-    totalWorkbodies: filteredWorkbodies.length,
-    committees: filteredWorkbodies.filter(w => w.type === 'committee').length,
-    workingGroups: filteredWorkbodies.filter(w => w.type === 'working-group').length,
-    taskForces: filteredWorkbodies.filter(w => w.type === 'task-force').length,
-    totalMeetings: filteredWorkbodies.reduce((sum, w) => sum + w.totalMeetings, 0),
-    meetingsThisYear: filteredWorkbodies.reduce((sum, w) => sum + w.meetingsThisYear, 0),
-    completionRate: filteredWorkbodies.length ? Math.round(
-      (filteredWorkbodies.reduce((sum, w) => sum + w.actionsCompleted, 0) / 
-       Math.max(1, filteredWorkbodies.reduce((sum, w) => sum + w.actionsAgreed, 0))) * 100
-    ) : 0
-  };
-
-  const handleShowDialog = (dialogType: string) => {
-    setActiveDialog(dialogType);
-  };
-
-  const handleWorkbodyClick = (workbodyId: string) => {
-    navigate(`/workbodies/${workbodyId}`);
-  };
+  // Calculate stats for dashboard
+  const workbodiesStats = useMemo(() => {
+    const committees = sortedFilteredWorkbodies.filter(w => w.type === 'committee').length;
+    const workingGroups = sortedFilteredWorkbodies.filter(w => w.type === 'working-group').length;
+    const taskForces = sortedFilteredWorkbodies.filter(w => w.type === 'task-force').length;
+    const actionsCompleted = sortedFilteredWorkbodies.reduce((sum, w) => sum + w.actionsCompleted, 0);
+    const actionsAgreed = sortedFilteredWorkbodies.reduce((sum, w) => sum + w.actionsAgreed, 0);
+    const completionRate = actionsAgreed ? Math.round((actionsCompleted / actionsAgreed) * 100) : 0;
+    const meetingsThisYear = sortedFilteredWorkbodies.reduce((sum, w) => sum + w.meetingsThisYear, 0);
+    
+    // Mock data for now, would come from API
+    const overdueActions = Math.round(actionsAgreed * 0.15);
+    
+    return {
+      totalWorkbodies: sortedFilteredWorkbodies.length,
+      committees,
+      workingGroups,
+      taskForces,
+      actionsCompleted,
+      actionsAgreed,
+      completionRate,
+      meetingsThisYear,
+      upcomingMeetingsCount: upcomingMeetings.length,
+      overdueActions
+    };
+  }, [sortedFilteredWorkbodies, upcomingMeetings.length]);
+  
+  // Mock activity data
+  const recentActivities = useMemo(() => {
+    // Generate sample activities based on workbodies and meetings
+    const activities = [];
+    
+    // Add meeting activities
+    if (meetings && meetings.length) {
+      for (let i = 0; i < Math.min(3, meetings.length); i++) {
+        activities.push({
+          id: `meeting-${i}`,
+          type: 'meeting' as const,
+          title: `Meeting Scheduled`,
+          description: `${meetings[i].workbodyName} meeting has been scheduled.`,
+          timestamp: new Date(Date.now() - i * 24 * 60 * 60 * 1000), // days ago
+          user: 'System',
+          workbody: meetings[i].workbodyName
+        });
+      }
+    }
+    
+    // Add document activities
+    if (sortedFilteredWorkbodies.length) {
+      for (let i = 0; i < Math.min(2, sortedFilteredWorkbodies.length); i++) {
+        activities.push({
+          id: `doc-${i}`,
+          type: 'document' as const,
+          title: `Minutes Uploaded`,
+          description: `Minutes for ${sortedFilteredWorkbodies[i].name} have been uploaded.`,
+          timestamp: new Date(Date.now() - (i + 3) * 24 * 60 * 60 * 1000), // days ago
+          user: 'Admin User',
+          workbody: sortedFilteredWorkbodies[i].name
+        });
+      }
+    }
+    
+    // Add action activities
+    activities.push({
+      id: 'action-1',
+      type: 'action' as const,
+      title: 'Action Item Completed',
+      description: 'Finalize annual report action has been completed.',
+      timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // 5 days ago
+      user: 'Coordination Team',
+      workbody: 'Annual Report Committee'
+    });
+    
+    // Add progress activity
+    activities.push({
+      id: 'progress-1',
+      type: 'progress' as const,
+      title: 'Progress Updated',
+      description: 'ICT Taskforce progress has been updated to 75%.',
+      timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
+      user: 'ICT Manager',
+      workbody: 'ICT Taskforce'
+    });
+    
+    // Sort by timestamp (newest first)
+    return activities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+  }, [meetings, sortedFilteredWorkbodies]);
 
   if (isLoading) {
     return (
@@ -111,107 +179,32 @@ export default function Dashboard() {
         </div>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
-            <Card key={i} className="shadow-sm hover:shadow-md transition-shadow duration-300 dark:border-gray-700">
-              <CardContent className="p-6">
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-8 w-16" />
-                </div>
-              </CardContent>
-            </Card>
+            <div key={i} className="bg-card rounded-lg p-6 shadow-sm">
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-8 w-16" />
+              </div>
+            </div>
           ))}
         </div>
       </div>
     );
   }
 
-  if (user?.role === 'secretary' && !isCoordinationUser) {
-    const workbody = sortedFilteredWorkbodies[0];
-    if (!workbody) {
-      return (
-        <div className="space-y-6">
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground">No workbody assigned.</p>
-        </div>
-      );
-    }
-
-    return (
-      <div className="space-y-6">
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm mb-6 border-l-4 border-pec-green dark:border-pec-green-500">
-          <h1 className="text-3xl font-bold">{workbody.name}</h1>
-          <p className="text-muted-foreground mt-2">
-            Welcome to your workbody dashboard. Here you can track progress and manage all activities.
-          </p>
-        </div>
-        
+  return (
+    <DashboardProvider>
+      <>
         {expiringTaskForces.length > 0 && (
           <ExpiringTaskForceAlert expiringTaskForces={expiringTaskForces} />
         )}
         
-        <OverviewStats stats={{
-          totalWorkbodies: workbody.totalMeetings,
-          meetingsThisYear: workbody.meetingsThisYear,
-          completionRate: workbody.actionsAgreed ? 
-            Math.round((workbody.actionsCompleted / workbody.actionsAgreed) * 100) : 0,
-          upcomingMeetingsCount: upcomingMeetingsCount
-        }} 
-        onStatClick={handleShowDialog}
+        <DashboardContainer 
+          userRole={user?.role || 'user'}
+          workbodiesStats={workbodiesStats}
+          upcomingMeetings={upcomingMeetings}
+          recentActivities={recentActivities}
         />
-        
-        <div className="grid gap-6 md:grid-cols-2">
-          <UpcomingMeetings />
-          <ActionCompletionProgress workbodies={[workbody]} />
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm mb-6 border-l-4 border-pec-green dark:border-pec-green-500">
-        <h1 className="text-3xl font-bold">PEC Pulse Dashboard</h1>
-        <p className="text-muted-foreground mt-2">
-          Comprehensive overview of all workbodies, meetings and action items across Pakistan Engineering Council.
-        </p>
-      </div>
-
-      {expiringTaskForces.length > 0 && (
-        <ExpiringTaskForceAlert expiringTaskForces={expiringTaskForces} />
-      )}
-
-      <OverviewStats 
-        stats={{
-          totalWorkbodies: stats.totalWorkbodies,
-          meetingsThisYear: stats.meetingsThisYear,
-          completionRate: stats.completionRate,
-          upcomingMeetingsCount: upcomingMeetingsCount
-        }}
-        onStatClick={handleShowDialog}
-      />
-
-      <div className="grid gap-6 md:grid-cols-2">
-        <UpcomingMeetings />
-        <WorkbodyDistribution data={{
-          committees: stats.committees,
-          workingGroups: stats.workingGroups,
-          taskForces: stats.taskForces
-        }} />
-      </div>
-
-      <WorkbodyTables 
-        workbodies={sortedFilteredWorkbodies}
-      />
-
-      <ActionCompletionProgress workbodies={sortedFilteredWorkbodies} />
-
-      <AllWorkbodiesTable workbodies={sortedFilteredWorkbodies} />
-
-      <DetailDialogs 
-        activeDialog={activeDialog}
-        setActiveDialog={setActiveDialog}
-        workbodies={sortedFilteredWorkbodies}
-      />
-    </div>
+      </>
+    </DashboardProvider>
   );
 }

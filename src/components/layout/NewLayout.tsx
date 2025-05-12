@@ -63,7 +63,7 @@ export function NewLayout({ children }: LayoutProps) {
   
   if (isPublicPage) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col bg-background text-foreground">
         {children}
         <div className="fixed bottom-4 right-4">
           <ThemeToggle />
@@ -74,7 +74,7 @@ export function NewLayout({ children }: LayoutProps) {
   }
   
   return (
-    <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="flex min-h-screen bg-background">
       <NewSidebar 
         userRole={currentUser?.role}
         isOpen={sidebarOpen} 
@@ -96,7 +96,7 @@ export function NewLayout({ children }: LayoutProps) {
           </div>
         </main>
           
-        <footer className="border-t bg-white dark:bg-gray-800 dark:border-gray-700 py-4 text-center text-sm text-gray-600 dark:text-gray-400">
+        <footer className="border-t bg-card py-4 text-center text-sm text-muted-foreground">
           © {new Date().getFullYear()} Pakistan Engineering Council. All rights reserved.
           <div className="inline-flex ml-4">
             <ThemeToggle />

@@ -18,24 +18,23 @@ export const OverviewStats = ({ stats, onStatClick }: OverviewStatsProps) => {
 
   const handleClick = (statType: string) => {
     // Handle navigation based on stat type
-    switch (statType) {
-      case 'totalWorkbodies':
-        navigate('/workbodies/list');
-        break;
-      case 'meetingsThisYear':
-        navigate('/meetings/year');
-        break;
-      case 'upcomingMeetings':
-        navigate('/calendar');
-        break;
-      case 'actionCompletion':
-        navigate('/reports');
-        break;
-      default:
-        // For Dialog-based stats, use the original handler
-        if (onStatClick) {
-          onStatClick(statType);
-        }
+    if (onStatClick) {
+      onStatClick(statType);
+    } else {
+      switch (statType) {
+        case 'totalWorkbodies':
+          navigate('/workbodies/list');
+          break;
+        case 'meetingsThisYear':
+          navigate('/meetings/year');
+          break;
+        case 'upcomingMeetings':
+          navigate('/calendar');
+          break;
+        case 'actionCompletion':
+          navigate('/reports');
+          break;
+      }
     }
   };
 
