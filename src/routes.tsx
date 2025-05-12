@@ -1,5 +1,5 @@
 
-import { Layout } from "./components/layout/Layout";
+import { NewLayout } from "./components/layout/NewLayout";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -129,18 +129,18 @@ export const router = [
     ...route,
     element: (
       <ProtectedRoute>
-        <Layout>
+        <NewLayout>
           {route.element}
-        </Layout>
+        </NewLayout>
       </ProtectedRoute>
     )
   })),
   {
     path: "*",
     element: (
-      <Layout>
+      <NewLayout>
         <NotFound />
-      </Layout>
+      </NewLayout>
     ),
   },
 ];
