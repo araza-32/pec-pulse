@@ -115,20 +115,25 @@ export function WorkBodyDrawer({
           <div className="mb-6">
             <h3 className="text-sm font-medium text-gray-500 mb-2">Composition</h3>
             <div className="flex flex-wrap gap-2">
-              {workbody.members.map(member => (
-                <div key={member.id} className="flex items-center rounded-full bg-gray-100 px-3 py-1">
-                  <Avatar className="h-5 w-5 mr-2">
-                    <AvatarImage src={member.avatar} />
-                    <AvatarFallback className="text-xs">
-                      {getInitials(member.name)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="text-xs">{member.name}</span>
-                  <Badge variant="outline" className="ml-1 text-[10px] px-1 py-0 h-4 bg-white">
-                    {member.role}
-                  </Badge>
-                </div>
-              ))}
+              {/* Add null check for members array */}
+              {workbody.members && workbody.members.length > 0 ? (
+                workbody.members.map(member => (
+                  <div key={member.id} className="flex items-center rounded-full bg-gray-100 px-3 py-1">
+                    <Avatar className="h-5 w-5 mr-2">
+                      <AvatarImage src={member.avatar} />
+                      <AvatarFallback className="text-xs">
+                        {getInitials(member.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="text-xs">{member.name}</span>
+                    <Badge variant="outline" className="ml-1 text-[10px] px-1 py-0 h-4 bg-white">
+                      {member.role}
+                    </Badge>
+                  </div>
+                ))
+              ) : (
+                <div className="text-sm text-muted-foreground">No members listed</div>
+              )}
             </div>
           </div>
 
@@ -143,7 +148,8 @@ export function WorkBodyDrawer({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {workbody.meetings.length > 0 ? (
+                {/* Add null check for meetings array */}
+                {workbody.meetings && workbody.meetings.length > 0 ? (
                   workbody.meetings.map(meeting => (
                     <TableRow key={meeting.id}>
                       <TableCell className="font-medium">{meeting.date}</TableCell>

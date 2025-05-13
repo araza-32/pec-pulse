@@ -76,9 +76,53 @@ export default function WorkbodiesOverview() {
     console.log("Sort option:", option);
   };
 
-  // Get selected workbody
+  // Get selected workbody with enhanced data for the drawer
   const getWorkbodyById = (id: string) => {
-    return workbodies.find(wb => wb.id === id) || null;
+    const workbody = workbodies.find(wb => wb.id === id);
+    
+    if (!workbody) return null;
+    
+    // Generate abbreviation from name
+    let abbreviation = "";
+    const match = workbody.name.match(/\(([^)]+)\)$/);
+    
+    if (match && match[1]) {
+      // Use abbreviation found in parentheses
+      abbreviation = match[1];
+    } else {
+      // Create abbreviation from first letters of words
+      abbreviation = workbody.name.split(' ')
+        .filter(word => word.length > 0)
+        .map(word => word[0])
+        .join('')
+        .toUpperCase()
+        .substring(0, 3);
+    }
+    
+    // Generate mock meetings if needed
+    const meetings = workbody.meetingsThisYear ? 
+      Array.from({ length: workbody.meetingsThisYear }, (_, i) => ({
+        id: `${workbody.id}-meeting-${i}`,
+        date: new Date(Date.now() - i * 30 * 24 * 60 * 60 * 1000).toLocaleDateString(),
+        title: `Regular Meeting ${i + 1}`,
+        hasMinutes: i < 2 // Only recent meetings have minutes
+      })) : [];
+    
+    // Return enhanced workbody with required fields for the drawer
+    return {
+      id: workbody.id,
+      name: workbody.name,
+      abbreviation,
+      mandate: workbody.description,
+      termsOfReference: workbody.termsOfReference,
+      members: workbody.members || [],
+      meetings,
+      lastProgressLog: workbody.meetingsThisYear > 0 ? {
+        content: `The ${workbody.name} has made progress on several key initiatives this quarter.`,
+        date: new Date().toLocaleDateString(),
+        author: 'System'
+      } : undefined
+    };
   };
 
   return (
