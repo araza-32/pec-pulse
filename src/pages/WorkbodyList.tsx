@@ -72,16 +72,6 @@ export default function WorkbodyList() {
     }
   };
   
-  const getChairperson = (workbody: any) => {
-    if (!workbody.members) return "Not assigned";
-    
-    const chairperson = workbody.members.find(
-      (member: any) => member.role === "chairman" || member.role === "chairperson"
-    );
-    
-    return chairperson ? chairperson.name : "Not assigned";
-  };
-  
   const getWorkbodyStatus = (workbody: any) => {
     if (workbody.type === "task-force" && workbody.endDate) {
       const endDate = new Date(workbody.endDate);
@@ -92,6 +82,23 @@ export default function WorkbodyList() {
       }
     }
     return { label: "Active", className: "bg-green-100 text-green-800" };
+  };
+
+  const getEndOfTermText = (workbody: any) => {
+    if (workbody.endDate) {
+      return format(new Date(workbody.endDate), "MMM d, yyyy");
+    }
+    
+    switch(workbody.type) {
+      case "committee":
+        return "Tenure of GB";
+      case "working-group":
+        return "Decision of Management";
+      case "task-force":
+        return "Not specified";
+      default:
+        return "-";
+    }
   };
   
   return (
@@ -157,8 +164,7 @@ export default function WorkbodyList() {
                 <TableHead>Name</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Chairperson</TableHead>
-                <TableHead>Expiry Date</TableHead>
+                <TableHead>End of Term</TableHead>
                 <TableHead className="text-right">Action</TableHead>
               </TableRow>
             </TableHeader>
@@ -180,15 +186,12 @@ export default function WorkbodyList() {
                           {status.label}
                         </span>
                       </TableCell>
-                      <TableCell>{getChairperson(workbody)}</TableCell>
-                      <TableCell>
-                        {workbody.endDate ? format(new Date(workbody.endDate), "MMM d, yyyy") : "Permanent"}
-                      </TableCell>
+                      <TableCell>{getEndOfTermText(workbody)}</TableCell>
                       <TableCell className="text-right">
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => navigate(`/workbodies/${workbody.id}`)}
+                          onClick={() => navigate(`/workbody/${workbody.id}`)}
                         >
                           View Details
                         </Button>
@@ -198,7 +201,7 @@ export default function WorkbodyList() {
                 })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
+                  <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
                     No workbodies found matching the current filters.
                   </TableCell>
                 </TableRow>

@@ -128,29 +128,33 @@ export function UserManagement() {
     
     try {
       // Create the user directly in the auth table using the signUp method
-      // This is more reliable than using admin.createUser which requires special permissions
       const { data, error } = await supabase.auth.signUp({
         email: newUser.email,
         password: newUser.password,
         options: {
           data: {
             name: newUser.name,
-            role: newUser.role,
-            workbody_id: newUser.workbodyId || null
+            role: newUser.role
           }
         }
       });
       
       if (error) throw error;
       
-      // Add user details to profiles table
+      // Add user details to profiles table without workbody_id
       if (data?.user) {
-        const { error: profileError } = await supabase.from('profiles').upsert({
+        const profileData: any = {
           id: data.user.id,
           name: newUser.name,
-          role: newUser.role,
-          workbody_id: newUser.workbodyId || null
-        });
+          role: newUser.role
+        };
+        
+        // Only add workbody_id if it's secretary role and a workbody is selected
+        if (newUser.role === 'secretary' && newUser.workbodyId) {
+          profileData.workbody_id = newUser.workbodyId;
+        }
+        
+        const { error: profileError } = await supabase.from('profiles').upsert(profileData);
         
         if (profileError) throw profileError;
       }

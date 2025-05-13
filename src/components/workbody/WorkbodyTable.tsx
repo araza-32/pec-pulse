@@ -55,6 +55,23 @@ export function WorkbodyTable({
     }
   };
 
+  const getEndOfTermText = (workbody: Workbody) => {
+    if (workbody.endDate) {
+      return new Date(workbody.endDate).toLocaleDateString();
+    }
+    
+    switch(workbody.type) {
+      case "committee":
+        return "Tenure of GB";
+      case "working-group":
+        return "Decision of Management";
+      case "task-force":
+        return "Not specified";
+      default:
+        return "-";
+    }
+  };
+
   return (
     <div className="space-y-2">
       <ScrollArea className="h-[600px] rounded-md border">
@@ -64,7 +81,7 @@ export function WorkbodyTable({
               <TableHead className="font-semibold text-foreground">Name</TableHead>
               <TableHead className="font-semibold text-foreground">Type</TableHead>
               <TableHead className="font-semibold text-foreground">Created</TableHead>
-              <TableHead className="font-semibold text-foreground">End Date</TableHead>
+              <TableHead className="font-semibold text-foreground">End of Term</TableHead>
               <TableHead className="w-[200px] font-semibold text-foreground">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -87,9 +104,7 @@ export function WorkbodyTable({
                   {new Date(workbody.createdDate).toLocaleDateString()}
                 </TableCell>
                 <TableCell>
-                  {workbody.endDate
-                    ? new Date(workbody.endDate).toLocaleDateString()
-                    : "-"}
+                  {getEndOfTermText(workbody)}
                 </TableCell>
                 <TableCell>
                   <div className="flex space-x-2">

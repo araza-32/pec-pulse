@@ -18,9 +18,9 @@ export function getNavigation(): SidebarItem[] {
   return [
     { 
       name: "Dashboard", 
-      href: "/dashboard", 
+      href: "/", 
       icon: Home, 
-      current: location.pathname === "/dashboard",
+      current: location.pathname === "/" || location.pathname === "/dashboard",
       roles: ["admin", "secretary", "chairman", "registrar"]
     },
     { 
@@ -34,9 +34,22 @@ export function getNavigation(): SidebarItem[] {
       name: "Workbodies",
       href: "/workbodies",
       icon: Users,
-      current: location.pathname.startsWith("/workbodies") && location.pathname !== "/workbodies/list",
-      children: [],
-      roles: ["admin", "secretary"]
+      current: location.pathname === "/workbodies" || location.pathname.startsWith("/workbody/"),
+      roles: ["admin", "secretary", "chairman", "registrar", "coordination"]
+    },
+    {
+      name: "Workbodies Overview",
+      href: "/workbodies-overview",
+      icon: Users,
+      current: location.pathname === "/workbodies-overview",
+      roles: ["admin", "chairman", "registrar", "coordination"]
+    },
+    {
+      name: "Workbody Management",
+      href: "/workbody-management",
+      icon: Users,
+      current: location.pathname === "/workbody-management",
+      roles: ["admin", "coordination"]
     },
     {
       name: "Meeting Minutes",

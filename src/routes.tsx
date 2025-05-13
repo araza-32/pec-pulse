@@ -11,6 +11,7 @@ import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
 import NotFound from './pages/NotFound';
+import WorkbodyManagement from './pages/WorkbodyManagement';
 
 export const router = [
   {
@@ -34,6 +35,10 @@ export const router = [
     element: <Layout><WorkbodyDetail /></Layout>,
   },
   {
+    path: '/workbodies/:id',
+    element: <Layout><WorkbodyDetail /></Layout>,
+  },
+  {
     path: '/calendar',
     element: <Layout><MeetingCalendar /></Layout>,
   },
@@ -44,6 +49,10 @@ export const router = [
   {
     path: '/settings',
     element: <Layout><Settings /></Layout>,
+  },
+  {
+    path: '/workbody-management',
+    element: <Layout><WorkbodyManagement /></Layout>,
   },
   {
     path: '/login',
