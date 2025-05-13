@@ -1,17 +1,9 @@
 
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
-import { 
-  Select, 
-  SelectTrigger, 
-  SelectValue, 
-  SelectContent, 
-  SelectItem 
-} from "@/components/ui/select";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Search } from "lucide-react";
-import { debounce } from "lodash";
-
-export type SortOption = "progress" | "meetings" | "alphabetical";
+import { SortOption } from "@/hooks/useWorkBodiesQuery";
 
 interface SearchSortBarProps {
   onSearch: (query: string) => void;
@@ -19,37 +11,44 @@ interface SearchSortBarProps {
   defaultSort?: SortOption;
 }
 
-export function SearchSortBar({
-  onSearch,
-  onSort,
-  defaultSort = "progress"
-}: SearchSortBarProps) {
+export function SearchSortBar({ onSearch, onSort, defaultSort = "progress" }: SearchSortBarProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortOption, setSortOption] = useState<SortOption>(defaultSort);
-  
-  // Debounced search function
-  const debouncedSearch = debounce((query: string) => {
-    onSearch(query);
-  }, 300);
-  
+  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
+
+  // Custom debounce implementation without using lodash
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
     setSearchQuery(query);
-    debouncedSearch(query);
+    
+    // Clear previous timeout
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+    }
+    
+    // Set new timeout
+    const timeout = setTimeout(() => {
+      onSearch(query);
+    }, 300);
+    
+    setSearchTimeout(timeout as any);
   };
-  
-  const handleSortChange = (value: SortOption) => {
-    setSortOption(value);
-    onSort(value);
+
+  const handleSortChange = (value: string) => {
+    const sortOption = value as SortOption;
+    setSortOption(sortOption);
+    onSort(sortOption);
   };
-  
+
+  // Clean up timeout on component unmount
   useEffect(() => {
-    // Cleanup debounce on component unmount
     return () => {
-      debouncedSearch.cancel();
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
+      }
     };
-  }, []);
-  
+  }, [searchTimeout]);
+
   return (
     <div className="flex items-center space-x-3">
       <div className="relative flex-1">
@@ -61,10 +60,8 @@ export function SearchSortBar({
           onChange={handleSearchChange}
         />
       </div>
-      <Select 
-        value={sortOption} 
-        onValueChange={(value) => handleSortChange(value as SortOption)}
-      >
+      
+      <Select value={sortOption} onValueChange={(value) => handleSortChange(value)}>
         <SelectTrigger className="w-[180px]">
           <SelectValue placeholder="Sort by" />
         </SelectTrigger>

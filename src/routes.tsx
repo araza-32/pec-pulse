@@ -19,6 +19,10 @@ export const router = [
     element: <Layout><Dashboard /></Layout>,
   },
   {
+    path: '/dashboard',
+    element: <Layout><Dashboard /></Layout>,
+  },
+  {
     path: '/chairman-dashboard',
     element: <Layout><ChairmanDashboard /></Layout>,
   },

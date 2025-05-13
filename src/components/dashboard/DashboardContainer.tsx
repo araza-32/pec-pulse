@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { OverviewStats } from "./OverviewStats";
 import { DashboardHero } from "./DashboardHero";
-import { WorkbodyDistributionChart } from "./WorkbodyDistributionChart";
 import { MeetingsOverview } from "./MeetingsOverview";
 import { ActionItemsTracking } from "./ActionItemsTracking";
 import { ActivityFeed } from "./ActivityFeed";
@@ -96,21 +95,12 @@ export function DashboardContainer({
         onWorkbodyTypeClick={handleWorkbodyTypeClick}
       />
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
         <div className="lg:col-span-2">
           <MeetingsOverview
             meetings={upcomingMeetings}
             meetingsThisYear={workbodiesStats.meetingsThisYear}
             onViewAllClick={handleViewAllMeetings}
-          />
-        </div>
-        <div>
-          <WorkbodyDistributionChart
-            data={{
-              committees: workbodiesStats.committees,
-              workingGroups: workbodiesStats.workingGroups,
-              taskForces: workbodiesStats.taskForces
-            }}
           />
         </div>
       </div>

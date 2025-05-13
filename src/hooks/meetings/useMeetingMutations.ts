@@ -1,7 +1,7 @@
 
-import { ScheduledMeeting } from '@/types';
+import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useMeetingValidation } from './useMeetingValidation';
+import { ScheduledMeeting } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 
 export const useMeetingMutations = (
@@ -9,213 +9,155 @@ export const useMeetingMutations = (
   setMeetings: React.Dispatch<React.SetStateAction<ScheduledMeeting[]>>,
   refetchMeetings: () => Promise<void>
 ) => {
-  const { checkForDuplicates } = useMeetingValidation(meetings);
+  const [isUpdating, setIsUpdating] = useState(false);
   const { toast } = useToast();
 
-  const addMeeting = async (newMeeting: Omit<ScheduledMeeting, 'id'>) => {
-    console.log("Adding new meeting:", newMeeting);
-    
+  // Add a new meeting
+  const addMeeting = async (meetingData: Omit<ScheduledMeeting, 'id'>) => {
+    const { 
+      workbodyId, 
+      workbodyName, 
+      date, 
+      time, 
+      location, 
+      agendaItems,
+      notificationFile,
+      notificationFilePath,
+      agendaFile,
+      agendaFilePath
+    } = meetingData;
+
     try {
-      // First validate the meeting for duplicates
-      await checkForDuplicates(newMeeting);
-      
-      // Ensure agendaItems is an array
-      let agendaItemsArray: string[] = [];
-      
-      // Check if agendaItems exists and determine its type
-      if (newMeeting.agendaItems) {
-        if (Array.isArray(newMeeting.agendaItems)) {
-          // If it's already an array, use it directly
-          agendaItemsArray = newMeeting.agendaItems;
-        } else if (typeof newMeeting.agendaItems === 'string') {
-          // If it's a string, split it into an array
-          const agendaItemsString = newMeeting.agendaItems as unknown as string;
-          agendaItemsArray = agendaItemsString.split('\n').filter(item => item.trim() !== '');
-        }
-      }
-      
-      console.log("Inserting meeting with agendaItems:", agendaItemsArray);
-      
-      // Prepare meeting data for database insertion
-      const meetingData = {
-        workbody_id: newMeeting.workbodyId,
-        workbody_name: newMeeting.workbodyName,
-        date: newMeeting.date,
-        time: newMeeting.time,
-        location: newMeeting.location,
-        agenda_items: agendaItemsArray,
-        notification_file_name: newMeeting.notificationFile,
-        notification_file_path: newMeeting.notificationFilePath,
-        agenda_file_name: newMeeting.agendaFile,
-        agenda_file_path: newMeeting.agendaFilePath
+      const meetingPayload = {
+        workbody_id: workbodyId,
+        workbody_name: workbodyName,
+        date,
+        time,
+        location,
+        agenda_items: agendaItems || [],
+        notification_file_name: notificationFile || null,
+        notification_file_path: notificationFilePath || null,
+        agenda_file_name: agendaFile || null, 
+        agenda_file_path: agendaFilePath || null
       };
-      
-      // Debug log before insertion
-      console.log("Meeting data to be inserted:", meetingData);
-      
+
       const { data, error } = await supabase
         .from('scheduled_meetings')
-        .insert(meetingData)
+        .insert(meetingPayload)
         .select()
         .single();
 
-      if (error) {
-        console.error("Error adding meeting:", error);
-        throw error;
-      }
+      if (error) throw error;
 
-      console.log("Meeting added successfully:", data);
-      
-      // Force a refetch to ensure data consistency
-      await refetchMeetings();
-      
-      // Create a correctly formatted meeting object to return
-      const addedMeeting: ScheduledMeeting = {
+      // Convert data to ScheduledMeeting format
+      const newMeeting: ScheduledMeeting = {
         id: data.id,
         workbodyId: data.workbody_id,
         workbodyName: data.workbody_name,
         date: data.date,
         time: data.time,
         location: data.location,
-        agendaItems: data.agenda_items,
+        agendaItems: data.agenda_items || [],
         notificationFile: data.notification_file_name,
         notificationFilePath: data.notification_file_path,
-        agendaFile: data.agenda_file_name || null,
-        agendaFilePath: data.agenda_file_path || null
+        agendaFile: data.agenda_file_name,
+        agendaFilePath: data.agenda_file_path
       };
 
-      // Show success toast
-      toast({
-        title: "Meeting Scheduled",
-        description: `${addedMeeting.workbodyName} meeting has been scheduled for ${addedMeeting.date} at ${addedMeeting.time}`,
-      });
-
-      return addedMeeting;
+      // Update state with the new meeting
+      setMeetings(prev => [...prev, newMeeting]);
+      
+      return newMeeting;
     } catch (error: any) {
       console.error('Error adding meeting:', error);
-      
-      // Show error toast with specific message
       toast({
-        title: "Failed to Schedule Meeting",
-        description: error.message || "An unexpected error occurred",
-        variant: "destructive",
+        title: 'Error adding meeting',
+        description: error.message || 'Something went wrong',
+        variant: 'destructive',
       });
-      
       throw error;
     }
   };
 
+  // Update an existing meeting
   const updateMeeting = async (id: string, updates: Partial<ScheduledMeeting>) => {
+    setIsUpdating(true);
     try {
-      const updateData: any = {};
+      // Transform updates to database column format
+      const dbUpdates: any = {};
       
-      if (updates.workbodyId) updateData.workbody_id = updates.workbodyId;
-      if (updates.workbodyName) updateData.workbody_name = updates.workbodyName;
-      if (updates.date) updateData.date = updates.date;
-      if (updates.time) updateData.time = updates.time;
-      if (updates.location) updateData.location = updates.location;
-      if (updates.agendaItems) updateData.agenda_items = updates.agendaItems;
-      if (updates.notificationFile !== undefined) updateData.notification_file_name = updates.notificationFile;
-      if (updates.notificationFilePath !== undefined) updateData.notification_file_path = updates.notificationFilePath;
-      if (updates.agendaFile !== undefined) updateData.agenda_file_name = updates.agendaFile;
-      if (updates.agendaFilePath !== undefined) updateData.agenda_file_path = updates.agendaFilePath;
-
-      console.log("Updating meeting with data:", updateData);
-
+      if (updates.workbodyId !== undefined) dbUpdates.workbody_id = updates.workbodyId;
+      if (updates.workbodyName !== undefined) dbUpdates.workbody_name = updates.workbodyName;
+      if (updates.date !== undefined) dbUpdates.date = updates.date;
+      if (updates.time !== undefined) dbUpdates.time = updates.time;
+      if (updates.location !== undefined) dbUpdates.location = updates.location;
+      if (updates.agendaItems !== undefined) dbUpdates.agenda_items = updates.agendaItems;
+      if (updates.notificationFile !== undefined) dbUpdates.notification_file_name = updates.notificationFile;
+      if (updates.notificationFilePath !== undefined) dbUpdates.notification_file_path = updates.notificationFilePath;
+      if (updates.agendaFile !== undefined) dbUpdates.agenda_file_name = updates.agendaFile;
+      if (updates.agendaFilePath !== undefined) dbUpdates.agenda_file_path = updates.agendaFilePath;
+      
       const { error } = await supabase
         .from('scheduled_meetings')
-        .update(updateData)
+        .update(dbUpdates)
         .eq('id', id);
 
-      if (error) {
-        console.error("Error in supabase update:", error);
-        throw error;
-      }
+      if (error) throw error;
 
-      console.log("Meeting updated successfully:", id);
-      
-      // Force a refetch to ensure data consistency
+      // Update the meetings state
+      setMeetings(prev => 
+        prev.map(meeting => 
+          meeting.id === id 
+            ? { ...meeting, ...updates } 
+            : meeting
+        )
+      );
+
       await refetchMeetings();
       
-      toast({
-        title: "Meeting Updated",
-        description: "The meeting has been updated successfully",
-      });
+      return true;
     } catch (error: any) {
       console.error('Error updating meeting:', error);
-      
       toast({
-        title: "Update Failed", 
-        description: error.message || "Failed to update meeting",
-        variant: "destructive",
+        title: 'Error updating meeting',
+        description: error.message || 'Something went wrong',
+        variant: 'destructive',
       });
-      
       throw error;
+    } finally {
+      setIsUpdating(false);
     }
   };
 
+  // Delete a meeting
   const deleteMeeting = async (id: string) => {
     try {
-      console.log("Deleting meeting:", id);
-      
-      if (!id) {
-        console.error("Invalid meeting ID provided for deletion");
-        throw new Error("Invalid meeting ID");
-      }
-      
-      // First verify the meeting exists before attempting to delete
-      const { data: meetingToDelete, error: fetchError } = await supabase
-        .from('scheduled_meetings')
-        .select('*')
-        .eq('id', id)
-        .maybeSingle();
-        
-      if (fetchError) {
-        console.error("Error fetching meeting to delete:", fetchError);
-        throw fetchError;
-      }
-      
-      // If meeting not found, handle gracefully
-      if (!meetingToDelete) {
-        console.warn("Meeting already deleted or doesn't exist:", id);
-        // Force a refetch to update UI
-        await refetchMeetings();
-        return;
-      }
-      
       const { error } = await supabase
         .from('scheduled_meetings')
         .delete()
         .eq('id', id);
 
-      if (error) {
-        console.error("Error in supabase delete:", error);
-        throw error;
-      }
+      if (error) throw error;
 
-      console.log("Meeting deleted successfully");
+      // Update state by removing the deleted meeting
+      setMeetings(prev => prev.filter(meeting => meeting.id !== id));
       
-      // Force a refetch rather than manipulating the local state directly
-      await refetchMeetings();
-      
-      toast({
-        title: "Meeting Deleted",
-        description: "The meeting has been deleted successfully",
-      });
+      return true;
     } catch (error: any) {
       console.error('Error deleting meeting:', error);
-      
       toast({
-        title: "Delete Failed",
-        description: error.message || "Failed to delete meeting",
-        variant: "destructive",
+        title: 'Error deleting meeting',
+        description: error.message || 'Something went wrong',
+        variant: 'destructive',
       });
-      
-      // Force a refresh to make sure UI is in sync with actual data
-      await refetchMeetings();
       throw error;
     }
   };
 
-  return { addMeeting, updateMeeting, deleteMeeting };
+  return { 
+    addMeeting, 
+    updateMeeting, 
+    deleteMeeting, 
+    isUpdating 
+  };
 };

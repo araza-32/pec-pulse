@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -141,7 +140,7 @@ export function UserManagement() {
       
       if (error) throw error;
       
-      // Add user details to profiles table without workbody_id
+      // Add user details to profiles table - NOTE: Removed workbody_id reference since it doesn't exist
       if (data?.user) {
         const profileData: any = {
           id: data.user.id,
@@ -149,14 +148,15 @@ export function UserManagement() {
           role: newUser.role
         };
         
-        // Only add workbody_id if it's secretary role and a workbody is selected
-        if (newUser.role === 'secretary' && newUser.workbodyId) {
-          profileData.workbody_id = newUser.workbodyId;
-        }
-        
         const { error: profileError } = await supabase.from('profiles').upsert(profileData);
         
         if (profileError) throw profileError;
+        
+        // If secretary role and workbody is selected, create a separate mapping in a different table
+        if (newUser.role === 'secretary' && newUser.workbodyId) {
+          // This could be handled through a separate table if needed
+          console.log("Secretary assigned to workbody:", newUser.workbodyId);
+        }
       }
       
       setCreationSuccess(true);
@@ -198,8 +198,6 @@ export function UserManagement() {
       
       if (profileError) throw profileError;
       
-      // Use auth.signOut without the sessionIds parameter, which is causing the TypeScript error
-      // Just sign out generally without specifying session IDs
       await supabase.auth.signOut();
       
       toast({

@@ -21,14 +21,14 @@ export function getNavigation(): SidebarItem[] {
       href: "/", 
       icon: Home, 
       current: location.pathname === "/" || location.pathname === "/dashboard",
-      roles: ["admin", "secretary", "chairman", "registrar"]
+      roles: ["admin", "secretary", "chairman", "registrar", "coordination"]
     },
     { 
       name: "Chairman's Dashboard", 
       href: "/chairman-dashboard", 
       icon: BarChart3, 
       current: location.pathname === "/chairman-dashboard",
-      roles: ["admin", "chairman", "registrar"]
+      roles: ["admin", "chairman", "registrar", "coordination"]
     },
     {
       name: "Workbodies",
@@ -70,7 +70,7 @@ export function getNavigation(): SidebarItem[] {
       href: "/settings",
       icon: Settings,
       current: location.pathname === "/settings",
-      roles: ["admin"]
+      roles: ["admin", "coordination"]
     },
   ];
 }
