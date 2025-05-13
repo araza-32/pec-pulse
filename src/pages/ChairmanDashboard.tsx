@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -5,20 +6,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChairmanStatCards } from "@/components/chairman/ChairmanStatCards";
 import { WorkbodyDistributionChart } from "@/components/chairman/WorkbodyDistributionChart";
 import { WorkbodiesOverview } from "@/components/chairman-dashboard/WorkbodiesOverview";
-import { ActionCompletionChart } from "@/components/chairman/ActionCompletionChart";
 import { ExpiringTaskForces } from "@/components/chairman/ExpiringTaskForces";
 import { useWorkbodies } from "@/hooks/useWorkbodies";
 import { useScheduledMeetings } from "@/hooks/useScheduledMeetings";
 import { EngagementChart } from "@/components/chairman/EngagementChart";
 import { Button } from "@/components/ui/button";
-import { Clock, PieChart, Calendar, TrendingUp, Search } from "lucide-react";
+import { PieChart, Calendar, TrendingUp, Search } from "lucide-react";
 import { useWorkBodiesQuery } from "@/hooks/useWorkBodiesQuery";
+import { SearchSortBar } from "@/components/workbody/SearchSortBar";
 
 export default function ChairmanDashboard() {
   const { workbodies, isLoading: isLoadingWorkbodies } = useWorkbodies();
   const { meetings } = useScheduledMeetings();
   const [typeDistribution, setTypeDistribution] = useState<any[]>([]);
-  const [timeframe, setTimeframe] = useState<"month" | "quarter" | "year">("month");
   const [isWorkbodiesModalOpen, setIsWorkbodiesModalOpen] = useState(false);
   const [isMeetingsModalOpen, setIsMeetingsModalOpen] = useState(false);
   const [isUpcomingModalOpen, setIsUpcomingModalOpen] = useState(false);
@@ -110,6 +110,22 @@ export default function ChairmanDashboard() {
     new Date(wb.endDate) >= sixtyDaysAgo
   );
 
+  const handleStatClick = (statType: string) => {
+    switch(statType) {
+      case 'totalWorkbodies':
+        setIsWorkbodiesModalOpen(true);
+        break;
+      case 'meetingsThisYear':
+        setIsMeetingsModalOpen(true);
+        break;
+      case 'upcomingMeetings':
+        setIsUpcomingModalOpen(true);
+        break;
+      default:
+        break;
+    }
+  };
+
   return (
     <div className="space-y-6 animate-in">
       {/* Header */}
@@ -129,48 +145,34 @@ export default function ChairmanDashboard() {
         meetingsThisYear={meetings.length}
         completionRate={completionRate}
         upcomingMeetingsCount={upcomingMeetings.length}
-        onStatClick={(statType) => {
-          if (statType === 'totalWorkbodies') setIsWorkbodiesModalOpen(true);
-          else if (statType === 'meetingsThisYear') setIsMeetingsModalOpen(true);
-          else if (statType === 'upcomingMeetings') setIsUpcomingModalOpen(true);
-        }}
+        onStatClick={handleStatClick}
       />
 
       {/* Workbodies Overview */}
-      <div className="mt-8">
-        <WorkbodiesOverview workbodies={workbodies} isLoading={isLoadingWorkbodies} />
-      </div>
+      <Card className="mt-6">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Workbodies Overview</CardTitle>
+            <CardDescription>Filter, search, and sort workbodies</CardDescription>
+          </div>
+          <SearchSortBar 
+            onSearch={(query) => console.log("Search:", query)}
+            onSort={(option) => console.log("Sort by:", option)}
+          />
+        </CardHeader>
+        <CardContent className="p-0">
+          <WorkbodiesOverview workbodies={workbodies} isLoading={isLoadingWorkbodies} />
+        </CardContent>
+      </Card>
 
       {/* Engagement Analysis and Task Force Status */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
         <div className="lg:col-span-2">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <div>
-                <CardTitle>Engagement Analysis</CardTitle>
-                <CardDescription>Trends over the last 6 months</CardDescription>
-              </div>
-              <div className="inline-flex items-center">
-                <select 
-                  className="p-1 text-sm border rounded-md"
-                  value={engagementFilter}
-                  onChange={(e) => setEngagementFilter(e.target.value as any)}
-                >
-                  <option value="all">All Bodies</option>
-                  <option value="committees">Committees</option>
-                  <option value="workingGroups">Working Groups</option>
-                  <option value="taskForces">Task Forces</option>
-                </select>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-2">
-              <EngagementChart data={engagementData} />
-            </CardContent>
-          </Card>
+          <EngagementChart data={engagementData} />
         </div>
 
         <div className="lg:col-span-1">
-          <Card>
+          <Card className="h-full">
             <CardHeader className="pb-2">
               <CardTitle>Task Force Status</CardTitle>
               <CardDescription>Task forces requiring attention</CardDescription>
