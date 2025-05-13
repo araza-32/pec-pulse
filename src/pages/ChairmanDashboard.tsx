@@ -146,7 +146,8 @@ export default function ChairmanDashboard() {
         <WorkbodiesOverview workbodies={workbodies} isLoading={isLoadingWorkbodies} />
       </div>
 
-      <style jsx>{`
+      <style>
+        {`
         .colorful-card {
           position: relative;
           overflow: hidden;
@@ -200,7 +201,8 @@ export default function ChairmanDashboard() {
           from { opacity: 0; transform: translateY(10px); }
           to { opacity: 1; transform: translateY(0); }
         }
-      `}</style>
+        `}
+      </style>
     </div>
   );
 }

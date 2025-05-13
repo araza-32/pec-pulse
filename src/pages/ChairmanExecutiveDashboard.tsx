@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { 
   Card, 
@@ -213,6 +212,9 @@ export default function ChairmanExecutiveDashboard() {
         <>
           <ChairmanStatCards 
             totalWorkbodies={dashboardData.totalWorkbodies}
+            committees={workbodyCounts.committees}
+            workingGroups={workbodyCounts.workingGroups}
+            taskForces={workbodyCounts.taskForces}
             meetingsThisYear={dashboardData.meetingsThisYear}
             completionRate={dashboardData.completionRate}
             upcomingMeetingsCount={dashboardData.upcomingMeetingsCount}
