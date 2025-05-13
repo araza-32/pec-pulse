@@ -14,6 +14,11 @@ export default function ChairmanDashboard() {
   const { workbodies, isLoading: isLoadingWorkbodies } = useWorkbodies();
   const { meetings } = useScheduledMeetings();
   const [typeDistribution, setTypeDistribution] = useState<any[]>([]);
+  const [timeframe, setTimeframe] = useState<"month" | "quarter" | "year">("month");
+  const currentYear = new Date().getFullYear();
+  
+  // Monthly meetings data
+  const [monthlyMeetingsData, setMonthlyMeetingsData] = useState<{ month: string; meetings: number }[]>([]);
 
   useEffect(() => {
     if (workbodies.length > 0) {
@@ -26,8 +31,28 @@ export default function ChairmanDashboard() {
         { name: "Working Groups", value: workingGroups },
         { name: "Task Forces", value: taskForces }
       ]);
+      
+      // Generate monthly meetings data based on the meetings
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const monthCounts = new Array(12).fill(0);
+      
+      meetings.forEach(meeting => {
+        try {
+          const date = new Date(meeting.date);
+          if (date.getFullYear() === currentYear) {
+            monthCounts[date.getMonth()]++;
+          }
+        } catch (e) {
+          console.error("Error parsing meeting date:", e);
+        }
+      });
+      
+      setMonthlyMeetingsData(monthNames.map((month, index) => ({
+        month,
+        meetings: monthCounts[index]
+      })));
     }
-  }, [workbodies]);
+  }, [workbodies, meetings, currentYear]);
 
   // Generate workbody abbreviations
   const workbodiesWithAbbr = workbodies.map(wb => {
@@ -50,6 +75,14 @@ export default function ChairmanDashboard() {
     
     return { ...wb, abbreviation: abbr };
   });
+  
+  // Calculate action completion metrics
+  const totalActionsAgreed = workbodies.reduce((sum, wb) => sum + (wb.actionsAgreed || 0), 0);
+  const totalActionsCompleted = workbodies.reduce((sum, wb) => sum + (wb.actionsCompleted || 0), 0);
+  const completionRate = totalActionsAgreed > 0 ? Math.round((totalActionsCompleted / totalActionsAgreed) * 100) : 0;
+  
+  // Get upcoming meetings
+  const upcomingMeetings = meetings.filter(m => new Date(m.date) >= new Date());
 
   return (
     <div className="space-y-6 animate-in">
@@ -65,8 +98,9 @@ export default function ChairmanDashboard() {
         committees={typeDistribution[0]?.value || 0}
         workingGroups={typeDistribution[1]?.value || 0}
         taskForces={typeDistribution[2]?.value || 0}
-        totalMeetings={meetings.length}
-        upcomingMeetings={meetings.filter(m => new Date(m.date) >= new Date()).length}
+        meetingsThisYear={meetings.length}
+        completionRate={completionRate}
+        upcomingMeetingsCount={upcomingMeetings.length}
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -78,7 +112,12 @@ export default function ChairmanDashboard() {
 
         <Card className="colorful-card purple shadow-md">
           <CardContent className="pt-6">
-            <MonthlyMeetingsChart />
+            <MonthlyMeetingsChart 
+              monthlyMeetings={monthlyMeetingsData}
+              timeframe={timeframe}
+              setTimeframe={setTimeframe}
+              currentYear={currentYear}
+            />
           </CardContent>
         </Card>
       </div>
@@ -87,9 +126,9 @@ export default function ChairmanDashboard() {
         <div className="lg:col-span-1">
           <Card className="colorful-card green shadow-md h-full">
             <CardContent className="p-0">
-              <ActionCompletionChart 
-                completed={workbodies.reduce((sum, wb) => sum + (wb.actionsCompleted || 0), 0)}
-                total={workbodies.reduce((sum, wb) => sum + (wb.actionsAgreed || 0), 0)}
+              <ActionCompletionChart
+                completed={totalActionsCompleted}
+                total={totalActionsAgreed}
               />
             </CardContent>
           </Card>
@@ -97,7 +136,7 @@ export default function ChairmanDashboard() {
         <div className="lg:col-span-2">
           <Card className="colorful-card amber shadow-md h-full">
             <CardContent className="p-0">
-              <ChairmanUpcomingMeetings meetings={meetings} />
+              <ChairmanUpcomingMeetings upcomingMeetings={upcomingMeetings} />
             </CardContent>
           </Card>
         </div>
@@ -107,7 +146,7 @@ export default function ChairmanDashboard() {
         <WorkbodiesOverview workbodies={workbodies} isLoading={isLoadingWorkbodies} />
       </div>
 
-      <style jsx global>{`
+      <style jsx>{`
         .colorful-card {
           position: relative;
           overflow: hidden;

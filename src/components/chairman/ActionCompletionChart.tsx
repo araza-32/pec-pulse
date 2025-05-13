@@ -12,26 +12,41 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface ActionCompletionChartProps {
-  completionByType: {
+  completionByType?: {
     name: string;
     agreed: number;
     completed: number;
   }[];
+  completed?: number;
+  total?: number;
 }
 
-export function ActionCompletionChart({ completionByType }: ActionCompletionChartProps) {
+export function ActionCompletionChart({ 
+  completionByType = [],
+  completed = 0,
+  total = 0 
+}: ActionCompletionChartProps) {
+  // If completionByType is provided, use that, otherwise generate default data
+  const chartData = completionByType.length > 0 ? completionByType : [
+    {
+      name: "All Types",
+      agreed: total,
+      completed: completed
+    }
+  ];
+
   return (
     <Card className="col-span-1">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-lg font-medium">
-          Actions Completion Rate by Type
+          Actions Completion Rate
         </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="h-80">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
-              data={completionByType}
+              data={chartData}
               margin={{
                 top: 20,
                 right: 30,

@@ -6,10 +6,10 @@ import { ScheduledMeeting } from "@/types";
 import { useNavigate } from "react-router-dom";
 
 interface ChairmanUpcomingMeetingsProps {
-  upcomingMeetings: ScheduledMeeting[];
+  upcomingMeetings?: ScheduledMeeting[];
 }
 
-export function ChairmanUpcomingMeetings({ upcomingMeetings }: ChairmanUpcomingMeetingsProps) {
+export function ChairmanUpcomingMeetings({ upcomingMeetings = [] }: ChairmanUpcomingMeetingsProps) {
   const navigate = useNavigate();
 
   const formatDate = (dateStr: string) => {
@@ -50,7 +50,7 @@ export function ChairmanUpcomingMeetings({ upcomingMeetings }: ChairmanUpcomingM
             <div>
               <h4 className="font-medium">{meeting.workbodyName || "Unnamed Meeting"}</h4>
               <p className="text-sm text-muted-foreground">
-                {formatDate(meeting.date)} at {meeting.time.substring(0, 5)}
+                {formatDate(meeting.date)} at {meeting.time?.substring(0, 5) || "N/A"}
               </p>
             </div>
             <div className="flex shrink-0">
@@ -79,7 +79,7 @@ export function ChairmanUpcomingMeetings({ upcomingMeetings }: ChairmanUpcomingM
           </div>
           
           <div className="mt-2">
-            <p className="text-sm font-medium">Location: <span className="font-normal">{meeting.location}</span></p>
+            <p className="text-sm font-medium">Location: <span className="font-normal">{meeting.location || "N/A"}</span></p>
           </div>
           
           {meeting.agendaItems && meeting.agendaItems.length > 0 && (

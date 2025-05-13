@@ -11,23 +11,28 @@ import {
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
 
 interface MonthlyMeetingsChartProps {
-  monthlyMeetings: {
+  monthlyMeetings?: {
     month: string;
     meetings: number;
   }[];
-  timeframe: "month" | "quarter" | "year";
-  setTimeframe: (timeframe: "month" | "quarter" | "year") => void;
-  currentYear: number;
+  timeframe?: "month" | "quarter" | "year";
+  setTimeframe?: (timeframe: "month" | "quarter" | "year") => void;
+  currentYear?: number;
 }
 
 export function MonthlyMeetingsChart({ 
-  monthlyMeetings, 
-  timeframe, 
-  setTimeframe,
-  currentYear
+  monthlyMeetings = [], 
+  timeframe = "month", 
+  setTimeframe = () => {},
+  currentYear = new Date().getFullYear()
 }: MonthlyMeetingsChartProps) {
+  const handleTimeframeChange = (newTimeframe: "month" | "quarter" | "year") => {
+    setTimeframe(newTimeframe);
+  };
+
   return (
     <div className="grid gap-4 md:grid-cols-2">
       <Card className="col-span-2">
@@ -39,21 +44,21 @@ export function MonthlyMeetingsChart({
             <Button
               variant={timeframe === "month" ? "default" : "outline"}
               size="sm"
-              onClick={() => setTimeframe("month")}
+              onClick={() => handleTimeframeChange("month")}
             >
               Month
             </Button>
             <Button
               variant={timeframe === "quarter" ? "default" : "outline"}
               size="sm"
-              onClick={() => setTimeframe("quarter")}
+              onClick={() => handleTimeframeChange("quarter")}
             >
               Quarter
             </Button>
             <Button
               variant={timeframe === "year" ? "default" : "outline"}
               size="sm"
-              onClick={() => setTimeframe("year")}
+              onClick={() => handleTimeframeChange("year")}
             >
               Year
             </Button>

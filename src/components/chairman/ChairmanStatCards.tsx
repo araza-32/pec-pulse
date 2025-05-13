@@ -4,16 +4,24 @@ import { Users, CalendarClock, CheckSquare, BookOpen } from "lucide-react";
 
 interface ChairmanStatCardsProps {
   totalWorkbodies: number;
-  meetingsThisYear: number;
-  completionRate: number;
-  upcomingMeetingsCount: number;
+  committees: number;
+  workingGroups: number;
+  taskForces: number;
+  totalMeetings?: number;
+  upcomingMeetings?: number;
+  completionRate?: number;
+  meetingsThisYear?: number;
+  upcomingMeetingsCount?: number;
 }
 
 export function ChairmanStatCards({
   totalWorkbodies,
-  meetingsThisYear,
-  completionRate,
-  upcomingMeetingsCount
+  committees,
+  workingGroups,
+  taskForces,
+  meetingsThisYear = 0,
+  completionRate = 0,
+  upcomingMeetingsCount = 0
 }: ChairmanStatCardsProps) {
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
