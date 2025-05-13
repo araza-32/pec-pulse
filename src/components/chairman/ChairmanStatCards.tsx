@@ -12,6 +12,7 @@ interface ChairmanStatCardsProps {
   completionRate?: number;
   meetingsThisYear?: number;
   upcomingMeetingsCount?: number;
+  onStatClick?: (statType: string) => void;
 }
 
 export function ChairmanStatCards({
@@ -21,16 +22,24 @@ export function ChairmanStatCards({
   taskForces,
   meetingsThisYear = 0,
   completionRate = 0,
-  upcomingMeetingsCount = 0
+  upcomingMeetingsCount = 0,
+  onStatClick
 }: ChairmanStatCardsProps) {
+  const handleStatClick = (statType: string) => {
+    if (onStatClick) {
+      onStatClick(statType);
+    }
+  };
+
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       <StatCard
         title="Total Workbodies"
         value={totalWorkbodies}
         icon={Users}
-        colorClass="bg-pec-green"
+        colorClass="bg-green-600"
         clickable={true}
+        onClick={() => handleStatClick('totalWorkbodies')}
       />
       <StatCard
         title="Meetings This Year"
@@ -38,13 +47,7 @@ export function ChairmanStatCards({
         icon={CalendarClock}
         colorClass="bg-amber-500"
         clickable={true}
-      />
-      <StatCard
-        title="Action Completion"
-        value={`${completionRate}%`}
-        icon={CheckSquare}
-        colorClass="bg-blue-500"
-        clickable={true}
+        onClick={() => handleStatClick('meetingsThisYear')}
       />
       <StatCard
         title="Upcoming Meetings"
@@ -52,6 +55,7 @@ export function ChairmanStatCards({
         icon={BookOpen}
         colorClass="bg-purple-500"
         clickable={true}
+        onClick={() => handleStatClick('upcomingMeetings')}
       />
     </div>
   );
