@@ -1,7 +1,6 @@
 
 import { useState, useRef } from "react";
 import { WorkBodyCard } from "@/components/workbody/WorkBodyCard";
-import { useVirtualizer } from '@tanstack/react-virtual';
 import { cn } from "@/lib/utils";
 import { FileQuestion } from "lucide-react";
 
