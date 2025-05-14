@@ -1,7 +1,6 @@
 
-import React from "react";
-import { CalendarIcon, FileText, Clock } from "lucide-react";
-import { formatDistance } from "date-fns";
+import { Card } from "@/components/ui/card";
+import { format } from "date-fns";
 
 interface Meeting {
   id: string;
@@ -15,56 +14,34 @@ interface MeetingsListProps {
 }
 
 export function MeetingsList({ meetings }: MeetingsListProps) {
-  if (!meetings || meetings.length === 0) {
-    return (
-      <div className="text-center p-4">
-        <p className="text-muted-foreground">No meetings found</p>
-      </div>
-    );
+  if (meetings.length === 0) {
+    return <p className="text-muted-foreground py-4">No meetings to display.</p>;
   }
+
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return format(date, 'MMM dd, yyyy');
+    } catch (e) {
+      return dateString;
+    }
+  };
 
   return (
     <div className="space-y-4">
-      {meetings.map((meeting) => {
-        // Parse the date string
-        const meetingDate = new Date(meeting.date);
-        const isUpcoming = meetingDate > new Date();
-        
-        // Format the relative time
-        const relativeTime = formatDistance(
-          meetingDate,
-          new Date(),
-          { addSuffix: true }
-        );
-
-        return (
-          <div 
-            key={meeting.id}
-            className="p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-          >
-            <div className="flex justify-between">
-              <h3 className="font-medium text-lg">{meeting.workbodyName}</h3>
-              <div className="px-2 py-1 text-xs rounded-full bg-muted">
-                {isUpcoming ? "Upcoming" : "Past"}
-              </div>
+      {meetings.map((meeting) => (
+        <Card key={meeting.id} className="p-4 hover:bg-slate-50 transition-colors">
+          <div className="flex flex-col space-y-2">
+            <div className="flex justify-between items-start">
+              <h3 className="font-medium">{meeting.workbodyName}</h3>
+              <span className="text-sm text-muted-foreground">{formatDate(meeting.date)}</span>
             </div>
-            
-            <div className="flex items-center mt-2 text-muted-foreground text-sm">
-              <CalendarIcon className="w-4 h-4 mr-1" />
-              <span>
-                {new Date(meeting.date).toLocaleDateString()} ({relativeTime})
-              </span>
-            </div>
-            
             {meeting.agendaExcerpt && (
-              <div className="mt-2 text-sm flex items-start">
-                <FileText className="w-4 h-4 mr-1 mt-1 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">{meeting.agendaExcerpt}</p>
-              </div>
+              <p className="text-sm text-muted-foreground line-clamp-2">{meeting.agendaExcerpt}</p>
             )}
           </div>
-        );
-      })}
+        </Card>
+      ))}
     </div>
   );
 }
