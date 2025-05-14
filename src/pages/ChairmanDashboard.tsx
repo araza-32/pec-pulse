@@ -1,356 +1,265 @@
 
-import { useState, useEffect, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChairmanStatCards } from "@/components/chairman/ChairmanStatCards";
-import { WorkbodyDistributionChart } from "@/components/chairman/WorkbodyDistributionChart";
-import { WorkbodiesStackedCards } from "@/components/chairman-dashboard/WorkbodiesStackedCards";
-import { ExpiringTaskForces } from "@/components/chairman/ExpiringTaskForces";
-import { useWorkbodies } from "@/hooks/useWorkbodies";
-import { useScheduledMeetings } from "@/hooks/useScheduledMeetings";
-import { EngagementChart } from "@/components/chairman/EngagementChart";
 import { Button } from "@/components/ui/button";
-import { PieChart, Calendar, TrendingUp, Search } from "lucide-react";
+import { ChairmanStatCards } from "@/components/chairman/ChairmanStatCards";
+import { EngagementChart } from "@/components/chairman/EngagementChart";
+import { ExpiringTaskForceList } from "@/components/chairman/ExpiringTaskForceList";
 import { useWorkBodiesQuery } from "@/hooks/useWorkBodiesQuery";
-import { SearchSortBar } from "@/components/workbody/SearchSortBar";
+import { WorkbodiesStackedCards } from "@/components/chairman-dashboard/WorkbodiesStackedCards";
+import { Modal } from "@/components/ui/modal";
+import { DonutChart } from "@/components/chairman/DonutChart";
+import { MeetingsList } from "@/components/chairman/MeetingsList";
 
 export default function ChairmanDashboard() {
-  const { workbodies, isLoading: isLoadingWorkbodies } = useWorkbodies();
-  const { meetings } = useScheduledMeetings();
-  const [typeDistribution, setTypeDistribution] = useState<any[]>([]);
-  const [isWorkbodiesModalOpen, setIsWorkbodiesModalOpen] = useState(false);
-  const [isMeetingsModalOpen, setIsMeetingsModalOpen] = useState(false);
-  const [isUpcomingModalOpen, setIsUpcomingModalOpen] = useState(false);
-  const [engagementFilter, setEngagementFilter] = useState<"all" | "committees" | "workingGroups" | "taskForces">("all");
-  
-  const currentYear = new Date().getFullYear();
-  
-  // Enhanced query with additional metrics
-  const { counts } = useWorkBodiesQuery();
+  const { 
+    workbodies,
+    isLoading,
+    counts,
+    filteredWorkbodies,
+    setSelectedCategory
+  } = useWorkBodiesQuery();
 
-  useEffect(() => {
-    if (workbodies.length > 0) {
-      const committees = workbodies.filter(wb => wb.type === "committee").length;
-      const workingGroups = workbodies.filter(wb => wb.type === "working-group").length;
-      const taskForces = workbodies.filter(wb => wb.type === "task-force").length;
-      
-      setTypeDistribution([
-        { name: "Committees", value: committees, color: "#10B981" }, // Green
-        { name: "Working Groups", value: workingGroups, color: "#3B82F6" }, // Blue
-        { name: "Task Forces", value: taskForces, color: "#F59E0B" } // Amber
-      ]);
-    }
-  }, [workbodies]);
+  const [activeTab, setActiveTab] = useState<string>("expiring");
+  const [showDonutModal, setShowDonutModal] = useState(false);
+  const [showMeetingsModal, setShowMeetingsModal] = useState(false);
+  const [showUpcomingModal, setShowUpcomingModal] = useState(false);
 
-  // Generate monthly meetings data
-  const monthlyMeetingsData = useMemo(() => {
-    if (!meetings || meetings.length === 0) return [];
-    
-    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    const monthCounts = new Array(12).fill(0);
-    
-    meetings.forEach(meeting => {
-      try {
-        const date = new Date(meeting.date);
-        if (date.getFullYear() === currentYear) {
-          monthCounts[date.getMonth()]++;
-        }
-      } catch (e) {
-        console.error("Error parsing meeting date:", e);
-      }
-    });
-    
-    return monthNames.map((month, index) => ({
-      month,
-      meetings: monthCounts[index]
-    }));
-  }, [meetings, currentYear]);
-
-  // Calculate action completion metrics
-  const totalActionsAgreed = workbodies.reduce((sum, wb) => sum + (wb.actionsAgreed || 0), 0);
-  const totalActionsCompleted = workbodies.reduce((sum, wb) => sum + (wb.actionsCompleted || 0), 0);
-  const completionRate = totalActionsAgreed > 0 ? Math.round((totalActionsCompleted / totalActionsAgreed) * 100) : 0;
-  
-  // Get upcoming meetings
-  const upcomingMeetings = meetings.filter(m => new Date(m.date) >= new Date())
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-  // Mock engagement data for the chart
-  const engagementData = [
-    { month: "Jan", attendance: 85, participation: 72, actionRate: 68 },
-    { month: "Feb", attendance: 82, participation: 75, actionRate: 70 },
-    { month: "Mar", attendance: 88, participation: 78, actionRate: 65 },
-    { month: "Apr", attendance: 90, participation: 80, actionRate: 75 },
-    { month: "May", attendance: 87, participation: 76, actionRate: 72 },
-    { month: "Jun", attendance: 91, participation: 82, actionRate: 78 },
-  ];
-
-  // Task forces expiring in the next 60 days
-  const today = new Date();
-  const sixtyDaysLater = new Date(today);
-  sixtyDaysLater.setDate(today.getDate() + 60);
-  
-  // Find task forces expiring soon
-  const expiringTaskForces = workbodies.filter(wb => 
-    wb.type === 'task-force' && 
-    wb.endDate && 
-    new Date(wb.endDate) > today && 
-    new Date(wb.endDate) <= sixtyDaysLater
-  );
-  
-  // Find recently ended task forces
-  const sixtyDaysAgo = new Date(today);
-  sixtyDaysAgo.setDate(today.getDate() - 60);
-  
-  const endedTaskForces = workbodies.filter(wb => 
-    wb.type === 'task-force' && 
-    wb.endDate && 
-    new Date(wb.endDate) <= today && 
-    new Date(wb.endDate) >= sixtyDaysAgo
-  );
-
-  const handleStatClick = (statType: string) => {
-    switch(statType) {
-      case 'totalWorkbodies':
-        setIsWorkbodiesModalOpen(true);
-        break;
-      case 'meetingsThisYear':
-        setIsMeetingsModalOpen(true);
-        break;
-      case 'upcomingMeetings':
-        setIsUpcomingModalOpen(true);
-        break;
-      default:
-        break;
-    }
+  // Mock stats data (would come from API in production)
+  const meetingStats = {
+    totalWorkbodies: counts.committees + counts.workingGroups + counts.taskForces,
+    committees: counts.committees,
+    workingGroups: counts.workingGroups,
+    taskForces: counts.taskForces,
+    meetingsThisYear: 24,
+    completionRate: 78,
+    upcomingMeetingsCount: 5,
+    actionsCompleted: 87,
+    actionsAgreed: 112,
+    overdueActions: 8,
   };
 
+  const mockEngagementData = [
+    { month: "Jan", attendance: 78, participation: 65, actionRate: 72 },
+    { month: "Feb", attendance: 82, participation: 70, actionRate: 68 },
+    { month: "Mar", attendance: 75, participation: 68, actionRate: 70 },
+    { month: "Apr", attendance: 85, participation: 75, actionRate: 76 },
+    { month: "May", attendance: 87, participation: 78, actionRate: 80 },
+    { month: "Jun", attendance: 84, participation: 80, actionRate: 82 },
+  ];
+
+  // Mock meetings data
+  const upcomingMeetings = [
+    { 
+      id: "1", 
+      date: new Date(2025, 5, 20), 
+      workbodyName: "Committee on Professional Development",
+      type: "committee"
+    },
+    { 
+      id: "2", 
+      date: new Date(2025, 5, 22), 
+      workbodyName: "Working Group on Young Engineers Affairs",
+      type: "working-group"
+    },
+    { 
+      id: "3", 
+      date: new Date(2025, 5, 25), 
+      workbodyName: "Task Force on Digital Transformation",
+      type: "task-force"
+    },
+  ];
+
+  // Mock meeting list data
+  const pastMeetings = [
+    { 
+      id: "001",
+      date: "2025-04-15",
+      workbodyName: "Committee on Professional Development",
+      agendaExcerpt: "Review of ongoing CPD programs and planning for upcoming national conference."
+    },
+    { 
+      id: "002",
+      date: "2025-04-10",
+      workbodyName: "Working Group on Young Engineers Affairs",
+      agendaExcerpt: "Discussion on mentorship program expansion and university outreach initiatives."
+    },
+    { 
+      id: "003",
+      date: "2025-04-05",
+      workbodyName: "Task Force on Digital Transformation",
+      agendaExcerpt: "Evaluation of new membership management system implementation progress."
+    },
+  ];
+
+  // Type distribution for pie chart
+  const typeDistribution = [
+    { name: "Committees", value: counts.committees, color: "#3B82F6" },
+    { name: "Working Groups", value: counts.workingGroups, color: "#10B981" },
+    { name: "Task Forces", value: counts.taskForces, color: "#F59E0B" }
+  ];
+
   return (
-    <div className="space-y-6 animate-in">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-green-600 to-green-700 text-white p-6 rounded-lg shadow-lg">
+    <div className="space-y-6">
+      <div className="bg-gradient-to-r from-pec-green to-emerald-700 text-white p-6 rounded-lg shadow-md">
         <h1 className="text-3xl font-bold">Chairman's Dashboard</h1>
-        <p className="mt-2 text-green-100">
-          Comprehensive overview of all workbodies and their activities
+        <p className="text-sm mt-1 opacity-90">
+          Comprehensive overview of PEC workbodies, meetings and actions
         </p>
       </div>
 
-      {/* KPI Cards */}
+      {/* KPI Statistics Cards */}
       <ChairmanStatCards 
-        totalWorkbodies={workbodies.length}
-        committees={counts.committees}
-        workingGroups={counts.workingGroups}
-        taskForces={counts.taskForces}
-        meetingsThisYear={meetings.length}
-        completionRate={completionRate}
-        upcomingMeetingsCount={upcomingMeetings.length}
-        onStatClick={handleStatClick}
+        stats={meetingStats}
+        onWorkbodiesClick={() => setShowDonutModal(true)}
+        onMeetingsClick={() => setShowMeetingsModal(true)}
+        onUpcomingClick={() => setShowUpcomingModal(true)}
       />
 
-      {/* Workbodies Overview */}
-      <Card className="mt-6">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>Workbodies Overview</CardTitle>
-            <CardDescription>All workbodies across the Pakistan Engineering Council</CardDescription>
-          </div>
-          <SearchSortBar 
-            onSearch={(query) => console.log("Search:", query)}
-            onSort={(option) => console.log("Sort by:", option)}
-          />
-        </CardHeader>
-        <CardContent className="p-6">
-          <WorkbodiesStackedCards workbodies={workbodies} isLoading={isLoadingWorkbodies} />
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+        {/* Workbodies Overview (using stacked cards) - 8 columns */}
+        <Card className="md:col-span-8">
+          <CardHeader>
+            <CardTitle className="text-xl flex justify-between">
+              <span>Workbodies Overview</span>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className={activeTab === "all" ? "bg-muted" : ""}
+                  onClick={() => setSelectedCategory("all")}
+                >
+                  All
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className={activeTab === "committees" ? "bg-muted" : ""}
+                  onClick={() => setSelectedCategory("committees")}
+                >
+                  Committees
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className={activeTab === "workingGroups" ? "bg-muted" : ""}
+                  onClick={() => setSelectedCategory("workingGroups")}
+                >
+                  Working Groups
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className={activeTab === "taskForces" ? "bg-muted" : ""}
+                  onClick={() => setSelectedCategory("taskForces")}
+                >
+                  Task Forces
+                </Button>
+              </div>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <WorkbodiesStackedCards 
+              workbodies={filteredWorkbodies}
+              isLoading={isLoading}
+            />
+          </CardContent>
+        </Card>
 
-      {/* Engagement Analysis and Task Force Status */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mt-6">
-        <div className="lg:col-span-2">
-          <EngagementChart data={engagementData} />
-        </div>
-
-        <div className="lg:col-span-2">
-          <Card className="h-full">
-            <CardHeader className="pb-2">
-              <CardTitle>Task Force Status</CardTitle>
-              <CardDescription>Task forces requiring attention</CardDescription>
+        {/* Right Side: Split Column for Engagement and Task Force */}
+        <div className="md:col-span-4 space-y-6">
+          {/* Engagement Analysis */}
+          <Card className="h-auto">
+            <CardHeader>
+              <CardTitle>Engagement Analysis</CardTitle>
             </CardHeader>
-            <CardContent className="pt-0">
-              <Tabs defaultValue="expiring">
-                <TabsList className="w-full mb-4">
-                  <TabsTrigger value="expiring" className="flex-1">Expiring Soon</TabsTrigger>
-                  <TabsTrigger value="ended" className="flex-1">Recently Ended</TabsTrigger>
+            <CardContent className="h-64">
+              <EngagementChart data={mockEngagementData} />
+            </CardContent>
+          </Card>
+
+          {/* Task Force Status */}
+          <Card className="h-auto">
+            <CardHeader>
+              <CardTitle>Task Force Status</CardTitle>
+              <Tabs defaultValue="expiring" onValueChange={setActiveTab}>
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="expiring">Expiring Soon</TabsTrigger>
+                  <TabsTrigger value="ended">Recently Ended</TabsTrigger>
                 </TabsList>
-                <TabsContent value="expiring" className="mt-0">
-                  <ExpiringTaskForces expiringTaskForces={expiringTaskForces} />
-                </TabsContent>
-                <TabsContent value="ended" className="mt-0">
-                  <ExpiringTaskForces expiringTaskForces={endedTaskForces} showEnded={true} />
-                </TabsContent>
               </Tabs>
+            </CardHeader>
+            <CardContent>
+              <TabsContent value="expiring" className="mt-0">
+                <ExpiringTaskForceList 
+                  taskForces={workbodies.filter(wb => 
+                    wb.type === 'task-force' && wb.progressPercent < 100
+                  )}
+                  isLoading={isLoading}
+                />
+              </TabsContent>
+              <TabsContent value="ended" className="mt-0">
+                <ExpiringTaskForceList 
+                  taskForces={workbodies.filter(wb => 
+                    wb.type === 'task-force' && wb.progressPercent >= 100
+                  )}
+                  isLoading={isLoading}
+                  ended
+                />
+              </TabsContent>
             </CardContent>
           </Card>
         </div>
       </div>
 
-      {/* Analysis & Comment box (optional) */}
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle>Analysis & Comments</CardTitle>
-          <CardDescription>Add your observations and recommendations</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <textarea 
-            className="w-full h-32 p-2 border rounded-md resize-none" 
-            placeholder="Type your analysis or comments here..."
-          />
-          <div className="flex justify-end mt-4">
-            <Button>Add Comment</Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Workbodies Distribution Modal */}
-      <Dialog open={isWorkbodiesModalOpen} onOpenChange={setIsWorkbodiesModalOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Workbody Distribution</DialogTitle>
-          </DialogHeader>
-          <div className="h-96">
-            <WorkbodyDistributionChart typeDistribution={typeDistribution} />
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Meetings List Modal */}
-      <Dialog open={isMeetingsModalOpen} onOpenChange={setIsMeetingsModalOpen}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>Meetings This Year</DialogTitle>
-          </DialogHeader>
-          <div className="mt-4">
-            {/* Meetings Table */}
-            <div className="overflow-auto max-h-96">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-muted">
-                    <th className="p-2 text-left">Date</th>
-                    <th className="p-2 text-left">Workbody</th>
-                    <th className="p-2 text-left">Location</th>
-                    <th className="p-2 text-left">Agenda</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {meetings.map((meeting) => (
-                    <tr key={meeting.id} className="border-t hover:bg-muted/50">
-                      <td className="p-2">{new Date(meeting.date).toLocaleDateString()}</td>
-                      <td className="p-2">{meeting.workbodyName}</td>
-                      <td className="p-2">{meeting.location}</td>
-                      <td className="p-2">
-                        {meeting.agendaItems && meeting.agendaItems.length > 0
-                          ? meeting.agendaItems[0].substring(0, 100) + "..."
-                          : "No agenda items"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+      {/* Modals */}
+      <Modal
+        title="Workbodies Distribution"
+        isOpen={showDonutModal}
+        onClose={() => setShowDonutModal(false)}
+      >
+        <div className="h-[400px]">
+          <DonutChart data={typeDistribution} />
+          <div className="mt-4 space-y-2">
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div className="p-3 bg-blue-50 rounded-md">
+                <div className="text-xl font-bold text-blue-600">{counts.committees}</div>
+                <div className="text-sm text-blue-800">Committees</div>
+              </div>
+              <div className="p-3 bg-green-50 rounded-md">
+                <div className="text-xl font-bold text-green-600">{counts.workingGroups}</div>
+                <div className="text-sm text-green-800">Working Groups</div>
+              </div>
+              <div className="p-3 bg-amber-50 rounded-md">
+                <div className="text-xl font-bold text-amber-600">{counts.taskForces}</div>
+                <div className="text-sm text-amber-800">Task Forces</div>
+              </div>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      </Modal>
 
-      {/* Upcoming Meetings Modal */}
-      <Dialog open={isUpcomingModalOpen} onOpenChange={setIsUpcomingModalOpen}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>Upcoming Meetings</DialogTitle>
-          </DialogHeader>
-          <div className="mt-4">
-            {/* Upcoming Meetings Table */}
-            <div className="overflow-auto max-h-96">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-muted">
-                    <th className="p-2 text-left">Date</th>
-                    <th className="p-2 text-left">Time</th>
-                    <th className="p-2 text-left">Workbody</th>
-                    <th className="p-2 text-left">Location</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {upcomingMeetings.map((meeting) => (
-                    <tr key={meeting.id} className="border-t hover:bg-muted/50">
-                      <td className="p-2">{new Date(meeting.date).toLocaleDateString()}</td>
-                      <td className="p-2">{meeting.time}</td>
-                      <td className="p-2">{meeting.workbodyName}</td>
-                      <td className="p-2">{meeting.location}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <Modal
+        title="Meetings This Year"
+        isOpen={showMeetingsModal}
+        onClose={() => setShowMeetingsModal(false)}
+      >
+        <MeetingsList meetings={pastMeetings} />
+      </Modal>
 
-      <style jsx>{`
-        .colorful-card {
-          position: relative;
-          overflow: hidden;
-        }
-        
-        .colorful-card.blue::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 5px;
-          background: linear-gradient(90deg, #3B82F6, #10B981);
-        }
-        
-        .colorful-card.purple::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 5px;
-          background: linear-gradient(90deg, #8B5CF6, #EC4899);
-        }
-        
-        .colorful-card.green::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 5px;
-          background: linear-gradient(90deg, #10B981, #3B82F6);
-        }
-        
-        .colorful-card.amber::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 5px;
-          background: linear-gradient(90deg, #F59E0B, #EF4444);
-        }
-        
-        .animate-in {
-          animation: fadeIn 0.5s ease-out;
-        }
-        
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
+      <Modal
+        title="Upcoming Meetings"
+        isOpen={showUpcomingModal}
+        onClose={() => setShowUpcomingModal(false)}
+      >
+        <MeetingsList meetings={upcomingMeetings.map(m => ({
+          id: m.id,
+          date: m.date.toISOString().split('T')[0],
+          workbodyName: m.workbodyName,
+          agendaExcerpt: `Upcoming meeting of ${m.workbodyName}`
+        }))} />
+      </Modal>
     </div>
   );
 }

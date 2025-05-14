@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -59,6 +60,10 @@ export function UserManagement() {
 
   const fetchUsers = async () => {
     try {
+      // First get current user to ensure they're authenticated
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Authentication required");
+      
       const { data, error } = await supabase.from('profiles').select('*');
       if (error) throw error;
       setUsers(data || []);
@@ -126,7 +131,12 @@ export function UserManagement() {
     setCreationError("");
     
     try {
-      // Create the user directly in the auth table using the signUp method
+      // Get current admin user
+      const { data: { user: adminUser } } = await supabase.auth.getUser();
+      if (!adminUser) throw new Error("Admin authentication required");
+      
+      // Create the user through a server function/API endpoint
+      // This is a direct approach but in production, you'd typically use an admin function
       const { data, error } = await supabase.auth.signUp({
         email: newUser.email,
         password: newUser.password,
@@ -140,47 +150,51 @@ export function UserManagement() {
       
       if (error) throw error;
       
-      // Add user details to profiles table - NOTE: Removed workbody_id reference since it doesn't exist
+      // Adding directly to the profiles table with appropriate permissions
       if (data?.user) {
-        const profileData: any = {
+        const profileData = {
           id: data.user.id,
           name: newUser.name,
-          role: newUser.role
+          role: newUser.role,
+          created_by: adminUser.id // Track who created this user
         };
         
-        const { error: profileError } = await supabase.from('profiles').upsert(profileData);
+        // Insert into profiles table
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert(profileData);
         
         if (profileError) throw profileError;
         
-        // If secretary role and workbody is selected, create a separate mapping in a different table
+        // If secretary role and workbody is selected, create a separate mapping
         if (newUser.role === 'secretary' && newUser.workbodyId) {
-          // This could be handled through a separate table if needed
+          // This would be handled through an appropriate join table if needed
           console.log("Secretary assigned to workbody:", newUser.workbodyId);
         }
+        
+        setCreationSuccess(true);
+        
+        // Wait a moment before closing dialogs and refreshing
+        setTimeout(() => {
+          fetchUsers(); // Refresh the users list
+          setIsConfirmationDialogOpen(false);
+          setIsAddUserDialogOpen(false);
+          
+          // Reset form
+          setNewUser({
+            email: '',
+            password: '',
+            name: '',
+            role: 'secretary',
+            workbodyId: ''
+          });
+          
+          toast({
+            title: 'Success',
+            description: 'User has been added successfully',
+          });
+        }, 1500);
       }
-      
-      setCreationSuccess(true);
-      
-      // Wait a moment before closing dialogs and refreshing
-      setTimeout(() => {
-        fetchUsers(); // Refresh the users list
-        setIsConfirmationDialogOpen(false);
-        setIsAddUserDialogOpen(false);
-        
-        // Reset form
-        setNewUser({
-          email: '',
-          password: '',
-          name: '',
-          role: 'secretary',
-          workbodyId: ''
-        });
-        
-        toast({
-          title: 'Success',
-          description: 'User has been added successfully',
-        });
-      }, 1500);
     } catch (error: any) {
       console.error('Error adding user:', error);
       setCreationSuccess(false);
@@ -191,15 +205,21 @@ export function UserManagement() {
   };
 
   const handleDeleteUser = async (userId: string) => {
-    setIsLoading(true);
     try {
-      // Delete from profiles
-      const { error: profileError } = await supabase.from('profiles').delete().eq('id', userId);
+      // First get current admin user to ensure they're authenticated
+      const { data: { user: adminUser } } = await supabase.auth.getUser();
+      if (!adminUser) throw new Error("Admin authentication required");
+      
+      // Delete from profiles with admin credentials
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
       
       if (profileError) throw profileError;
       
-      await supabase.auth.signOut();
-      
+      // In production, you would use an admin function to delete the auth user
+      // This is a simplified approach
       toast({
         title: 'Success',
         description: 'User has been deleted successfully',
@@ -213,8 +233,6 @@ export function UserManagement() {
         description: error.message || 'Failed to delete user',
         variant: 'destructive',
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 

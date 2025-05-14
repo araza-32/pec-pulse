@@ -28,6 +28,15 @@ export const useMeetingMutations = (
     } = meetingData;
 
     try {
+      // Get current user for RLS policies
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('User must be logged in to create meetings');
+      }
+      
+      console.log("Creating meeting with user:", user.id);
+      
       const meetingPayload = {
         workbody_id: workbodyId,
         workbody_name: workbodyName,
@@ -38,7 +47,8 @@ export const useMeetingMutations = (
         notification_file_name: notificationFile || null,
         notification_file_path: notificationFilePath || null,
         agenda_file_name: agendaFile || null, 
-        agenda_file_path: agendaFilePath || null
+        agenda_file_path: agendaFilePath || null,
+        created_by: user.id // Add creator ID for RLS policies
       };
 
       const { data, error } = await supabase
