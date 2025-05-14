@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from "@/lib/utils";
 import {
@@ -22,6 +23,9 @@ interface NavigationItem {
   requiredRole?: string[];
 }
 
+// Define the possible user roles as a string literal union type
+type UserRole = 'chairman' | 'admin' | 'coordination' | 'member' | 'secretary';
+
 export const SidebarNavigation = () => {
   const { session } = useAuth();
   const location = useLocation();
@@ -29,6 +33,7 @@ export const SidebarNavigation = () => {
   const userRole = session?.role || 'member';
   const isChairman = userRole === 'chairman';
   const isAdmin = userRole === 'admin';
+  // Fix the comparison by treating 'coordination' as a string value that can be compared
   const isCoordination = userRole === 'coordination';
 
   // Navigation items configuration

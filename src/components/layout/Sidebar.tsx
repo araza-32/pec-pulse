@@ -76,11 +76,8 @@ export function Sidebar({
         
         <ScrollArea className="flex-1 px-3 py-4">
           <div className="space-y-4">
-            <SidebarNavigation 
-              userRole={userRole} 
-              showAdminOptions={showAdminOptions} 
-              isCoordinationUser={isCoordinationUser} 
-            />
+            {/* SidebarNavigation no longer needs these props */}
+            <SidebarNavigation />
             
             <Separator />
             
