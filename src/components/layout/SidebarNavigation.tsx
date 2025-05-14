@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from "@/lib/utils";
@@ -31,10 +30,10 @@ export const SidebarNavigation = () => {
   const { session } = useAuth();
   const location = useLocation();
 
-  const userRole = session?.role || 'member';
+  // Explicitly type userRole as UserRole to ensure TypeScript knows it can be 'coordination'
+  const userRole = (session?.role || 'member') as UserRole;
   const isChairman = userRole === 'chairman';
   const isAdmin = userRole === 'admin';
-  // Now this comparison is valid since 'coordination' is in the UserRole type
   const isCoordination = userRole === 'coordination';
 
   // Navigation items configuration
