@@ -12,14 +12,18 @@ export const useMeetingSubscription = (refetchCallback: () => void) => {
     // Set up subscription
     const channel = supabase
       .channel('scheduled_meetings_changes')
-      .on('postgres_changes', {
-        event: '*' as 'INSERT' | 'UPDATE' | 'DELETE' | '*', // Properly cast the string to the expected type
-        schema: 'public',
-        table: 'scheduled_meetings'
-      }, () => {
-        console.log('Meeting database change detected, refreshing data...');
-        refetchCallback();
-      })
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Using wildcard for all events (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'scheduled_meetings'
+        },
+        () => {
+          console.log('Meeting database change detected, refreshing data...');
+          refetchCallback();
+        }
+      )
       .subscribe((status) => {
         console.log('Subscription status:', status);
       });

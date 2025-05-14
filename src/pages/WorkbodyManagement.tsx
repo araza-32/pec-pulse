@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -20,11 +21,12 @@ export default function WorkbodyManagement() {
   const [viewMode, setViewMode] = useState<"grid" | "chart" | "list">("grid");
   const [activeFilter, setActiveFilter] = useState<"all" | "committee" | "working-group" | "task-force">("all");
 
-  // Check if user has admin access - Fixed the role comparison
-  const hasAdminAccess = session?.role === "admin" || 
-                         session?.role === "chairman" || 
-                         session?.role === "coordination";
-
+  // Check if user has admin access - Fix the role comparison by checking the string value properly
+  const hasAdminAccess = 
+    session?.role === "admin" || 
+    session?.role === "chairman" || 
+    session?.role === "coordination";
+  
   // Count workbodies by type
   const committees = workbodies.filter(wb => wb.type === "committee").length;
   const workingGroups = workbodies.filter(wb => wb.type === "working-group").length;
