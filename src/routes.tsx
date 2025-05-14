@@ -5,8 +5,10 @@ import Dashboard from './pages/Dashboard';
 import WorkbodyManagement from './pages/WorkbodyManagement';
 import WorkbodyDetail from './pages/WorkbodyDetail';
 import ChairmanDashboard from './pages/ChairmanDashboard';
+import ChairmanExecutiveDashboard from './pages/ChairmanExecutiveDashboard';
 import MeetingCalendar from './pages/MeetingCalendar';
 import MeetingMinutes from './pages/MeetingMinutes';
+import UploadMinutes from './pages/UploadMinutes';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
@@ -25,6 +27,10 @@ export const router = [
   {
     path: '/chairman-dashboard',
     element: <Layout><ChairmanDashboard /></Layout>,
+  },
+  {
+    path: '/chairman-executive',
+    element: <Layout><ChairmanExecutiveDashboard /></Layout>,
   },
   {
     path: '/workbodies',
@@ -49,6 +55,10 @@ export const router = [
   {
     path: '/minutes/:id',
     element: <Layout><MeetingMinutes /></Layout>,
+  },
+  {
+    path: '/upload-minutes',
+    element: <Layout><UploadMinutes /></Layout>,
   },
   {
     path: '/reports',

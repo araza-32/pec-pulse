@@ -1,6 +1,12 @@
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle,
+  CardDescription
+} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { ChairmanStatCards } from "@/components/chairman/ChairmanStatCards";
@@ -189,7 +195,7 @@ export default function ChairmanDashboard() {
             </CardContent>
           </Card>
 
-          {/* Task Force Status */}
+          {/* Task Force Status - Fixed structure with Tabs */}
           <Card className="h-auto">
             <CardHeader>
               <CardTitle>Task Force Status</CardTitle>

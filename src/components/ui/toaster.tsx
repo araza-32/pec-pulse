@@ -17,7 +17,7 @@ export function Toaster() {
   return (
     <ToastProvider>
       {toasts.map(function ({ id, title, description, action, variant, ...props }) {
-        // Handle the success variant by mapping it to the correct variant in Toast component
+        // Handle the success variant
         const toastVariant = variant === "success" ? "success" : variant;
         
         return (

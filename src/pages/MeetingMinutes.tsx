@@ -1,15 +1,15 @@
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
-import { FileText, ArrowLeft, Download, Search, CalendarDays } from "lucide-react";
+import { FileText, ArrowLeft, Download, Search, CalendarDays, Upload, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from 'react-router-dom';
 
 interface MeetingMinute {
   id: string;
@@ -116,7 +116,7 @@ export default function MeetingMinutes() {
   if (id && currentMinute) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center justify-between">
           <Button
             variant="outline"
             size="sm"
@@ -223,6 +223,14 @@ export default function MeetingMinutes() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
+        
+        <Button
+          onClick={() => navigate('/upload-minutes')}
+          className="bg-blue-600 hover:bg-blue-700"
+        >
+          <Upload className="h-4 w-4 mr-2" />
+          Upload Minutes
+        </Button>
       </div>
 
       <Card>
@@ -246,6 +254,13 @@ export default function MeetingMinutes() {
               <p className="text-muted-foreground mt-2">
                 {searchTerm ? "Try a different search term" : "No meeting minutes have been uploaded yet"}
               </p>
+              <Button
+                onClick={() => navigate('/upload-minutes')}
+                className="mt-4 bg-blue-600 hover:bg-blue-700"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Upload Your First Minutes
+              </Button>
             </div>
           ) : (
             <div className="divide-y">

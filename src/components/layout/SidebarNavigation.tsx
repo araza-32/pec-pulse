@@ -1,141 +1,118 @@
-import { useLocation } from "react-router-dom";
-import { Link } from "react-router-dom";
-import { BarChart3, Calendar, FileText, Home, Settings, Users } from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
+import { cn } from "@/lib/utils";
+import {
+  Home,
+  Users,
+  Calendar,
+  FileText,
+  Settings,
+  BarChart2,
+  ChevronDown,
+  ChevronRight,
+  AreaChart,
+} from "lucide-react";
+import { useAuth } from '@/contexts/AuthContext';
 
-interface SidebarItem {
-  name: string;
+interface NavigationItem {
+  label: string;
   href: string;
-  icon: any;
-  current?: boolean;
-  children?: SidebarItem[];
-  roles?: string[];
+  icon: React.ReactNode;
+  activePattern?: RegExp;
+  requiredRole?: string[];
 }
 
-export function getNavigation(): SidebarItem[] {
+export const SidebarNavigation = () => {
+  const { session } = useAuth();
   const location = useLocation();
-  
-  return [
-    { 
-      name: "Dashboard", 
-      href: "/dashboard", 
-      icon: Home, 
-      current: location.pathname === "/" || location.pathname === "/dashboard",
-      roles: ["admin", "secretary", "chairman", "registrar", "coordination"]
-    },
-    { 
-      name: "Chairman's Dashboard", 
-      href: "/chairman-dashboard", 
-      icon: BarChart3, 
-      current: location.pathname === "/chairman-dashboard",
-      roles: ["admin", "chairman", "registrar", "coordination"]
-    },
-    {
-      name: "Workbodies Management",
-      href: "/workbodies",
-      icon: Users,
-      current: location.pathname === "/workbodies" || location.pathname.startsWith("/workbody/"),
-      roles: ["admin", "secretary", "chairman", "registrar", "coordination"]
-    },
-    {
-      name: "Meeting Minutes",
-      href: "/meetings/list", 
-      icon: FileText,
-      current: location.pathname === "/meetings/list" || location.pathname.startsWith("/minutes/"),
-      roles: ["admin", "secretary", "chairman", "registrar"]
-    },
-    {
-      name: "Meeting Calendar",
-      href: "/calendar",
-      icon: Calendar,
-      current: location.pathname === "/calendar",
-      roles: ["admin", "secretary", "chairman", "registrar"]
-    },
-    {
-      name: "Settings",
-      href: "/settings",
-      icon: Settings,
-      current: location.pathname === "/settings",
-      roles: ["admin", "coordination"]
-    },
-  ];
-}
 
-// Create and export the SidebarNavigation component
-export function SidebarNavigation({ 
-  userRole, 
-  showAdminOptions, 
-  isCoordinationUser 
-}: { 
-  userRole: string; 
-  showAdminOptions: boolean; 
-  isCoordinationUser: boolean; 
-}) {
-  const allNavigation = getNavigation();
-  
-  // Filter navigation items based on user role
-  const filteredNavigation = allNavigation.filter(item => {
-    // If roles are defined, check if user role is included
-    if (item.roles) {
-      if (userRole === 'admin' || showAdminOptions) {
-        // Admin and coordination users can see everything
-        return true;
-      }
-      return item.roles.includes(userRole);
+  const userRole = session?.role || 'member';
+  const isChairman = userRole === 'chairman';
+  const isAdmin = userRole === 'admin';
+  const isCoordination = userRole === 'coordination';
+
+  // Navigation items configuration
+  const navigationItems: NavigationItem[] = [
+    { 
+      label: "Dashboard", 
+      href: "/dashboard", 
+      icon: <Home className="h-5 w-5" />, 
+      activePattern: /^\/dashboard$/
+    },
+    { 
+      label: "Chairman's Dashboard", 
+      href: "/chairman-dashboard", 
+      icon: <BarChart2 className="h-5 w-5" />, 
+      activePattern: /^\/chairman-dashboard$/, 
+      requiredRole: ['chairman', 'admin', 'coordination']
+    },
+    { 
+      label: "Chairman's Executive", 
+      href: "/chairman-executive", 
+      icon: <AreaChart className="h-5 w-5" />, 
+      activePattern: /^\/chairman-executive$/,
+      requiredRole: ['chairman']
+    },
+    { 
+      label: "Workbodies", 
+      href: "/workbodies", 
+      icon: <Users className="h-5 w-5" />, 
+      activePattern: /^\/workbod(y|ies)/
+    },
+    { 
+      label: "Meeting Calendar", 
+      href: "/calendar", 
+      icon: <Calendar className="h-5 w-5" />, 
+      activePattern: /^\/calendar/
+    },
+    { 
+      label: "Meeting Minutes", 
+      href: "/meetings/list", 
+      icon: <FileText className="h-5 w-5" />, 
+      activePattern: /^\/meetings\/|^\/minutes\//
+    },
+    { 
+      label: "Settings", 
+      href: "/settings", 
+      icon: <Settings className="h-5 w-5" />, 
+      activePattern: /^\/settings/,
+      requiredRole: ['admin', 'chairman', 'coordination']
     }
+  ];
+
+  const filteredNavItems = navigationItems.filter(item => {
+    // If no required role is specified, show to everyone
+    if (!item.requiredRole) return true;
     
-    // Items without defined roles are shown to everyone
-    return true;
+    // Otherwise, check if user has one of the required roles
+    return item.requiredRole.includes(userRole);
   });
 
   return (
-    <div>
-      <h4 className="mb-2 px-3 text-xs font-semibold uppercase text-muted-foreground">
-        Navigation
-      </h4>
-      <nav className="space-y-1">
-        {filteredNavigation.map((item) => (
-          <div key={item.name}>
-            <Link
-              to={item.href}
-              className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
-                item.current 
-                  ? "bg-pec-green text-white" 
-                  : "hover:bg-pec-green-50"
-              }`}
-            >
-              {item.icon && <item.icon className="h-5 w-5" />}
-              {item.name}
-            </Link>
-            
-            {item.children && item.children.length > 0 && (
-              <div className="ml-6 space-y-1 mt-1">
-                {item.children.filter(subItem => {
-                  if (subItem.roles) {
-                    if (userRole === 'admin' || showAdminOptions) {
-                      return true;
-                    }
-                    return subItem.roles.includes(userRole);
-                  }
-                  return true;
-                }).map(subItem => (
-                  <Link
-                    key={subItem.name}
-                    to={subItem.href}
-                    className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors ${
-                      subItem.current 
-                        ? "bg-pec-green/80 text-white" 
-                        : "hover:bg-pec-green-50"
-                    }`}
-                  >
-                    {subItem.icon && <subItem.icon className="h-4 w-4" />}
-                    {subItem.name}
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
-      </nav>
+    <div className="space-y-1">
+      {filteredNavItems.map((item) => {
+        const isActive = item.activePattern 
+          ? item.activePattern.test(location.pathname) 
+          : location.pathname === item.href;
+
+        return (
+          <NavLink
+            key={item.href}
+            to={item.href}
+            className={({ isActive }) => 
+              cn(
+                "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+                isActive 
+                  ? "bg-accent text-accent-foreground font-medium" 
+                  : "hover:bg-muted/50 text-muted-foreground hover:text-foreground"
+              )
+            }
+          >
+            {item.icon}
+            {item.label}
+          </NavLink>
+        );
+      })}
     </div>
   );
-}
+};

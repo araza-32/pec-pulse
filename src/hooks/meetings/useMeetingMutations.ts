@@ -28,7 +28,7 @@ export const useMeetingMutations = (
     } = meetingData;
 
     try {
-      // Get current user for RLS policies
+      // Get current user for RLS policies - removed reference to created_by
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
@@ -47,8 +47,7 @@ export const useMeetingMutations = (
         notification_file_name: notificationFile || null,
         notification_file_path: notificationFilePath || null,
         agenda_file_name: agendaFile || null, 
-        agenda_file_path: agendaFilePath || null,
-        created_by: user.id // Add creator ID for RLS policies
+        agenda_file_path: agendaFilePath || null
       };
 
       const { data, error } = await supabase

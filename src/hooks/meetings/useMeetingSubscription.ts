@@ -1,42 +1,32 @@
 
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
-export const useMeetingSubscription = (refetchCallback: () => void) => {
+export const useMeetingSubscription = (onUpdate: () => Promise<void>) => {
   useEffect(() => {
-    // Enable realtime subscriptions for the table
-    const enableRealtimeForTable = async () => {
-      // Type assertion at the function level to avoid TypeScript error
-      // This is needed because the rpc function doesn't have a type definition for this custom function
-      const rpcCall = supabase.rpc as unknown as (fnName: string) => Promise<any>;
-      await rpcCall('enable_scheduled_meetings_realtime');
-    };
-
-    // Set up subscription
+    // Cast rpc to a function that accepts string parameters to fix the type error
+    const rpcFunc = supabase.rpc as unknown as (fnName: string) => Promise<any>;
+    
+    // Set up real-time subscription
     const channel = supabase
       .channel('scheduled_meetings_changes')
       .on(
-        'postgres_changes' as any, // Using 'as any' to bypass type checking temporarily
+        'postgres_changes',
         {
-          event: '*', // Using wildcard for all events (INSERT, UPDATE, DELETE)
+          event: '*',
           schema: 'public',
           table: 'scheduled_meetings'
         },
-        () => {
-          console.log('Meeting database change detected, refreshing data...');
-          refetchCallback();
+        (payload) => {
+          console.log('Meeting change detected:', payload);
+          onUpdate();
         }
       )
-      .subscribe((status) => {
-        console.log('Subscription status:', status);
-      });
-
-    enableRealtimeForTable();
-
-    // Cleanup subscription when component unmounts
+      .subscribe();
+    
+    // Clean up subscription on unmount
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [refetchCallback]);
+  }, [onUpdate]);
 };
