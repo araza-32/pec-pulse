@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { 
   Card, 
@@ -116,7 +115,8 @@ export default function ChairmanDashboard() {
       id: member.id,
       name: member.name,
       role: member.role,
-      email: member.email || undefined,
+      // Don't try to access email since it doesn't exist on the member type
+      email: undefined,
       phone: undefined,
       hasCV: false // Add the required hasCV property
     }));
