@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -192,31 +193,31 @@ export default function ChairmanDashboard() {
           <Card className="h-auto">
             <CardHeader>
               <CardTitle>Task Force Status</CardTitle>
+            </CardHeader>
+            <CardContent>
               <Tabs defaultValue="expiring" onValueChange={setActiveTab}>
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="expiring">Expiring Soon</TabsTrigger>
                   <TabsTrigger value="ended">Recently Ended</TabsTrigger>
                 </TabsList>
+                <TabsContent value="expiring" className="mt-0">
+                  <ExpiringTaskForceList 
+                    taskForces={workbodies.filter(wb => 
+                      wb.type === 'task-force' && wb.progressPercent < 100
+                    )}
+                    isLoading={isLoading}
+                  />
+                </TabsContent>
+                <TabsContent value="ended" className="mt-0">
+                  <ExpiringTaskForceList 
+                    taskForces={workbodies.filter(wb => 
+                      wb.type === 'task-force' && wb.progressPercent >= 100
+                    )}
+                    isLoading={isLoading}
+                    ended
+                  />
+                </TabsContent>
               </Tabs>
-            </CardHeader>
-            <CardContent>
-              <TabsContent value="expiring" className="mt-0">
-                <ExpiringTaskForceList 
-                  taskForces={workbodies.filter(wb => 
-                    wb.type === 'task-force' && wb.progressPercent < 100
-                  )}
-                  isLoading={isLoading}
-                />
-              </TabsContent>
-              <TabsContent value="ended" className="mt-0">
-                <ExpiringTaskForceList 
-                  taskForces={workbodies.filter(wb => 
-                    wb.type === 'task-force' && wb.progressPercent >= 100
-                  )}
-                  isLoading={isLoading}
-                  ended
-                />
-              </TabsContent>
             </CardContent>
           </Card>
         </div>
