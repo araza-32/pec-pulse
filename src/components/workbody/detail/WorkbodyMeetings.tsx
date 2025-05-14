@@ -1,17 +1,19 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText } from "lucide-react";
+import { FileText, Upload } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MeetingMinutes } from "@/types";
+import { WorkbodyMinutesUpload } from "./WorkbodyMinutesUpload";
 
 interface WorkbodyMeetingsProps {
   minutes: MeetingMinutes[];
   isLoadingMinutes: boolean;
+  workbodyId: string;
 }
 
-export function WorkbodyMeetings({ minutes, isLoadingMinutes }: WorkbodyMeetingsProps) {
+export function WorkbodyMeetings({ minutes, isLoadingMinutes, workbodyId }: WorkbodyMeetingsProps) {
   const sortedMinutes = [...minutes].sort((a, b) => {
     const dateA = new Date(a.meetingDate || a.date).getTime();
     const dateB = new Date(b.meetingDate || b.date).getTime();
@@ -37,8 +39,9 @@ export function WorkbodyMeetings({ minutes, isLoadingMinutes }: WorkbodyMeetings
 
   return (
     <Card>
-      <CardHeader className="text-center">
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Meeting Minutes</CardTitle>
+        <WorkbodyMinutesUpload workbodyId={workbodyId} />
       </CardHeader>
       <CardContent>
         {minutes.length > 0 ? (
@@ -72,6 +75,7 @@ export function WorkbodyMeetings({ minutes, isLoadingMinutes }: WorkbodyMeetings
         ) : (
           <div className="text-center py-6 text-muted-foreground">
             <p>No meeting minutes available</p>
+            <WorkbodyMinutesUpload workbodyId={workbodyId} />
           </div>
         )}
       </CardContent>

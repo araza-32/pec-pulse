@@ -17,6 +17,7 @@ import { WorkbodiesStackedCards } from "@/components/chairman-dashboard/Workbodi
 import { Modal } from "@/components/ui/modal";
 import { DonutChart } from "@/components/chairman/DonutChart";
 import { MeetingsList } from "@/components/chairman/MeetingsList";
+import { AlertsQuickAccess } from "@/components/chairman-dashboard/AlertsQuickAccess";
 
 export default function ChairmanDashboard() {
   const { 
@@ -106,6 +107,14 @@ export default function ChairmanDashboard() {
     { name: "Working Groups", value: counts.workingGroups, color: "#10B981" },
     { name: "Task Forces", value: counts.taskForces, color: "#F59E0B" }
   ];
+  
+  // Schedule meetings data for alerts
+  const scheduledMeetings = upcomingMeetings.map(m => ({
+    id: m.id,
+    date: m.date.toISOString().split('T')[0],
+    time: "14:00",
+    workbodyName: m.workbodyName
+  }));
 
   return (
     <div className="space-y-6">
@@ -183,18 +192,15 @@ export default function ChairmanDashboard() {
           </CardContent>
         </Card>
 
-        {/* Right Side: Split Column for Engagement and Task Force */}
+        {/* Right Side: Split Column for Alerts/Quick Access */}
         <div className="md:col-span-4 space-y-6">
-          {/* Engagement Analysis */}
-          <Card className="h-auto">
-            <CardHeader>
-              <CardTitle>Engagement Analysis</CardTitle>
-            </CardHeader>
-            <CardContent className="h-64">
-              <EngagementChart data={mockEngagementData} />
-            </CardContent>
-          </Card>
-
+          {/* Alert & Quick Access Card */}
+          <AlertsQuickAccess
+            workbodies={workbodies}
+            meetings={scheduledMeetings}
+            isLoading={isLoading}
+          />
+          
           {/* Task Force Status - Fixed structure with Tabs */}
           <Card className="h-auto">
             <CardHeader>
@@ -224,6 +230,16 @@ export default function ChairmanDashboard() {
                   />
                 </TabsContent>
               </Tabs>
+            </CardContent>
+          </Card>
+
+          {/* Engagement Analysis */}
+          <Card className="h-auto">
+            <CardHeader>
+              <CardTitle>Engagement Analysis</CardTitle>
+            </CardHeader>
+            <CardContent className="h-64">
+              <EngagementChart data={mockEngagementData} />
             </CardContent>
           </Card>
         </div>

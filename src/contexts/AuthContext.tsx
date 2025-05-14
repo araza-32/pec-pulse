@@ -1,9 +1,10 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 
 // Define the User type with specific role types
-type UserRole = 'admin' | 'secretary' | 'chairman' | 'registrar';
+export type UserRole = 'admin' | 'secretary' | 'chairman' | 'registrar' | 'coordination' | 'member';
 
 interface User {
   id: string;
@@ -30,6 +31,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
   // Check for existing session on mount
   useEffect(() => {
@@ -122,6 +124,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           role = 'registrar';
           id = '4';
           name = 'Registrar PEC';
+        } else if (email.includes('coordination')) {
+          role = 'coordination';
+          id = '5';
+          name = 'Coordination User';
         }
         
         // Set the user with the proper typed role
@@ -205,6 +211,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.removeItem('workbodyId');
       localStorage.removeItem('userName');
       localStorage.removeItem('userEmail');
+      
+      // Redirect to login page after logout
+      navigate('/login');
     } catch (error) {
       console.error('Logout error:', error);
       throw error;

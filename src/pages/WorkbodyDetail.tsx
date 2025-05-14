@@ -174,6 +174,7 @@ export default function WorkbodyDetail() {
           <WorkbodyMeetings 
             minutes={minutes}
             isLoadingMinutes={isLoadingMinutes}
+            workbodyId={workbody.id}
           />
         </TabsContent>
 

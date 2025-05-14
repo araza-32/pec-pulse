@@ -1,32 +1,32 @@
+
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from "@/lib/utils";
 import {
-  Home,
-  Users,
-  Calendar,
+  CalendarDays,
+  File,
   FileText,
+  Home,
+  LucideIcon,
+  BarChart3,
+  Users,
   Settings,
-  BarChart2,
-  ChevronDown,
-  ChevronRight,
-  AreaChart,
+  CalendarCheck,
+  FolderOpen,
+  Briefcase,
 } from "lucide-react";
-import { useAuth } from '@/contexts/AuthContext';
+import { Button } from "../ui/button";
+import { useAuth, UserRole } from "@/contexts/AuthContext";
 
-interface NavigationItem {
+interface SidebarItemProps {
+  icon: LucideIcon;
   label: string;
   href: string;
-  icon: React.ReactNode;
-  activePattern?: RegExp;
-  requiredRole?: string[];
+  active?: boolean;
 }
 
-// Define the possible user roles as a string literal union type
-// Add 'coordination' to the UserRole type
-type UserRole = 'chairman' | 'admin' | 'coordination' | 'member' | 'secretary';
-
-export const SidebarNavigation = () => {
+// This type ensures UserRole can include "coordination" without conflicts
+export function SidebarNavigation() {
   const { session } = useAuth();
   const location = useLocation();
 
@@ -37,87 +37,109 @@ export const SidebarNavigation = () => {
   const isCoordination = userRole === 'coordination';
 
   // Navigation items configuration
-  const navigationItems: NavigationItem[] = [
-    { 
-      label: "Dashboard", 
-      href: "/dashboard", 
-      icon: <Home className="h-5 w-5" />, 
-      activePattern: /^\/dashboard$/
+  const navigationItems = [
+    {
+      label: "Dashboard",
+      icon: Home,
+      href: "/dashboard",
+      roles: ["admin", "secretary", "chairman", "registrar", "coordination", "member"]
     },
-    { 
-      label: "Chairman's Dashboard", 
-      href: "/chairman-dashboard", 
-      icon: <BarChart2 className="h-5 w-5" />, 
-      activePattern: /^\/chairman-dashboard$/, 
-      requiredRole: ['chairman', 'admin', 'coordination']
+    {
+      label: "Chairman Dashboard",
+      icon: BarChart3,
+      href: "/chairman-dashboard",
+      roles: ["chairman", "admin"]
     },
-    { 
-      label: "Chairman's Executive", 
-      href: "/chairman-executive", 
-      icon: <AreaChart className="h-5 w-5" />, 
-      activePattern: /^\/chairman-executive$/,
-      requiredRole: ['chairman']
+    {
+      label: "Executive Dashboard",
+      icon: BarChart3,
+      href: "/chairman-executive",
+      roles: ["chairman", "admin"]
     },
-    { 
-      label: "Workbodies", 
-      href: "/workbodies", 
-      icon: <Users className="h-5 w-5" />, 
-      activePattern: /^\/workbod(y|ies)/
+    {
+      label: "Workbodies",
+      icon: Briefcase,
+      href: "/workbodies",
+      roles: ["admin", "secretary", "chairman", "registrar", "coordination", "member"]
     },
-    { 
-      label: "Meeting Calendar", 
-      href: "/calendar", 
-      icon: <Calendar className="h-5 w-5" />, 
-      activePattern: /^\/calendar/
+    {
+      label: "Calendar",
+      icon: CalendarDays,
+      href: "/calendar",
+      roles: ["admin", "secretary", "chairman", "registrar", "coordination", "member"]
     },
-    { 
-      label: "Meeting Minutes", 
-      href: "/meetings/list", 
-      icon: <FileText className="h-5 w-5" />, 
-      activePattern: /^\/meetings\/|^\/minutes\//
+    {
+      label: "Meetings",
+      icon: CalendarCheck,
+      href: "/meetings/list",
+      roles: ["admin", "secretary", "chairman", "registrar", "coordination", "member"]
     },
-    { 
-      label: "Settings", 
-      href: "/settings", 
-      icon: <Settings className="h-5 w-5" />, 
-      activePattern: /^\/settings/,
-      requiredRole: ['admin', 'chairman', 'coordination']
+    {
+      label: "Minutes",
+      icon: FileText,
+      href: "/minutes",
+      roles: ["admin", "secretary", "chairman", "registrar", "coordination", "member"]
+    },
+    {
+      label: "Upload Minutes",
+      icon: File,
+      href: "/upload-minutes",
+      roles: ["admin", "secretary", "chairman", "registrar", "coordination"]
+    },
+    {
+      label: "Reports",
+      icon: FolderOpen,
+      href: "/reports",
+      roles: ["admin", "secretary", "chairman", "registrar", "coordination"]
+    },
+    {
+      label: "Members",
+      icon: Users,
+      href: "/members",
+      roles: ["admin", "chairman", "registrar", "coordination"]
+    },
+    {
+      label: "Settings",
+      icon: Settings,
+      href: "/settings",
+      roles: ["admin", "secretary", "chairman", "registrar", "coordination", "member"]
     }
   ];
 
-  const filteredNavItems = navigationItems.filter(item => {
-    // If no required role is specified, show to everyone
-    if (!item.requiredRole) return true;
-    
-    // Otherwise, check if user has one of the required roles
-    return item.requiredRole.includes(userRole);
-  });
+  // Filter navigation items based on user role
+  const filteredItems = navigationItems.filter(item =>
+    item.roles.includes(userRole as string)
+  );
+
+  const SidebarItem = ({ icon: Icon, label, href, active }: SidebarItemProps) => {
+    return (
+      <NavLink to={href} className="w-full">
+        {({ isActive }) => (
+          <Button
+            variant="ghost"
+            className={cn(
+              "w-full justify-start gap-x-3 text-base font-normal",
+              (isActive || active) && "bg-muted font-medium"
+            )}
+          >
+            <Icon className="h-5 w-5" /> {label}
+          </Button>
+        )}
+      </NavLink>
+    );
+  };
 
   return (
-    <div className="space-y-1">
-      {filteredNavItems.map((item) => {
-        const isActive = item.activePattern 
-          ? item.activePattern.test(location.pathname) 
-          : location.pathname === item.href;
-
-        return (
-          <NavLink
-            key={item.href}
-            to={item.href}
-            className={({ isActive }) => 
-              cn(
-                "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
-                isActive 
-                  ? "bg-accent text-accent-foreground font-medium" 
-                  : "hover:bg-muted/50 text-muted-foreground hover:text-foreground"
-              )
-            }
-          >
-            {item.icon}
-            {item.label}
-          </NavLink>
-        );
-      })}
+    <div className="flex w-full flex-col space-y-1 px-2">
+      {filteredItems.map((item, index) => (
+        <SidebarItem
+          key={index}
+          icon={item.icon}
+          label={item.label}
+          href={item.href}
+          active={location.pathname === item.href}
+        />
+      ))}
     </div>
   );
-};
+}

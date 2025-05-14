@@ -5,7 +5,7 @@ import { NewSidebar } from "./NewSidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { Toaster } from "@/components/ui/toaster";
 import { Loading } from "@/components/ui/loading";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
@@ -15,9 +15,10 @@ interface LayoutProps {
 
 export function NewLayout({ children }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const { session, logout } = useAuth();
+  const { session, logout, isAuthenticated } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const location = useLocation();
+  const navigate = useNavigate();
   
   const currentUser = session ? {
     name: session.name || 'User',
@@ -33,6 +34,14 @@ export function NewLayout({ children }: LayoutProps) {
     
     return () => clearTimeout(timer);
   }, []);
+
+  // Redirect to login if not authenticated and not on public pages
+  useEffect(() => {
+    const isPublicPage = location.pathname === "/" || location.pathname === "/login";
+    if (!isAuthenticated && !isPublicPage && !isLoading) {
+      navigate('/login');
+    }
+  }, [isAuthenticated, location.pathname, isLoading, navigate]);
 
   // Handle sidebar state in localStorage
   useEffect(() => {
