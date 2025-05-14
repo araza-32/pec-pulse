@@ -2,30 +2,33 @@
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-export const useMeetingSubscription = (
-  onUpdate: () => Promise<void>
-) => {
+export const useMeetingSubscription = (refetchCallback: () => void) => {
   useEffect(() => {
-    // Set up a real-time subscription to scheduled_meetings table
+    // Enable realtime subscriptions for the table
+    const enableRealtimeForTable = async () => {
+      await supabase.rpc('enable_scheduled_meetings_realtime');
+    };
+
+    // Set up subscription
     const channel = supabase
       .channel('scheduled_meetings_changes')
-      .on(
-        'postgres_changes', 
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'scheduled_meetings' 
-        }, 
-        () => {
-          // When any change is detected, refetch meetings
-          onUpdate();
-        }
-      )
-      .subscribe();
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'scheduled_meetings'
+      }, () => {
+        console.log('Meeting database change detected, refreshing data...');
+        refetchCallback();
+      })
+      .subscribe((status) => {
+        console.log('Subscription status:', status);
+      });
 
-    // Clean up the subscription on component unmount
+    enableRealtimeForTable();
+
+    // Cleanup subscription when component unmounts
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [onUpdate]);
+  }, [refetchCallback]);
 };

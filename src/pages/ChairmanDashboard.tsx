@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChairmanStatCards } from "@/components/chairman/ChairmanStatCards";
 import { WorkbodyDistributionChart } from "@/components/chairman/WorkbodyDistributionChart";
-import { WorkbodiesOverview } from "@/components/chairman-dashboard/WorkbodiesOverview";
+import { WorkbodiesStackedCards } from "@/components/chairman-dashboard/WorkbodiesStackedCards";
 import { ExpiringTaskForces } from "@/components/chairman/ExpiringTaskForces";
 import { useWorkbodies } from "@/hooks/useWorkbodies";
 import { useScheduledMeetings } from "@/hooks/useScheduledMeetings";
@@ -153,25 +153,25 @@ export default function ChairmanDashboard() {
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle>Workbodies Overview</CardTitle>
-            <CardDescription>Filter, search, and sort workbodies</CardDescription>
+            <CardDescription>All workbodies across the Pakistan Engineering Council</CardDescription>
           </div>
           <SearchSortBar 
             onSearch={(query) => console.log("Search:", query)}
             onSort={(option) => console.log("Sort by:", option)}
           />
         </CardHeader>
-        <CardContent className="p-0">
-          <WorkbodiesOverview workbodies={workbodies} isLoading={isLoadingWorkbodies} />
+        <CardContent className="p-6">
+          <WorkbodiesStackedCards workbodies={workbodies} isLoading={isLoadingWorkbodies} />
         </CardContent>
       </Card>
 
       {/* Engagement Analysis and Task Force Status */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mt-6">
         <div className="lg:col-span-2">
           <EngagementChart data={engagementData} />
         </div>
 
-        <div className="lg:col-span-1">
+        <div className="lg:col-span-2">
           <Card className="h-full">
             <CardHeader className="pb-2">
               <CardTitle>Task Force Status</CardTitle>
@@ -296,8 +296,7 @@ export default function ChairmanDashboard() {
         </DialogContent>
       </Dialog>
 
-      <style>
-        {`
+      <style jsx>{`
         .colorful-card {
           position: relative;
           overflow: hidden;
@@ -351,8 +350,7 @@ export default function ChairmanDashboard() {
           from { opacity: 0; transform: translateY(10px); }
           to { opacity: 1; transform: translateY(0); }
         }
-        `}
-      </style>
+      `}</style>
     </div>
   );
 }

@@ -1,4 +1,3 @@
-
 import { useLocation } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { BarChart3, Calendar, FileText, Home, Settings, Users } from "lucide-react";
@@ -18,7 +17,7 @@ export function getNavigation(): SidebarItem[] {
   return [
     { 
       name: "Dashboard", 
-      href: "/", 
+      href: "/dashboard", 
       icon: Home, 
       current: location.pathname === "/" || location.pathname === "/dashboard",
       roles: ["admin", "secretary", "chairman", "registrar", "coordination"]
@@ -31,31 +30,17 @@ export function getNavigation(): SidebarItem[] {
       roles: ["admin", "chairman", "registrar", "coordination"]
     },
     {
-      name: "Workbodies",
+      name: "Workbodies Management",
       href: "/workbodies",
       icon: Users,
       current: location.pathname === "/workbodies" || location.pathname.startsWith("/workbody/"),
       roles: ["admin", "secretary", "chairman", "registrar", "coordination"]
     },
     {
-      name: "Workbodies Overview",
-      href: "/workbodies-overview",
-      icon: Users,
-      current: location.pathname === "/workbodies-overview",
-      roles: ["admin", "chairman", "registrar", "coordination"]
-    },
-    {
-      name: "Workbody Management",
-      href: "/workbody-management",
-      icon: Users,
-      current: location.pathname === "/workbody-management",
-      roles: ["admin", "coordination"]
-    },
-    {
       name: "Meeting Minutes",
       href: "/meetings/list", 
       icon: FileText,
-      current: location.pathname === "/meetings/list",
+      current: location.pathname === "/meetings/list" || location.pathname.startsWith("/minutes/"),
       roles: ["admin", "secretary", "chairman", "registrar"]
     },
     {
