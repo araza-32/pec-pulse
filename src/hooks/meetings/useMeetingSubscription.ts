@@ -7,7 +7,7 @@ export const useMeetingSubscription = (refetchCallback: () => void) => {
   useEffect(() => {
     // Enable realtime subscriptions for the table
     const enableRealtimeForTable = async () => {
-      await supabase.rpc('enable_scheduled_meetings_realtime');
+      await supabase.rpc('enable_scheduled_meetings_realtime' as any);
     };
 
     // Set up subscription

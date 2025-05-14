@@ -53,6 +53,7 @@ export type ToastProps = {
   action?: ToastActionElement
   variant?: "default" | "destructive" | "success"
   className?: string
+  duration?: number
 }
 
 const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
@@ -82,7 +83,6 @@ const reducer = (state: State, action: Action): State => {
           ...state,
           toasts: state.toasts.map((t) => ({
             ...t,
-            onOpenChange: undefined,
           })),
         }
       }
@@ -91,7 +91,7 @@ const reducer = (state: State, action: Action): State => {
       return {
         ...state,
         toasts: state.toasts.map((t) =>
-          t.id === toastId ? { ...t, onOpenChange: undefined } : t
+          t.id === toastId ? { ...t } : t
         ),
       }
     }
@@ -127,7 +127,6 @@ function dispatch(action: Action) {
 
 interface Toast extends Omit<ToastProps, "id"> {
   id?: string
-  duration?: number; // Add this property here since it's used in the component
 }
 
 function toast({ ...props }: Toast) {
@@ -146,10 +145,6 @@ function toast({ ...props }: Toast) {
     toast: {
       ...props,
       id,
-      // Remove the 'open' property as it doesn't exist in ToastProps
-      onOpenChange: (open) => {
-        if (!open) dismiss()
-      },
     },
   })
 

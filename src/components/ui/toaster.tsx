@@ -17,8 +17,8 @@ export function Toaster() {
   return (
     <ToastProvider>
       {toasts.map(function ({ id, title, description, action, variant, ...props }) {
-        // Only pass allowed variant values to Toast component
-        const toastVariant = variant === "success" ? "default" : variant;
+        // Handle the success variant by mapping it to the correct variant in Toast component
+        const toastVariant = variant === "success" ? "success" : variant;
         
         return (
           <Toast key={id} {...props} variant={toastVariant}>
