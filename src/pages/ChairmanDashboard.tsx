@@ -18,7 +18,7 @@ import { Modal } from "@/components/ui/modal";
 import { DonutChart } from "@/components/chairman/DonutChart";
 import { MeetingsList } from "@/components/chairman/MeetingsList";
 import { AlertsQuickAccess } from "@/components/chairman-dashboard/AlertsQuickAccess";
-import { Workbody, ScheduledMeeting } from "@/types";
+import { Workbody, ScheduledMeeting, WorkbodyMember } from "@/types";
 
 export default function ChairmanDashboard() {
   const { 
@@ -110,19 +110,31 @@ export default function ChairmanDashboard() {
   ];
   
   // Convert enhanced workbodies to the format expected by AlertsQuickAccess
-  const convertedWorkbodies: Workbody[] = workbodies.map(wb => ({
-    id: wb.id,
-    name: wb.name,
-    type: wb.type,
-    description: wb.mandate,
-    createdDate: new Date().toISOString(), // Using current date as fallback
-    termsOfReference: wb.termsOfReference,
-    totalMeetings: Math.round(wb.progressPercent / 10), // Approximation based on existing logic
-    meetingsThisYear: wb.meetingsYtd,
-    actionsAgreed: wb.progressPercent > 0 ? Math.round(wb.progressPercent * 0.8) : 0, // Estimation
-    actionsCompleted: wb.actionsClosed > 0 ? Math.round((wb.actionsClosed / 100) * (wb.progressPercent * 0.8)) : 0,
-    members: wb.members
-  }));
+  const convertedWorkbodies: Workbody[] = workbodies.map(wb => {
+    // Convert member format to match WorkbodyMember type
+    const members: WorkbodyMember[] = wb.members.map(member => ({
+      id: member.id,
+      name: member.name,
+      role: member.role,
+      email: member.email || undefined,
+      phone: undefined,
+      hasCV: false // Add the required hasCV property
+    }));
+
+    return {
+      id: wb.id,
+      name: wb.name,
+      type: wb.type,
+      description: wb.mandate,
+      createdDate: new Date().toISOString(), // Using current date as fallback
+      termsOfReference: wb.termsOfReference,
+      totalMeetings: Math.round(wb.progressPercent / 10), // Approximation based on existing logic
+      meetingsThisYear: wb.meetingsYtd,
+      actionsAgreed: wb.progressPercent > 0 ? Math.round(wb.progressPercent * 0.8) : 0, // Estimation
+      actionsCompleted: wb.actionsClosed > 0 ? Math.round((wb.actionsClosed / 100) * (wb.progressPercent * 0.8)) : 0,
+      members: members
+    };
+  });
   
   // Schedule meetings data for alerts with proper typing
   const scheduledMeetings: ScheduledMeeting[] = upcomingMeetings.map(m => ({
