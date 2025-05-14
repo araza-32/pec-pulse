@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -40,6 +39,7 @@ export default function ChairmanDashboard() {
     overdueActions: 8,
   };
 
+  // Mock engagement data (would come from API in production)
   const mockEngagementData = [
     { month: "Jan", attendance: 78, participation: 65, actionRate: 72 },
     { month: "Feb", attendance: 82, participation: 70, actionRate: 68 },
@@ -109,9 +109,18 @@ export default function ChairmanDashboard() {
         </p>
       </div>
 
-      {/* KPI Statistics Cards */}
+      {/* KPI Statistics Cards - Updated to use spread props instead of stats object */}
       <ChairmanStatCards 
-        stats={meetingStats}
+        totalWorkbodies={meetingStats.totalWorkbodies}
+        committees={meetingStats.committees}
+        workingGroups={meetingStats.workingGroups}
+        taskForces={meetingStats.taskForces}
+        meetingsThisYear={meetingStats.meetingsThisYear}
+        completionRate={meetingStats.completionRate}
+        upcomingMeetingsCount={meetingStats.upcomingMeetingsCount}
+        actionsCompleted={meetingStats.actionsCompleted}
+        actionsAgreed={meetingStats.actionsAgreed}
+        overdueActions={meetingStats.overdueActions}
         onWorkbodiesClick={() => setShowDonutModal(true)}
         onMeetingsClick={() => setShowMeetingsModal(true)}
         onUpcomingClick={() => setShowUpcomingModal(true)}

@@ -13,7 +13,7 @@ export const useMeetingSubscription = (refetchCallback: () => void) => {
     const channel = supabase
       .channel('scheduled_meetings_changes')
       .on('postgres_changes', {
-        event: '*', // This is now properly typed as '*' for all events
+        event: '*' as 'INSERT' | 'UPDATE' | 'DELETE' | '*', // Properly cast the string to the expected type
         schema: 'public',
         table: 'scheduled_meetings'
       }, () => {

@@ -1,38 +1,30 @@
 
-import React from 'react';
-import { X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader,
-  DialogTitle,
-  DialogClose
-} from '@/components/ui/dialog';
+import React from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { X } from "lucide-react";
+import { Button } from "./button";
 
 interface ModalProps {
-  title: string;
   isOpen: boolean;
   onClose: () => void;
+  title: string;
   children: React.ReactNode;
 }
 
-export function Modal({ title, isOpen, onClose, children }: ModalProps) {
+export function Modal({ isOpen, onClose, title, children }: ModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md md:max-w-xl">
-        <DialogHeader className="flex flex-row items-center justify-between">
-          <DialogTitle>{title}</DialogTitle>
-          <DialogClose asChild>
-            <Button onClick={onClose} variant="ghost" size="icon" className="h-8 w-8 p-0">
+      <DialogContent className="sm:max-w-[600px]">
+        <DialogHeader>
+          <div className="flex items-center justify-between">
+            <DialogTitle>{title}</DialogTitle>
+            <Button variant="ghost" size="sm" onClick={onClose} className="h-8 w-8 p-0">
               <X className="h-4 w-4" />
               <span className="sr-only">Close</span>
             </Button>
-          </DialogClose>
+          </div>
         </DialogHeader>
-        <div className="my-2">
-          {children}
-        </div>
+        <div className="mt-2">{children}</div>
       </DialogContent>
     </Dialog>
   );
