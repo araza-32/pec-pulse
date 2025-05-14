@@ -1,5 +1,6 @@
 
 import * as React from "react"
+import { useState } from "react"
 import { X } from "lucide-react" // Using lucide-react instead of @radix-ui/react-icons
 import * as ToastPrimitives from "@radix-ui/react-toast"
 import { cva, type VariantProps } from "class-variance-authority"
@@ -334,7 +335,7 @@ function Toaster() {
 
 export { useToast, Toaster }
 
-// Convenience method for using toast
+// Convenience export to simplify usage throughout the app
 export const toast = (options: ToastOptions) => {
   const { toast: toastFn } = useToast();
   return toastFn(options);

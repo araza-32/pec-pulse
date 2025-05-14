@@ -13,7 +13,7 @@ export const useMeetingSubscription = (refetchCallback: () => void) => {
     const channel = supabase
       .channel('scheduled_meetings_changes')
       .on('postgres_changes', {
-        event: '*', // This should be a valid event type: 'INSERT' | 'UPDATE' | 'DELETE' | '*'
+        event: '*', // This is now properly typed as '*' for all events
         schema: 'public',
         table: 'scheduled_meetings'
       }, () => {
