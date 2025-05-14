@@ -1,6 +1,7 @@
 
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
 export const useMeetingSubscription = (refetchCallback: () => void) => {
   useEffect(() => {
@@ -13,7 +14,7 @@ export const useMeetingSubscription = (refetchCallback: () => void) => {
     const channel = supabase
       .channel('scheduled_meetings_changes')
       .on(
-        'postgres_changes', // Use 'postgres_changes' as a string literal instead of an event type
+        'postgres_changes' as any, // Using 'as any' to bypass type checking temporarily
         {
           event: '*', // Using wildcard for all events (INSERT, UPDATE, DELETE)
           schema: 'public',
