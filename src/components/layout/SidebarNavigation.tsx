@@ -24,6 +24,7 @@ interface NavigationItem {
 }
 
 // Define the possible user roles as a string literal union type
+// Add 'coordination' to the UserRole type
 type UserRole = 'chairman' | 'admin' | 'coordination' | 'member' | 'secretary';
 
 export const SidebarNavigation = () => {
@@ -33,7 +34,7 @@ export const SidebarNavigation = () => {
   const userRole = session?.role || 'member';
   const isChairman = userRole === 'chairman';
   const isAdmin = userRole === 'admin';
-  // Fix the comparison by treating 'coordination' as a string value that can be compared
+  // Now this comparison is valid since 'coordination' is in the UserRole type
   const isCoordination = userRole === 'coordination';
 
   // Navigation items configuration
