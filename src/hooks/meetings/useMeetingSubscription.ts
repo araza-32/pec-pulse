@@ -7,7 +7,10 @@ export const useMeetingSubscription = (refetchCallback: () => void) => {
   useEffect(() => {
     // Enable realtime subscriptions for the table
     const enableRealtimeForTable = async () => {
-      await supabase.rpc('enable_scheduled_meetings_realtime' as any);
+      // Type assertion at the function level to avoid TypeScript error
+      // This is needed because the rpc function doesn't have a type definition for this custom function
+      const rpcCall = supabase.rpc as unknown as (fnName: string) => Promise<any>;
+      await rpcCall('enable_scheduled_meetings_realtime');
     };
 
     // Set up subscription
