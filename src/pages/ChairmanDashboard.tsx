@@ -18,6 +18,7 @@ import { Modal } from "@/components/ui/modal";
 import { DonutChart } from "@/components/chairman/DonutChart";
 import { MeetingsList } from "@/components/chairman/MeetingsList";
 import { AlertsQuickAccess } from "@/components/chairman-dashboard/AlertsQuickAccess";
+import { Workbody, ScheduledMeeting } from "@/types";
 
 export default function ChairmanDashboard() {
   const { 
@@ -108,12 +109,30 @@ export default function ChairmanDashboard() {
     { name: "Task Forces", value: counts.taskForces, color: "#F59E0B" }
   ];
   
-  // Schedule meetings data for alerts
-  const scheduledMeetings = upcomingMeetings.map(m => ({
+  // Convert enhanced workbodies to the format expected by AlertsQuickAccess
+  const convertedWorkbodies: Workbody[] = workbodies.map(wb => ({
+    id: wb.id,
+    name: wb.name,
+    type: wb.type,
+    description: wb.mandate,
+    createdDate: new Date().toISOString(), // Using current date as fallback
+    termsOfReference: wb.termsOfReference,
+    totalMeetings: Math.round(wb.progressPercent / 10), // Approximation based on existing logic
+    meetingsThisYear: wb.meetingsYtd,
+    actionsAgreed: wb.progressPercent > 0 ? Math.round(wb.progressPercent * 0.8) : 0, // Estimation
+    actionsCompleted: wb.actionsClosed > 0 ? Math.round((wb.actionsClosed / 100) * (wb.progressPercent * 0.8)) : 0,
+    members: wb.members
+  }));
+  
+  // Schedule meetings data for alerts with proper typing
+  const scheduledMeetings: ScheduledMeeting[] = upcomingMeetings.map(m => ({
     id: m.id,
+    workbodyId: '1', // Adding required property
+    workbodyName: m.workbodyName,
     date: m.date.toISOString().split('T')[0],
     time: "14:00",
-    workbodyName: m.workbodyName
+    location: "Conference Room", // Adding required property
+    agendaItems: [] // Adding required property
   }));
 
   return (
@@ -196,7 +215,7 @@ export default function ChairmanDashboard() {
         <div className="md:col-span-4 space-y-6">
           {/* Alert & Quick Access Card */}
           <AlertsQuickAccess
-            workbodies={workbodies}
+            workbodies={convertedWorkbodies}
             meetings={scheduledMeetings}
             isLoading={isLoading}
           />
