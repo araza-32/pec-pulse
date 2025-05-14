@@ -1,6 +1,6 @@
 
-import React from "react";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
+import React from 'react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
 interface DonutChartProps {
   data: {
@@ -10,7 +10,7 @@ interface DonutChartProps {
   }[];
 }
 
-export function DonutChart({ data }: DonutChartProps) {
+export const DonutChart: React.FC<DonutChartProps> = ({ data }) => {
   return (
     <ResponsiveContainer width="100%" height={300}>
       <PieChart>
@@ -18,22 +18,20 @@ export function DonutChart({ data }: DonutChartProps) {
           data={data}
           cx="50%"
           cy="50%"
+          labelLine={false}
+          outerRadius={100}
           innerRadius={60}
-          outerRadius={80}
           fill="#8884d8"
-          paddingAngle={5}
           dataKey="value"
-          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+          nameKey="name"
         >
           {data.map((entry, index) => (
             <Cell key={`cell-${index}`} fill={entry.color} />
           ))}
         </Pie>
-        <Tooltip 
-          formatter={(value: number, name: string) => [`${value}`, name]} 
-        />
+        <Tooltip />
         <Legend />
       </PieChart>
     </ResponsiveContainer>
   );
-}
+};

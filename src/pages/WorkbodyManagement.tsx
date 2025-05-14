@@ -21,8 +21,8 @@ export default function WorkbodyManagement() {
   const [viewMode, setViewMode] = useState<"grid" | "chart" | "list">("grid");
   const [activeFilter, setActiveFilter] = useState<"all" | "committee" | "working-group" | "task-force">("all");
 
-  // Check if user has admin access
-  const hasAdminAccess = session?.role === "admin" || session?.role === 'coordination';
+  // Check if user has admin access - Fixed the role comparison
+  const hasAdminAccess = session?.role === "admin" || session?.role === "coordination";
 
   // Count workbodies by type
   const committees = workbodies.filter(wb => wb.type === "committee").length;

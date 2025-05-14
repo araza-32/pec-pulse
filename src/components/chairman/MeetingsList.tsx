@@ -1,5 +1,6 @@
 
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 
 interface Meeting {
@@ -11,35 +12,52 @@ interface Meeting {
 
 interface MeetingsListProps {
   meetings: Meeting[];
+  isLoading?: boolean;
 }
 
-export function MeetingsList({ meetings }: MeetingsListProps) {
-  if (meetings.length === 0) {
-    return <p className="text-muted-foreground py-4">No meetings to display.</p>;
+export function MeetingsList({ meetings, isLoading = false }: MeetingsListProps) {
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        {Array(3).fill(0).map((_, index) => (
+          <Card key={index} className="p-4">
+            <div className="space-y-2">
+              <Skeleton className="h-5 w-1/3" />
+              <Skeleton className="h-4 w-full" />
+              <div className="flex justify-between items-center mt-2">
+                <Skeleton className="h-4 w-1/4" />
+                <Skeleton className="h-8 w-20" />
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+    );
   }
 
-  const formatDate = (dateString: string) => {
-    try {
-      const date = new Date(dateString);
-      return format(date, 'MMM dd, yyyy');
-    } catch (e) {
-      return dateString;
-    }
-  };
+  if (meetings.length === 0) {
+    return (
+      <div className="text-center p-6 text-muted-foreground">
+        No meetings found
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
       {meetings.map((meeting) => (
-        <Card key={meeting.id} className="p-4 hover:bg-slate-50 transition-colors">
-          <div className="flex flex-col space-y-2">
-            <div className="flex justify-between items-start">
-              <h3 className="font-medium">{meeting.workbodyName}</h3>
-              <span className="text-sm text-muted-foreground">{formatDate(meeting.date)}</span>
-            </div>
-            {meeting.agendaExcerpt && (
-              <p className="text-sm text-muted-foreground line-clamp-2">{meeting.agendaExcerpt}</p>
-            )}
+        <Card key={meeting.id} className="p-4">
+          <div className="mb-2 flex justify-between">
+            <h3 className="font-medium">{meeting.workbodyName}</h3>
+            <time className="text-sm text-muted-foreground">
+              {format(new Date(meeting.date), 'MMM dd, yyyy')}
+            </time>
           </div>
+          {meeting.agendaExcerpt && (
+            <p className="text-sm text-muted-foreground line-clamp-2">
+              {meeting.agendaExcerpt}
+            </p>
+          )}
         </Card>
       ))}
     </div>

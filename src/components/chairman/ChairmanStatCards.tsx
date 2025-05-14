@@ -2,30 +2,37 @@
 import { StatCard } from "@/components/dashboard/StatCard";
 import { Users, CalendarClock, BookOpen } from "lucide-react";
 
-interface ChairmanStatCardsProps {
-  totalWorkbodies: number;
-  committees?: number;
-  workingGroups?: number;
-  taskForces?: number;
-  meetingsThisYear?: number;
-  completionRate?: number;
-  upcomingMeetingsCount?: number;
-  onStatClick?: (statType: string) => void;
+export interface ChairmanStatCardsProps {
+  stats: {
+    totalWorkbodies: number;
+    committees?: number;
+    workingGroups?: number;
+    taskForces?: number;
+    meetingsThisYear?: number;
+    completionRate?: number;
+    upcomingMeetingsCount?: number;
+    actionsCompleted?: number;
+    actionsAgreed?: number;
+    overdueActions?: number;
+  };
+  onWorkbodiesClick?: () => void;
+  onMeetingsClick?: () => void;
+  onUpcomingClick?: () => void;
 }
 
 export function ChairmanStatCards({
-  totalWorkbodies,
-  committees = 0,
-  workingGroups = 0,
-  taskForces = 0,
-  meetingsThisYear = 0,
-  completionRate = 0,
-  upcomingMeetingsCount = 0,
-  onStatClick
+  stats,
+  onWorkbodiesClick,
+  onMeetingsClick,
+  onUpcomingClick
 }: ChairmanStatCardsProps) {
   const handleStatClick = (statType: string) => {
-    if (onStatClick) {
-      onStatClick(statType);
+    if (statType === 'totalWorkbodies' && onWorkbodiesClick) {
+      onWorkbodiesClick();
+    } else if (statType === 'meetingsThisYear' && onMeetingsClick) {
+      onMeetingsClick();
+    } else if (statType === 'upcomingMeetings' && onUpcomingClick) {
+      onUpcomingClick();
     }
   };
 
@@ -33,7 +40,7 @@ export function ChairmanStatCards({
     <div className="grid gap-4 md:grid-cols-3">
       <StatCard
         title="Total Workbodies"
-        value={totalWorkbodies}
+        value={stats.totalWorkbodies}
         icon={Users}
         colorClass="bg-green-600"
         clickable={true}
@@ -42,7 +49,7 @@ export function ChairmanStatCards({
       />
       <StatCard
         title="Meetings This Year"
-        value={meetingsThisYear}
+        value={stats.meetingsThisYear || 0}
         icon={CalendarClock}
         colorClass="bg-amber-500"
         clickable={true}
@@ -51,7 +58,7 @@ export function ChairmanStatCards({
       />
       <StatCard
         title="Upcoming Meetings"
-        value={upcomingMeetingsCount}
+        value={stats.upcomingMeetingsCount || 0}
         icon={BookOpen}
         colorClass="bg-purple-500"
         clickable={true}
