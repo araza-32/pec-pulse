@@ -1,3 +1,3 @@
 
-// Re-export from the properly implemented tsx file
-export * from "./use-toast.tsx";
+// Re-export from the tsx file
+export { useToast, toast } from "./use-toast.tsx";
