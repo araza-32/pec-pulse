@@ -1,6 +1,5 @@
 
 import * as React from "react"
-import { useState } from "react"
 import { Cross2Icon } from "@radix-ui/react-icons"
 import * as ToastPrimitives from "@radix-ui/react-toast"
 import { cva, type VariantProps } from "class-variance-authority"
@@ -237,6 +236,8 @@ const reducer = (state: State, action: Action): State => {
         toasts: state.toasts.filter((t) => t.id !== toastId),
       }
     }
+    default:
+      return state
   }
 }
 
@@ -331,10 +332,10 @@ function Toaster() {
   )
 }
 
-export { useToast, Toaster, toast };
+export { useToast, Toaster }
 
-// convenience method for toast
+// Convenience export to simplify usage throughout the app
 export const toast = (options: ToastOptions) => {
-  const toastInstance = useToast().toast;
-  return toastInstance(options);
-};
+  const { toast: toastFn } = useToast();
+  return toastFn(options);
+}
