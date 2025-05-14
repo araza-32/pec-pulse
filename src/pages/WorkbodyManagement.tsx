@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -25,7 +24,7 @@ export default function WorkbodyManagement() {
   const hasAdminAccess = 
     session?.role === "admin" || 
     session?.role === "chairman" || 
-    session?.role === "coordination";
+    session?.role?.includes("coordination"); // Use includes for string comparison
   
   // Count workbodies by type
   const committees = workbodies.filter(wb => wb.type === "committee").length;

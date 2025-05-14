@@ -16,9 +16,12 @@ export function Toaster() {
 
   return (
     <ToastProvider>
-      {toasts.map(function ({ id, title, description, action, ...props }) {
+      {toasts.map(function ({ id, title, description, action, variant, ...props }) {
+        // Only pass allowed variant values to Toast component
+        const toastVariant = variant === "success" ? "default" : variant;
+        
         return (
-          <Toast key={id} {...props}>
+          <Toast key={id} {...props} variant={toastVariant}>
             <div className="grid gap-1">
               {title && <ToastTitle>{title}</ToastTitle>}
               {description && (

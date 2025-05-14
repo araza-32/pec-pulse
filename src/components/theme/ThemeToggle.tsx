@@ -30,8 +30,8 @@ export function ThemeToggle() {
     setTheme(newTheme);
     toast({
       title: `${newTheme.charAt(0).toUpperCase() + newTheme.slice(1)} mode activated`,
-      description: `Switched to ${newTheme} theme.`,
-      duration: 1500,
+      description: `Switched to ${newTheme} theme.`
+      // Remove 'duration' property as it doesn't exist in Toast type
     });
   };
 
