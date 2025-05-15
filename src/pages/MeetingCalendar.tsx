@@ -148,30 +148,30 @@ export default function MeetingCalendar() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-gradient-to-r from-cyan-500 to-blue-500 p-6 rounded-lg shadow-md text-white">
+      <div className="bg-gradient-to-r from-blue-600 to-blue-800 p-8 rounded-xl shadow-lg text-white">
         <h1 className="text-3xl font-bold mb-2">Meeting Calendar</h1>
-        <p className="text-blue-50">
+        <p className="text-blue-100">
           View, schedule and manage all workbody meetings
         </p>
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap gap-4 items-center justify-between bg-white p-4 rounded-lg shadow-sm border border-blue-100">
         <div className="flex items-center space-x-4">
-          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>
-            <TabsList>
-              <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-              <TabsTrigger value="past">Past</TabsTrigger>
-              <TabsTrigger value="all">All</TabsTrigger>
+          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="bg-blue-50 p-1 rounded-lg">
+            <TabsList className="grid grid-cols-3 gap-1">
+              <TabsTrigger value="upcoming" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Upcoming</TabsTrigger>
+              <TabsTrigger value="past" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Past</TabsTrigger>
+              <TabsTrigger value="all" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">All</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
 
         <div className="flex items-center space-x-2">
           <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-blue-500" />
             <Input
               placeholder="Search meetings..."
-              className="pl-8 w-[220px]"
+              className="pl-8 w-[220px] border-blue-200 focus:border-blue-400"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -180,7 +180,7 @@ export default function MeetingCalendar() {
           {canEditMeetings && (
             <Button 
               onClick={() => setIsAddMeetingDialogOpen(true)}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
             >
               <CalendarPlus className="mr-2 h-4 w-4" />
               Schedule Meeting
@@ -189,22 +189,22 @@ export default function MeetingCalendar() {
         </div>
       </div>
 
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle>
+      <Card className="shadow-md border border-blue-100 overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 pb-3 border-b border-blue-100">
+          <CardTitle className="text-blue-800">
             {activeTab === "upcoming" ? "Upcoming Meetings" : 
              activeTab === "past" ? "Past Meetings" : "All Meetings"}
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-blue-600">
             {activeTab === "upcoming" ? "Scheduled upcoming meetings across all workbodies" : 
              activeTab === "past" ? "Historical record of past meetings" : 
              "Complete overview of all meetings"}
           </CardDescription>
         </CardHeader>
         
-        <CardContent>
+        <CardContent className="p-0">
           {isLoadingMeetings ? (
-            <div className="space-y-2">
+            <div className="p-6 space-y-2">
               {Array(5).fill(0).map((_, index) => (
                 <div key={index} className="flex items-center space-x-4 p-3 rounded-md border">
                   <div className="space-y-2">
@@ -220,10 +220,10 @@ export default function MeetingCalendar() {
               ))}
             </div>
           ) : filteredMeetings.length === 0 ? (
-            <div className="text-center py-12 border rounded-lg">
-              <CalendarDays className="mx-auto h-12 w-12 text-muted-foreground opacity-50" />
-              <h3 className="mt-4 text-lg font-medium">No meetings found</h3>
-              <p className="text-muted-foreground mt-2">
+            <div className="text-center py-12 border-b">
+              <CalendarDays className="mx-auto h-12 w-12 text-blue-300 opacity-50" />
+              <h3 className="mt-4 text-lg font-medium text-blue-800">No meetings found</h3>
+              <p className="text-blue-600 mt-2">
                 {searchTerm ? "Try a different search term" : 
                  activeTab === "upcoming" ? "No upcoming meetings scheduled" : 
                  activeTab === "past" ? "No past meetings recorded" : 
@@ -233,7 +233,7 @@ export default function MeetingCalendar() {
                 <Button
                   variant="outline"
                   onClick={() => setIsAddMeetingDialogOpen(true)}
-                  className="mt-4"
+                  className="mt-4 border-blue-300 text-blue-700 hover:bg-blue-50"
                 >
                   <CalendarPlus className="mr-2 h-4 w-4" />
                   Schedule Meeting
@@ -241,15 +241,15 @@ export default function MeetingCalendar() {
               )}
             </div>
           ) : (
-            <ScrollArea className="h-[500px]">
+            <ScrollArea className="h-[550px]">
               <Table>
-                <TableHeader className="sticky top-0 bg-background">
-                  <TableRow>
-                    <TableHead>Date & Time</TableHead>
-                    <TableHead>Workbody</TableHead>
-                    <TableHead>Location</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                <TableHeader className="sticky top-0 bg-blue-50">
+                  <TableRow className="hover:bg-blue-50/80">
+                    <TableHead className="font-semibold text-blue-800">Date & Time</TableHead>
+                    <TableHead className="font-semibold text-blue-800">Workbody</TableHead>
+                    <TableHead className="font-semibold text-blue-800">Location</TableHead>
+                    <TableHead className="font-semibold text-blue-800">Status</TableHead>
+                    <TableHead className="text-right font-semibold text-blue-800">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -262,27 +262,27 @@ export default function MeetingCalendar() {
                     return (
                       <TableRow 
                         key={meeting.id}
-                        className="hover:bg-muted/50 cursor-pointer"
+                        className="hover:bg-blue-50 cursor-pointer border-b border-blue-100"
                         onClick={() => handleViewMeeting(meeting)}
                       >
                         <TableCell>
-                          <div className="font-medium">
+                          <div className="font-medium text-blue-800">
                             {format(parseISO(meeting.date), "d MMM yyyy")}
-                            {isToday && <Badge className="ml-2 bg-green-500">Today</Badge>}
+                            {isToday && <Badge className="ml-2 bg-green-500 text-white">Today</Badge>}
                           </div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-xs text-blue-600">
                             {meeting.time.substring(0, 5)}
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="font-medium">{meeting.workbodyName}</div>
+                          <div className="font-medium text-blue-800">{meeting.workbodyName}</div>
                         </TableCell>
-                        <TableCell>{meeting.location}</TableCell>
+                        <TableCell className="text-blue-700">{meeting.location}</TableCell>
                         <TableCell>
                           {isPastMeeting ? (
-                            <Badge variant="outline" className="bg-gray-100">Completed</Badge>
+                            <Badge variant="outline" className="bg-gray-100 text-gray-800 border-gray-300">Completed</Badge>
                           ) : (
-                            <Badge variant="outline" className="bg-blue-100 text-blue-800">Scheduled</Badge>
+                            <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300">Scheduled</Badge>
                           )}
                         </TableCell>
                         <TableCell className="text-right">
@@ -290,6 +290,7 @@ export default function MeetingCalendar() {
                             <Button
                               variant="outline"
                               size="sm"
+                              className="border-blue-200 hover:bg-blue-50 text-blue-700"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleViewMeeting(meeting);
@@ -302,7 +303,7 @@ export default function MeetingCalendar() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="bg-blue-50 text-blue-600 hover:bg-blue-100"
+                                className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleViewNotification(meeting);
@@ -355,8 +356,8 @@ export default function MeetingCalendar() {
         onOpenChange={setIsNotificationOpen}
       >
         <DialogContent className="max-w-4xl max-h-[90vh] h-[90vh] flex flex-col p-0">
-          <div className="flex items-center justify-between p-4 border-b">
-            <h2 className="text-lg font-semibold">Meeting Notification</h2>
+          <div className="flex items-center justify-between p-4 border-b bg-blue-50">
+            <h2 className="text-lg font-semibold text-blue-800">Meeting Notification</h2>
             <Button 
               variant="ghost" 
               size="icon" 

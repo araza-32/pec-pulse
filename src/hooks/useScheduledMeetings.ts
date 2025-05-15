@@ -66,8 +66,39 @@ export const useScheduledMeetings = () => {
     }
   }, [toast]);
   
-  // Create meeting mutations
-  const { addMeeting, updateMeeting, deleteMeeting } = useMeetingMutations(meetings, setMeetings, fetchMeetings);
+  // Create meeting mutations with an enhanced delete function
+  const { addMeeting, updateMeeting, deleteMeeting: deleteFromDatabase } = useMeetingMutations(meetings, setMeetings, fetchMeetings);
+
+  // Enhanced delete function that updates the local state immediately
+  const deleteMeeting = async (id: string) => {
+    try {
+      // Immediately update local state to remove the meeting
+      setMeetings(currentMeetings => currentMeetings.filter(meeting => meeting.id !== id));
+      
+      // Then delete from database
+      await deleteFromDatabase(id);
+      
+      toast({
+        title: 'Success',
+        description: 'Meeting deleted successfully'
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Error deleting meeting:', error);
+      
+      // Re-fetch to restore state if delete failed
+      await fetchMeetings();
+      
+      toast({
+        title: 'Error',
+        description: 'Failed to delete meeting',
+        variant: 'destructive'
+      });
+      
+      return false;
+    }
+  };
 
   // Initial fetch
   useEffect(() => {

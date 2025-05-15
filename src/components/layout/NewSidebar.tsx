@@ -39,18 +39,13 @@ export function NewSidebar({ userRole = 'admin', isOpen, toggle }: SidebarProps)
   }, []);
 
   // Navigation items with role-based access
+  // Removed Executive Dashboard entry from this array
   const navItems = [
     {
       name: "Dashboard",
       href: "/dashboard",
       icon: LayoutDashboard,
       roles: ["admin", "secretary", "chairman", "registrar", "convener", "member"]
-    },
-    {
-      name: "Executive Dashboard",
-      href: "/chairman-dashboard",
-      icon: BarChart3,
-      roles: ["chairman", "registrar", "admin"]
     },
     {
       name: "Meetings",
@@ -122,11 +117,11 @@ export function NewSidebar({ userRole = 'admin', isOpen, toggle }: SidebarProps)
         className={cn(
           "fixed left-0 top-0 z-50 h-full transform transition-all duration-300 ease-in-out",
           isOpen ? "w-64 translate-x-0" : "w-16 translate-x-0",
-          "bg-white dark:bg-gray-900 border-r dark:border-gray-800 flex flex-col"
+          "bg-gradient-to-b from-white to-blue-50 dark:bg-gray-900 border-r dark:border-gray-800 flex flex-col shadow-md"
         )}
       >
         {/* Header with logo */}
-        <div className="h-16 flex items-center px-4 border-b dark:border-gray-800">
+        <div className="h-16 flex items-center px-4 border-b dark:border-gray-800 bg-gradient-to-r from-blue-600 to-blue-700">
           <div className={cn(
             "flex items-center transition-all duration-300",
             isOpen ? "justify-between w-full" : "justify-center"
@@ -139,16 +134,16 @@ export function NewSidebar({ userRole = 'admin', isOpen, toggle }: SidebarProps)
                     alt="PEC Logo" 
                     className="h-8 w-auto" 
                   />
-                  <span className="ml-3 text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  <span className="ml-3 text-lg font-semibold text-white">
                     PEC Pulse
                   </span>
                 </div>
                 <button 
                   onClick={toggle}
-                  className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+                  className="p-1 rounded-full hover:bg-blue-500 text-white"
                   aria-label="Collapse sidebar"
                 >
-                  <ChevronLeft className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                  <ChevronLeft className="h-5 w-5" />
                 </button>
               </>
             ) : (
@@ -160,11 +155,11 @@ export function NewSidebar({ userRole = 'admin', isOpen, toggle }: SidebarProps)
                 />
                 <button 
                   onClick={toggle}
-                  className="absolute right-0 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 -mr-3 bg-white dark:bg-gray-900 border dark:border-gray-800"
+                  className="absolute right-0 p-1 rounded-full hover:bg-blue-500 text-white -mr-3 bg-blue-600 border border-blue-500"
                   style={{ transform: "translateX(50%)" }}
                   aria-label="Expand sidebar"
                 >
-                  <ChevronRight className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                  <ChevronRight className="h-5 w-5" />
                 </button>
               </>
             )}
@@ -185,8 +180,8 @@ export function NewSidebar({ userRole = 'admin', isOpen, toggle }: SidebarProps)
                     className={({ isActive }) => cn(
                       "flex items-center py-2 px-3 rounded-lg transition-colors",
                       isActive 
-                        ? "bg-pec-green text-white" 
-                        : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+                        ? "bg-blue-600 text-white shadow-md" 
+                        : "text-gray-700 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-gray-800"
                     )}
                   >
                     <item.icon className={cn(
@@ -210,8 +205,8 @@ export function NewSidebar({ userRole = 'admin', isOpen, toggle }: SidebarProps)
                               className={({ isActive }) => cn(
                                 "flex items-center py-1.5 px-3 rounded-md text-sm transition-colors",
                                 isActive 
-                                  ? "bg-pec-green/20 text-pec-green dark:text-pec-green-50" 
-                                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                                  ? "bg-blue-100 text-blue-700 font-medium" 
+                                  : "text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-gray-800"
                               )}
                             >
                               <span>{subItem.name}</span>
@@ -228,7 +223,7 @@ export function NewSidebar({ userRole = 'admin', isOpen, toggle }: SidebarProps)
         
         {/* Footer */}
         {isOpen && (
-          <div className="p-4 border-t dark:border-gray-800">
+          <div className="p-4 border-t dark:border-gray-800 bg-blue-50/50">
             <div className="text-xs text-gray-500 dark:text-gray-400">
               <p>PEC Pulse v2.0</p>
               <p>© {new Date().getFullYear()} Pakistan Engineering Council</p>

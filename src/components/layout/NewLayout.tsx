@@ -72,7 +72,7 @@ export function NewLayout({ children }: LayoutProps) {
   
   if (isPublicPage) {
     return (
-      <div className="min-h-screen flex flex-col bg-background text-foreground">
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-white to-blue-50/50 text-foreground">
         {children}
         <div className="fixed bottom-4 right-4">
           <ThemeToggle />
@@ -83,7 +83,7 @@ export function NewLayout({ children }: LayoutProps) {
   }
   
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen bg-gradient-to-br from-white to-blue-50/30">
       <NewSidebar 
         userRole={currentUser?.role}
         isOpen={sidebarOpen} 
@@ -99,13 +99,13 @@ export function NewLayout({ children }: LayoutProps) {
           onLogout={handleLogout}
         />
         
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-gradient-to-br from-white to-blue-50/30">
           <div className="container mx-auto max-w-7xl animate-fade-in">
             {children}
           </div>
         </main>
           
-        <footer className="border-t bg-card py-4 text-center text-sm text-muted-foreground">
+        <footer className="border-t bg-white py-4 text-center text-sm text-blue-700/70 shadow-inner">
           © {new Date().getFullYear()} Pakistan Engineering Council. All rights reserved.
           <div className="inline-flex ml-4">
             <ThemeToggle />

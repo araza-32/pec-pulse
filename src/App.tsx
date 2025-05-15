@@ -6,14 +6,17 @@ import { Toaster } from '@/components/ui/toaster';
 import './App.css';
 
 function App() {
-  // Apply light mode theme
+  // Apply theme with enhanced colors
   useEffect(() => {
     document.documentElement.classList.remove('dark');
     localStorage.setItem('theme', 'light');
+    
+    // Set background color for body
+    document.body.classList.add('bg-blue-50/30');
   }, []);
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-gradient-to-b from-white to-blue-50/50 text-foreground">
       <Routes>
         {router.map((route) => (
           <Route key={route.path} path={route.path} element={route.element} />

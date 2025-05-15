@@ -21,21 +21,21 @@ export default {
       colors: {
         border: "#e2e8f0",
         input: "#e2e8f0",
-        ring: "#4CAF50",
+        ring: "#3b82f6",
         background: "#ffffff",
         foreground: "#1e293b",
         primary: {
-          DEFAULT: "#4CAF50",
-          50: "#EEF7F1",
-          100: "#D7EBD8",
-          200: "#B1D9B3",
-          300: "#8AC78E",
-          400: "#64B568",
-          500: "#4CAF50", // primary
-          600: "#3E8E41",
-          700: "#2F6D32",
-          800: "#1F4C23",
-          900: "#166534", // primary-700
+          DEFAULT: "#2563eb",
+          50: "#eff6ff",
+          100: "#dbeafe",
+          200: "#bfdbfe",
+          300: "#93c5fd",
+          400: "#60a5fa",
+          500: "#3b82f6",
+          600: "#2563eb",
+          700: "#1d4ed8",
+          800: "#1e40af",
+          900: "#1e3a8a",
           foreground: "#ffffff",
         },
         secondary: {
@@ -69,11 +69,11 @@ export default {
           '200': '#B1D9B3',
           '300': '#8AC78E',
           '400': '#64B568',
-          '500': '#4CAF50', // primary
+          '500': '#4CAF50',
           '600': '#3E8E41',
           '700': '#2F6D32',
           '800': '#1F4C23',
-          '900': '#166534', // primary-700
+          '900': '#166534',
         },
         'accent-teal': '#B2F5EA',
         'danger': '#EF4444',
@@ -162,7 +162,7 @@ export default {
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
-        'gradient-primary': 'linear-gradient(135deg, #4CAF50 0%, #2F6D32 100%)',
+        'gradient-primary': 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
         'gradient-blue': 'linear-gradient(90deg, #3B82F6 0%, #60A5FA 100%)',
         'gradient-amber': 'linear-gradient(90deg, #F59E0B 0%, #FBBF24 100%)',
         'gradient-purple': 'linear-gradient(90deg, #A855F7 0%, #C084FC 100%)',
