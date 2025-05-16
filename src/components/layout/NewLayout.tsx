@@ -83,7 +83,7 @@ export function NewLayout({ children }: LayoutProps) {
   
   if (isPublicPage) {
     return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-white to-blue-50/50 text-foreground">
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-white to-green-50/50 text-foreground">
         {children}
         <div className="fixed bottom-4 right-4">
           <ThemeToggle />
@@ -94,7 +94,7 @@ export function NewLayout({ children }: LayoutProps) {
   }
   
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-white to-blue-50/30">
+    <div className="flex min-h-screen bg-gradient-to-br from-white to-green-50/30">
       <NewSidebar 
         userRole={currentUser?.role}
         isOpen={sidebarOpen} 
@@ -110,13 +110,13 @@ export function NewLayout({ children }: LayoutProps) {
           onLogout={handleLogout}
         />
         
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-gradient-to-br from-white to-blue-50/30">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-gradient-to-br from-white to-green-50/30">
           <div className="container mx-auto max-w-7xl animate-fade-in pb-16">
             {children}
           </div>
         </main>
           
-        <footer className="border-t bg-gradient-to-r from-blue-50 to-blue-100 py-4 text-center text-sm text-blue-700 shadow-inner">
+        <footer className="border-t bg-gradient-to-r from-green-50 to-green-100 py-4 text-center text-sm text-pec-green-700 shadow-inner">
           © {new Date().getFullYear()} Pakistan Engineering Council. All rights reserved.
           <div className="inline-flex ml-4">
             <ThemeToggle />

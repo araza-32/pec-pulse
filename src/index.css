@@ -13,11 +13,11 @@
     --card-foreground: 222.2 47.4% 11.2%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 47.4% 11.2%;
-    --primary: 210 100% 40%;
+    --primary: 122 39% 49%;
     --primary-foreground: 0 0% 98%;
-    --secondary: 210 40% 96.1%;
+    --secondary: 142 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
+    --muted: 142 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
     --accent: 174 84% 83%;
     --accent-foreground: 222.2 47.4% 11.2%;
@@ -25,7 +25,7 @@
     --destructive-foreground: 0 0% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 210 100% 40%;
+    --ring: 122 39% 49%;
     --radius: 0.5rem;
   }
 }
@@ -101,8 +101,8 @@ html {
   @apply absolute top-0 left-0 w-full h-1.5 bg-gradient-primary;
 }
 
-.colorful-card.blue::before {
-  @apply bg-gradient-blue;
+.colorful-card.green::before {
+  @apply bg-gradient-green;
 }
 
 .colorful-card.amber::before {
@@ -135,8 +135,8 @@ tbody td {
   @apply bg-gradient-primary text-white transition-all duration-200 hover:shadow-md;
 }
 
-.btn-gradient.blue {
-  @apply bg-gradient-blue;
+.btn-gradient.green {
+  @apply bg-gradient-green;
 }
 
 .btn-gradient.amber {
@@ -149,17 +149,17 @@ tbody td {
 
 /* Additional enhanced card styles */
 .enhanced-card {
-  @apply transition-all duration-300 hover:shadow-lg border border-transparent hover:border-blue-200;
+  @apply transition-all duration-300 hover:shadow-lg border border-transparent hover:border-pec-green-200;
 }
 
 /* Section dividers with gradient */
 .gradient-divider {
-  @apply h-0.5 w-full bg-gradient-to-r from-blue-500 to-purple-500 my-6;
+  @apply h-0.5 w-full bg-gradient-to-r from-pec-green-500 to-pec-green-700 my-6;
 }
 
 /* Improved focus states */
 button:focus, a:focus, input:focus, select:focus, textarea:focus {
-  @apply outline-none ring-2 ring-blue-400 ring-offset-2;
+  @apply outline-none ring-2 ring-pec-green-400 ring-offset-2;
 }
 
 /* Dashboard panel styles */
@@ -168,7 +168,7 @@ button:focus, a:focus, input:focus, select:focus, textarea:focus {
 }
 
 .dashboard-panel-header {
-  @apply bg-gradient-to-r from-blue-50 to-indigo-50 p-4 border-b border-gray-200;
+  @apply bg-gradient-to-r from-green-50 to-green-100 p-4 border-b border-gray-200;
 }
 
 /* Improved section headings */
@@ -178,17 +178,17 @@ button:focus, a:focus, input:focus, select:focus, textarea:focus {
 
 .section-heading::before {
   content: "";
-  @apply w-1 h-6 bg-blue-500 rounded-full;
+  @apply w-1 h-6 bg-pec-green-500 rounded-full;
 }
 
 /* Enhanced stat cards */
 .stat-card {
-  @apply bg-gradient-to-br from-white to-blue-50 rounded-lg p-4 border border-blue-100 shadow-sm hover:shadow-md transition-all;
+  @apply bg-gradient-to-br from-white to-green-50 rounded-lg p-4 border border-pec-green-100 shadow-sm hover:shadow-md transition-all;
 }
 
 /* Improved form controls */
 .form-control {
-  @apply border border-gray-200 rounded-md px-3 py-2 focus:border-blue-400 focus:ring focus:ring-blue-100;
+  @apply border border-gray-200 rounded-md px-3 py-2 focus:border-pec-green-400 focus:ring focus:ring-pec-green-100;
 }
 
 /* Badge enhancements */
@@ -201,7 +201,7 @@ button:focus, a:focus, input:focus, select:focus, textarea:focus {
 }
 
 .badge-info {
-  @apply bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium;
+  @apply bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium;
 }
 
 /* Activity indicator */
@@ -210,7 +210,7 @@ button:focus, a:focus, input:focus, select:focus, textarea:focus {
 }
 
 .activity-indicator.active {
-  @apply bg-green-500 animate-pulse;
+  @apply bg-pec-green-500 animate-pulse;
 }
 
 .activity-indicator.inactive {
@@ -223,9 +223,9 @@ button:focus, a:focus, input:focus, select:focus, textarea:focus {
 }
 
 .tab-item {
-  @apply px-4 py-2 text-gray-600 hover:text-blue-600 border-b-2 border-transparent hover:border-blue-500 transition-all;
+  @apply px-4 py-2 text-gray-600 hover:text-pec-green-600 border-b-2 border-transparent hover:border-pec-green-500 transition-all;
 }
 
 .tab-item.active {
-  @apply text-blue-600 border-blue-500 font-medium;
+  @apply text-pec-green-600 border-pec-green-500 font-medium;
 }

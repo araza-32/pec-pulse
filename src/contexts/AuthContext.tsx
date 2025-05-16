@@ -67,6 +67,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Update the user in localStorage
       if (data.name) localStorage.setItem('userName', data.name);
       if (data.email) localStorage.setItem('userEmail', data.email);
+      if (data.role) localStorage.setItem('userRole', data.role);
       
       // Update the user state
       setUser(prev => prev ? { ...prev, ...data } : null);
@@ -83,6 +84,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         if (error) throw error;
       }
+      
+      // Show success toast or notification
+      console.log("Profile updated successfully");
     } catch (error) {
       console.error('Error updating user profile:', error);
       throw error;
@@ -128,6 +132,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           role = 'coordination';
           id = '5';
           name = 'Coordination User';
+        } else if (email.includes('admin')) {
+          role = 'admin';
+          id = '1';
+          name = 'Admin User';
         }
         
         // Set the user with the proper typed role

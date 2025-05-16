@@ -72,19 +72,16 @@ export const useScheduledMeetings = () => {
   // Enhanced delete function that ensures database consistency
   const deleteMeeting = async (id: string) => {
     try {
-      // Immediately update local state to remove the meeting
-      setMeetings(currentMeetings => currentMeetings.filter(meeting => meeting.id !== id));
-      
-      // Then delete from database
+      // First delete from database
       await deleteFromDatabase(id);
+      
+      // Then update local state to remove the meeting
+      setMeetings(currentMeetings => currentMeetings.filter(meeting => meeting.id !== id));
       
       toast({
         title: 'Success',
         description: 'Meeting deleted successfully'
       });
-      
-      // Refetch to ensure local state is in sync with the database
-      await fetchMeetings();
       
       return true;
     } catch (error) {

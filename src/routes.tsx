@@ -4,6 +4,7 @@ import { NewLayout } from './components/layout/NewLayout';
 import Dashboard from './pages/Dashboard';
 import WorkbodyManagement from './pages/WorkbodyManagement';
 import WorkbodyDetail from './pages/WorkbodyDetail';
+import WorkbodyEdit from './pages/WorkbodyEdit';
 import ChairmanDashboard from './pages/ChairmanDashboard';
 import MeetingCalendar from './pages/MeetingCalendar';
 import MeetingMinutes from './pages/MeetingMinutes';
@@ -13,6 +14,7 @@ import Settings from './pages/Settings';
 import Login from './pages/Login';
 import NotFound from './pages/NotFound';
 import Index from './pages/Index';
+import Documents from './pages/Documents';
 
 export const router = [
   {
@@ -36,8 +38,12 @@ export const router = [
     element: <NewLayout><WorkbodyDetail /></NewLayout>,
   },
   {
+    path: '/workbody/edit/:id',
+    element: <NewLayout><WorkbodyEdit /></NewLayout>,
+  },
+  {
     path: '/workbodies/:id',
-    element: <NewLayout><WorkbodyDetail /></NewLayout>,
+    element: <Navigate to={`/workbody/${window.location.pathname.split('/workbodies/')[1]}`} />,
   },
   {
     path: '/workbodies/committees',
@@ -69,7 +75,7 @@ export const router = [
   },
   {
     path: '/documents',
-    element: <NewLayout><NotFound /></NewLayout>, // Temporary until Documents page is created
+    element: <NewLayout><Documents /></NewLayout>,
   },
   {
     path: '/reports',
