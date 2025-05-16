@@ -49,6 +49,17 @@ export function NewLayout({ children }: LayoutProps) {
     if (savedState !== null) {
       setSidebarOpen(savedState === 'true');
     }
+    
+    // Auto-collapse sidebar on mobile
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setSidebarOpen(false);
+      }
+    };
+    
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   const toggleSidebar = () => {
@@ -91,7 +102,7 @@ export function NewLayout({ children }: LayoutProps) {
       />
       
       <div className={cn(
-        "flex-1 flex flex-col transition-all duration-300",
+        "flex-1 flex flex-col transition-all duration-300 w-full",
         sidebarOpen ? "lg:ml-64" : "lg:ml-16"
       )}>
         <NewHeader 
@@ -100,12 +111,12 @@ export function NewLayout({ children }: LayoutProps) {
         />
         
         <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-gradient-to-br from-white to-blue-50/30">
-          <div className="container mx-auto max-w-7xl animate-fade-in">
+          <div className="container mx-auto max-w-7xl animate-fade-in pb-16">
             {children}
           </div>
         </main>
           
-        <footer className="border-t bg-white py-4 text-center text-sm text-blue-700/70 shadow-inner">
+        <footer className="border-t bg-gradient-to-r from-blue-50 to-blue-100 py-4 text-center text-sm text-blue-700 shadow-inner">
           © {new Date().getFullYear()} Pakistan Engineering Council. All rights reserved.
           <div className="inline-flex ml-4">
             <ThemeToggle />

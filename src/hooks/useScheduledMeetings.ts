@@ -66,10 +66,10 @@ export const useScheduledMeetings = () => {
     }
   }, [toast]);
   
-  // Create meeting mutations with an enhanced delete function
+  // Create improved meeting mutations
   const { addMeeting, updateMeeting, deleteMeeting: deleteFromDatabase } = useMeetingMutations(meetings, setMeetings, fetchMeetings);
 
-  // Enhanced delete function that updates the local state immediately
+  // Enhanced delete function that ensures database consistency
   const deleteMeeting = async (id: string) => {
     try {
       // Immediately update local state to remove the meeting
@@ -82,6 +82,9 @@ export const useScheduledMeetings = () => {
         title: 'Success',
         description: 'Meeting deleted successfully'
       });
+      
+      // Refetch to ensure local state is in sync with the database
+      await fetchMeetings();
       
       return true;
     } catch (error) {

@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EnhancedWorkbody } from '@/hooks/useWorkBodiesQuery';
 import { Workbody } from '@/types';
+import { Link } from "react-router-dom";
 
 interface WorkbodiesStackedCardsProps {
   workbodies: EnhancedWorkbody[] | Workbody[];
@@ -15,6 +16,13 @@ interface WorkbodiesStackedCardsProps {
 function isEnhancedWorkbody(workbody: any): workbody is EnhancedWorkbody {
   return 'progressPercent' in workbody && 'abbreviation' in workbody;
 }
+
+// Type colors for visual distinction
+const typeColors = {
+  committee: "from-blue-500 to-blue-700",
+  'working-group': "from-green-500 to-green-700",
+  'task-force': "from-amber-500 to-amber-700"
+};
 
 export function WorkbodiesStackedCards({ 
   workbodies, 
@@ -57,24 +65,37 @@ export function WorkbodiesStackedCards({
         const workbodyType = wb.type;
         const typeBadge = getTypeBadge(workbodyType);
         
+        // Get gradient color based on workbody type
+        const gradientClass = typeColors[workbodyType as keyof typeof typeColors] || "from-blue-300 to-blue-500";
+        
         return (
-          <Card key={wb.id} className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer">
-            <CardContent className="p-0">
-              <div className="p-4">
-                <h3 className="font-medium text-base mb-1">{displayName}</h3>
-                <div className="flex justify-between items-center mb-2">
+          <Link to={`/workbody/${wb.id}`} key={wb.id}>
+            <Card className="overflow-hidden hover:shadow-lg transition-all duration-200 transform hover:-translate-y-1 h-full border-2 border-gray-100 hover:border-blue-200 relative">
+              {/* Colored header strip based on workbody type */}
+              <div className={`h-2 w-full bg-gradient-to-r ${gradientClass}`}></div>
+              
+              <CardContent className="p-4 pt-5">
+                <h3 className="font-medium text-base text-blue-800 line-clamp-2 mb-2">{displayName}</h3>
+                <div className="flex justify-between items-center">
                   <div className="flex items-center">
                     {typeBadge}
                   </div>
                   {isEnhancedWorkbody(wb) && (
-                    <Badge variant="outline" className="bg-blue-50 text-blue-800">
+                    <Badge variant="outline" className="bg-blue-50 text-blue-800 border-blue-200">
                       {wb.meetingsYtd} meetings
                     </Badge>
                   )}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+                
+                {/* Add meeting stats if available */}
+                {wb.totalMeetings !== undefined && (
+                  <div className="mt-3 pt-3 border-t border-gray-100">
+                    <div className="text-xs text-gray-500">Total meetings: <span className="font-medium text-blue-700">{wb.totalMeetings}</span></div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </Link>
         );
       })}
     </div>
@@ -85,19 +106,19 @@ function getTypeBadge(type: string) {
   switch (type) {
     case 'committee':
       return (
-        <Badge variant="outline" className="bg-blue-50 text-blue-800">
+        <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-300">
           Committee
         </Badge>
       );
     case 'working-group':
       return (
-        <Badge variant="outline" className="bg-green-50 text-green-800">
+        <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300">
           Working Group
         </Badge>
       );
     case 'task-force':
       return (
-        <Badge variant="outline" className="bg-amber-50 text-amber-800">
+        <Badge variant="outline" className="bg-amber-100 text-amber-700 border-amber-300">
           Task Force
         </Badge>
       );

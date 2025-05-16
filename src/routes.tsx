@@ -1,11 +1,10 @@
 
 import { Navigate } from 'react-router-dom';
-import { Layout } from './components/layout/Layout';
+import { NewLayout } from './components/layout/NewLayout';
 import Dashboard from './pages/Dashboard';
 import WorkbodyManagement from './pages/WorkbodyManagement';
 import WorkbodyDetail from './pages/WorkbodyDetail';
 import ChairmanDashboard from './pages/ChairmanDashboard';
-import ChairmanExecutiveDashboard from './pages/ChairmanExecutiveDashboard';
 import MeetingCalendar from './pages/MeetingCalendar';
 import MeetingMinutes from './pages/MeetingMinutes';
 import UploadMinutes from './pages/UploadMinutes';
@@ -22,51 +21,63 @@ export const router = [
   },
   {
     path: '/dashboard',
-    element: <Layout><Dashboard /></Layout>,
+    element: <NewLayout><Dashboard /></NewLayout>,
   },
   {
     path: '/chairman-dashboard',
-    element: <Layout><ChairmanDashboard /></Layout>,
-  },
-  {
-    path: '/chairman-executive',
-    element: <Layout><ChairmanExecutiveDashboard /></Layout>,
+    element: <NewLayout><ChairmanDashboard /></NewLayout>,
   },
   {
     path: '/workbodies',
-    element: <Layout><WorkbodyManagement /></Layout>,
+    element: <NewLayout><WorkbodyManagement /></NewLayout>,
   },
   {
     path: '/workbody/:id',
-    element: <Layout><WorkbodyDetail /></Layout>,
+    element: <NewLayout><WorkbodyDetail /></NewLayout>,
   },
   {
     path: '/workbodies/:id',
-    element: <Layout><WorkbodyDetail /></Layout>,
+    element: <NewLayout><WorkbodyDetail /></NewLayout>,
+  },
+  {
+    path: '/workbodies/committees',
+    element: <NewLayout><WorkbodyManagement /></NewLayout>,
+  },
+  {
+    path: '/workbodies/working-groups',
+    element: <NewLayout><WorkbodyManagement /></NewLayout>,
+  },
+  {
+    path: '/workbodies/task-forces',
+    element: <NewLayout><WorkbodyManagement /></NewLayout>,
   },
   {
     path: '/calendar',
-    element: <Layout><MeetingCalendar /></Layout>,
+    element: <NewLayout><MeetingCalendar /></NewLayout>,
   },
   {
     path: '/meetings/list',
-    element: <Layout><MeetingMinutes /></Layout>,
+    element: <NewLayout><MeetingMinutes /></NewLayout>,
   },
   {
     path: '/minutes/:id',
-    element: <Layout><MeetingMinutes /></Layout>,
+    element: <NewLayout><MeetingMinutes /></NewLayout>,
   },
   {
     path: '/upload-minutes',
-    element: <Layout><UploadMinutes /></Layout>,
+    element: <NewLayout><UploadMinutes /></NewLayout>,
+  },
+  {
+    path: '/documents',
+    element: <NewLayout><NotFound /></NewLayout>, // Temporary until Documents page is created
   },
   {
     path: '/reports',
-    element: <Layout><Reports /></Layout>,
+    element: <NewLayout><Reports /></NewLayout>,
   },
   {
     path: '/settings',
-    element: <Layout><Settings /></Layout>,
+    element: <NewLayout><Settings /></NewLayout>,
   },
   {
     path: '/login',

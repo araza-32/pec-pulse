@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { 
@@ -6,7 +5,6 @@ import {
   ChevronRight, 
   LayoutDashboard,
   Calendar,
-  Users,
   FileText,
   BarChart3,
   Settings,
@@ -38,8 +36,7 @@ export function NewSidebar({ userRole = 'admin', isOpen, toggle }: SidebarProps)
     };
   }, []);
 
-  // Navigation items with role-based access
-  // Removed Executive Dashboard entry from this array
+  // Navigation items with role-based access - removed irrelevant links
   const navItems = [
     {
       name: "Dashboard",
