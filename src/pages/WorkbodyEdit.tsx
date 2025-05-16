@@ -17,7 +17,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Save } from "lucide-react";
-import type { Workbody } from "@/types";
+import { Workbody } from "@/types/workbody";
 
 export default function WorkbodyEdit() {
   const { id } = useParams<{ id: string }>();

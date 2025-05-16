@@ -26,8 +26,21 @@ interface AuthContextType {
   updateUserProfile: (data: Partial<User>) => Promise<void>;
 }
 
+// Create the auth context with a default undefined value
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Custom hook to use the auth context
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  
+  return context;
+};
+
+// AuthProvider component to wrap the app
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -60,6 +73,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     checkExistingSession();
   }, []);
 
+  // Update user profile data
   const updateUserProfile = async (data: Partial<User>) => {
     if (!user) return;
     
@@ -93,6 +107,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Login functionality
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
@@ -205,6 +220,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Logout functionality
   const logout = async () => {
     setIsLoading(true);
     try {
@@ -230,31 +246,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Context value
+  const authValue: AuthContextType = {
+    user,
+    isLoading,
+    login,
+    logout,
+    isAuthenticated: !!user,
+    session: user,
+    signIn: login,
+    signOut: logout,
+    updateUserProfile
+  };
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isLoading,
-        login,
-        logout,
-        isAuthenticated: !!user,
-        session: user,
-        signIn: login,
-        signOut: logout,
-        updateUserProfile
-      }}
-    >
+    <AuthContext.Provider value={authValue}>
       {children}
     </AuthContext.Provider>
   );
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  
-  return context;
 };
