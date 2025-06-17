@@ -1,8 +1,8 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Workbody, WorkbodyType } from "@/types";
-import { WorkbodyFormData } from "@/types/workbody";
+import { WorkbodyType } from "@/types";
+import { Workbody, WorkbodyFormData } from "@/types/workbody";
 
 export const useWorkbodies = () => {
   const queryClient = useQueryClient();

@@ -1,29 +1,8 @@
 
-export interface Workbody {
-  id: string;
-  name: string;
-  type: WorkbodyType;
-  description?: string;
-  createdDate: string;
-  endDate?: string;
-  termsOfReference?: string;
-  totalMeetings: number;
-  meetingsThisYear: number;
-  actionsAgreed: number;
-  actionsCompleted: number;
-  members: WorkbodyMember[];
-}
+// Re-export workbody types to maintain compatibility
+export type { Workbody, WorkbodyMember, WorkbodyFormData } from './workbody';
 
 export type WorkbodyType = 'committee' | 'working-group' | 'task-force';
-
-export interface WorkbodyMember {
-  id: string;
-  name: string;
-  role: string;
-  email?: string;
-  phone?: string;
-  hasCV: boolean;
-}
 
 export interface ScheduledMeeting {
   id: string;
