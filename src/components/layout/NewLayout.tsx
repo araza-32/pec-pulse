@@ -95,20 +95,13 @@ export function NewLayout({ children }: LayoutProps) {
   
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-white to-green-50/30">
-      <NewSidebar 
-        userRole={currentUser?.role}
-        isOpen={sidebarOpen} 
-        toggle={toggleSidebar} 
-      />
+      <NewSidebar />
       
       <div className={cn(
         "flex-1 flex flex-col transition-all duration-300 w-full",
         sidebarOpen ? "lg:ml-64" : "lg:ml-16"
       )}>
-        <NewHeader 
-          user={currentUser}
-          onLogout={handleLogout}
-        />
+        <NewHeader onMenuClick={toggleSidebar} />
         
         <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-gradient-to-br from-white to-green-50/30">
           <div className="container mx-auto max-w-7xl animate-fade-in pb-16">
