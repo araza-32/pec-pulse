@@ -6,30 +6,30 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { AttendanceRecord, ActionItem } from "@/types";
 import { v4 as uuidv4 } from 'uuid';
+import { useAuth } from "@/contexts/AuthContext";
 
 export const useMinutesUpload = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [isUploading, setIsUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedWorkbodyType, setSelectedWorkbodyType] = useState<string>("");
   const [selectedWorkbody, setSelectedWorkbody] = useState<string>("");
   const [meetingDate, setMeetingDate] = useState<string>("");
   const [meetingLocation, setMeetingLocation] = useState<string>("");
+  const [meetingNumber, setMeetingNumber] = useState<string>("");
   const [agendaItems, setAgendaItems] = useState<string>("");
   const [actionsAgreed, setActionsAgreed] = useState<string>("");
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [actionItems, setActionItems] = useState<ActionItem[]>([]);
   const [previousActions, setPreviousActions] = useState<ActionItem[]>([]);
 
-  const [userRole] = useState<"admin" | "coordination" | "secretary">(
-    (window as any).MOCK_USER_ROLE || "admin"
-  );
-  const userWorkbodyId = (window as any).MOCK_USER_WORKBODY_ID || null;
+  const userRole = user?.role || "member";
+  const userWorkbodyId = user?.workbodyId || null;
 
   const { workbodies = [], isLoading, refetch } = useWorkbodies();
 
-  // Reset previous actions when workbody is changed
   useEffect(() => {
     if (selectedWorkbody) {
       setPreviousActions([]);
@@ -39,7 +39,6 @@ export const useMinutesUpload = () => {
 
   const fetchPreviousActions = async () => {
     try {
-      // Get the most recent meeting minutes for this workbody
       const { data, error } = await supabase
         .from('meeting_minutes')
         .select('*')
@@ -49,16 +48,14 @@ export const useMinutesUpload = () => {
         .single();
 
       if (error || !data) {
-        // No previous minutes found, that's OK
         return;
       }
 
-      // If there are actions agreed in the previous minutes, add them to the form
       if (data.actions_agreed && data.actions_agreed.length > 0) {
         const previousActionItems: ActionItem[] = data.actions_agreed.map((action: string) => ({
           id: uuidv4(),
           description: action,
-          action: action, // For backward compatibility
+          action: action,
           assignedTo: '',
           dueDate: '',
           status: 'pending' as const,
@@ -76,6 +73,7 @@ export const useMinutesUpload = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validation
     if (!selectedWorkbodyType) {
       toast({
         title: "Select Workbody Type",
@@ -84,6 +82,7 @@ export const useMinutesUpload = () => {
       });
       return;
     }
+    
     if (!selectedWorkbody) {
       toast({
         title: "Select Workbody",
@@ -92,6 +91,16 @@ export const useMinutesUpload = () => {
       });
       return;
     }
+    
+    if (!meetingNumber.trim()) {
+      toast({
+        title: "Meeting Number Required",
+        description: "Please provide the meeting number.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     if (!meetingDate) {
       toast({
         title: "Meeting Date Required",
@@ -100,6 +109,16 @@ export const useMinutesUpload = () => {
       });
       return;
     }
+    
+    if (!meetingLocation.trim()) {
+      toast({
+        title: "Meeting Location Required",
+        description: "Please provide the meeting location.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     if (!selectedFile) {
       toast({
         title: "Minutes File Required",
@@ -109,12 +128,25 @@ export const useMinutesUpload = () => {
       return;
     }
 
+    // Validate file size (10MB limit)
+    if (selectedFile.size > 10 * 1024 * 1024) {
+      toast({
+        title: "File Too Large",
+        description: "Please upload a file smaller than 10MB.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsUploading(true);
 
     try {
+      // Upload file to storage
       const fileExt = selectedFile.name.split('.').pop();
-      const fileName = `${Date.now()}-${selectedWorkbody}`;
+      const fileName = `${Date.now()}-${selectedWorkbody}-meeting-${meetingNumber}`;
       const filePath = `minutes/${fileName}.${fileExt}`;
+      
+      console.log("Uploading file:", filePath);
       
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('workbody-documents')
@@ -123,7 +155,10 @@ export const useMinutesUpload = () => {
           upsert: false
         });
         
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error("File upload error:", uploadError);
+        throw uploadError;
+      }
       
       const { data: { publicUrl } } = supabase.storage
         .from('workbody-documents')
@@ -140,19 +175,29 @@ export const useMinutesUpload = () => {
         attendance_status: record.attendanceStatus || 'absent'
       }));
 
-      console.log("Saving attendance records:", attendanceData);
+      console.log("Saving meeting minutes with data:", {
+        workbody_id: selectedWorkbody,
+        meeting_number: meetingNumber,
+        date: meetingDate,
+        location: meetingLocation,
+        agenda_items: agendaItemsArray,
+        actions_agreed: actionsAgreedArray,
+        attendance: attendanceData
+      });
       
       // Insert the meeting minutes
       const { data: minutesData, error: minutesError } = await supabase
         .from('meeting_minutes')
         .insert({
           workbody_id: selectedWorkbody,
+          meeting_number: meetingNumber,
           date: meetingDate,
           location: meetingLocation,
           agenda_items: agendaItemsArray,
           actions_agreed: actionsAgreedArray,
           file_url: publicUrl,
           uploaded_at: new Date().toISOString(),
+          uploaded_by: user?.id,
           attendance: attendanceData
         })
         .select('id')
@@ -165,27 +210,24 @@ export const useMinutesUpload = () => {
       
       // Store action items
       if (actionItems.length > 0 && minutesData) {
-        // Update action items with the meeting ID
         const updatedActionItems = actionItems.map(item => ({
           ...item,
           meetingId: minutesData.id
         }));
         console.log("Action items:", updatedActionItems);
         
-        // Update any completed previous actions
         const completedPreviousActions = actionItems.filter(
           item => item.isPrevious === true && item.status === 'completed'
         );
         
         if (completedPreviousActions.length > 0) {
           console.log("Completed previous actions:", completedPreviousActions);
-          // Update workbody stats for completed actions
           const workbody = workbodies.find(wb => wb.id === selectedWorkbody);
           if (workbody) {
             await supabase
               .from('workbodies')
               .update({
-                actions_completed: workbody.actionsCompleted + completedPreviousActions.length
+                actions_completed: (workbody.actionsCompleted || 0) + completedPreviousActions.length
               })
               .eq('id', selectedWorkbody);
           }
@@ -203,16 +245,16 @@ export const useMinutesUpload = () => {
         await supabase
           .from('workbodies')
           .update({
-            total_meetings: workbody.totalMeetings + 1,
-            meetings_this_year: isMeetingThisYear ? workbody.meetingsThisYear + 1 : workbody.meetingsThisYear,
-            actions_agreed: workbody.actionsAgreed + actionsAgreedArray.length
+            total_meetings: (workbody.totalMeetings || 0) + 1,
+            meetings_this_year: isMeetingThisYear ? (workbody.meetingsThisYear || 0) + 1 : (workbody.meetingsThisYear || 0),
+            actions_agreed: (workbody.actionsAgreed || 0) + actionsAgreedArray.length
           })
           .eq('id', selectedWorkbody);
       }
 
       toast({
         title: "Minutes Uploaded Successfully",
-        description: "The meeting minutes have been uploaded and saved.",
+        description: `Meeting #${meetingNumber} minutes have been uploaded and saved.`,
       });
 
       // Reset form
@@ -220,12 +262,16 @@ export const useMinutesUpload = () => {
       setSelectedWorkbody("");
       setMeetingDate("");
       setMeetingLocation("");
+      setMeetingNumber("");
       setAgendaItems("");
       setActionsAgreed("");
       setSelectedFile(null);
       setAttendanceRecords([]);
       setActionItems([]);
       setPreviousActions([]);
+      
+      // Refresh data
+      refetch();
       
     } catch (error: any) {
       console.error("Upload error:", error);
@@ -241,12 +287,24 @@ export const useMinutesUpload = () => {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setSelectedFile(e.target.files[0]);
+      const file = e.target.files[0];
+      
+      // Validate file type
+      if (file.type !== 'application/pdf') {
+        toast({
+          title: "Invalid File Type",
+          description: "Please upload a PDF file only.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      setSelectedFile(file);
     }
   };
 
   const handleAttendanceChange = (records: AttendanceRecord[]) => {
-    console.log("Attendance records updated:", records);
+    console.log("Attendance records updated in hook:", records);
     setAttendanceRecords(records);
   };
 
@@ -263,6 +321,8 @@ export const useMinutesUpload = () => {
     setMeetingDate,
     meetingLocation,
     setMeetingLocation,
+    meetingNumber,
+    setMeetingNumber,
     agendaItems,
     setAgendaItems,
     actionsAgreed,

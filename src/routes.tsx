@@ -1,4 +1,3 @@
-
 import { Navigate } from 'react-router-dom';
 import { NewLayout } from './components/layout/NewLayout';
 import Dashboard from './pages/Dashboard';
@@ -9,6 +8,7 @@ import ChairmanDashboard from './pages/ChairmanDashboard';
 import MeetingCalendar from './pages/MeetingCalendar';
 import MeetingMinutes from './pages/MeetingMinutes';
 import UploadMinutes from './pages/UploadMinutes';
+import DraftMinutes from './pages/DraftMinutes';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
@@ -72,6 +72,10 @@ export const router = [
   {
     path: '/upload-minutes',
     element: <NewLayout><UploadMinutes /></NewLayout>,
+  },
+  {
+    path: '/draft-minutes',
+    element: <NewLayout><DraftMinutes /></NewLayout>,
   },
   {
     path: '/documents',
