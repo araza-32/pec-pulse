@@ -30,6 +30,12 @@ export const useMinutesUpload = () => {
 
   const { workbodies = [], isLoading, refetch } = useWorkbodies();
 
+  // Check if user has access to upload minutes
+  const hasUploadAccess = userRole === 'admin' || 
+                         userRole === 'secretary' || 
+                         userRole === 'coordination' || 
+                         userRole === 'chairman';
+
   useEffect(() => {
     if (selectedWorkbody) {
       setPreviousActions([]);
@@ -45,13 +51,14 @@ export const useMinutesUpload = () => {
         .eq('workbody_id', selectedWorkbody)
         .order('date', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
-      if (error || !data) {
+      if (error) {
+        console.error("Error fetching previous actions:", error);
         return;
       }
 
-      if (data.actions_agreed && data.actions_agreed.length > 0) {
+      if (data && data.actions_agreed && data.actions_agreed.length > 0) {
         const previousActionItems: ActionItem[] = data.actions_agreed.map((action: string) => ({
           id: uuidv4(),
           description: action,
@@ -72,6 +79,15 @@ export const useMinutesUpload = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!hasUploadAccess) {
+      toast({
+        title: "Access Denied",
+        description: "You don't have permission to upload minutes.",
+        variant: "destructive"
+      });
+      return;
+    }
     
     // Validation
     if (!selectedWorkbodyType) {
@@ -141,6 +157,8 @@ export const useMinutesUpload = () => {
     setIsUploading(true);
 
     try {
+      console.log("Starting minutes upload process...");
+
       // Upload file to storage
       const fileExt = selectedFile.name.split('.').pop();
       const fileName = `${Date.now()}-${selectedWorkbody}-meeting-${meetingNumber}`;
@@ -175,31 +193,25 @@ export const useMinutesUpload = () => {
         attendance_status: record.attendanceStatus || 'absent'
       }));
 
-      console.log("Saving meeting minutes with data:", {
+      const minutesPayload = {
         workbody_id: selectedWorkbody,
         meeting_number: meetingNumber,
         date: meetingDate,
         location: meetingLocation,
         agenda_items: agendaItemsArray,
         actions_agreed: actionsAgreedArray,
+        file_url: publicUrl,
+        uploaded_at: new Date().toISOString(),
+        uploaded_by: user?.id,
         attendance: attendanceData
-      });
+      };
+
+      console.log("Saving meeting minutes with payload:", minutesPayload);
       
       // Insert the meeting minutes
       const { data: minutesData, error: minutesError } = await supabase
         .from('meeting_minutes')
-        .insert({
-          workbody_id: selectedWorkbody,
-          meeting_number: meetingNumber,
-          date: meetingDate,
-          location: meetingLocation,
-          agenda_items: agendaItemsArray,
-          actions_agreed: actionsAgreedArray,
-          file_url: publicUrl,
-          uploaded_at: new Date().toISOString(),
-          uploaded_by: user?.id,
-          attendance: attendanceData
-        })
+        .insert(minutesPayload)
         .select('id')
         .single();
       
@@ -208,31 +220,7 @@ export const useMinutesUpload = () => {
         throw minutesError;
       }
       
-      // Store action items
-      if (actionItems.length > 0 && minutesData) {
-        const updatedActionItems = actionItems.map(item => ({
-          ...item,
-          meetingId: minutesData.id
-        }));
-        console.log("Action items:", updatedActionItems);
-        
-        const completedPreviousActions = actionItems.filter(
-          item => item.isPrevious === true && item.status === 'completed'
-        );
-        
-        if (completedPreviousActions.length > 0) {
-          console.log("Completed previous actions:", completedPreviousActions);
-          const workbody = workbodies.find(wb => wb.id === selectedWorkbody);
-          if (workbody) {
-            await supabase
-              .from('workbodies')
-              .update({
-                actions_completed: (workbody.actionsCompleted || 0) + completedPreviousActions.length
-              })
-              .eq('id', selectedWorkbody);
-          }
-        }
-      }
+      console.log("Successfully saved meeting minutes:", minutesData);
 
       // Update workbody stats
       const workbody = workbodies.find(wb => wb.id === selectedWorkbody);
@@ -242,14 +230,22 @@ export const useMinutesUpload = () => {
         const meetingDateObj = new Date(meetingDate);
         const isMeetingThisYear = meetingDateObj.getFullYear() === thisYear;
         
-        await supabase
+        const updatePayload = {
+          total_meetings: (workbody.totalMeetings || 0) + 1,
+          meetings_this_year: isMeetingThisYear ? (workbody.meetingsThisYear || 0) + 1 : (workbody.meetingsThisYear || 0),
+          actions_agreed: (workbody.actionsAgreed || 0) + actionsAgreedArray.length
+        };
+
+        console.log("Updating workbody stats:", updatePayload);
+
+        const { error: updateError } = await supabase
           .from('workbodies')
-          .update({
-            total_meetings: (workbody.totalMeetings || 0) + 1,
-            meetings_this_year: isMeetingThisYear ? (workbody.meetingsThisYear || 0) + 1 : (workbody.meetingsThisYear || 0),
-            actions_agreed: (workbody.actionsAgreed || 0) + actionsAgreedArray.length
-          })
+          .update(updatePayload)
           .eq('id', selectedWorkbody);
+
+        if (updateError) {
+          console.error("Error updating workbody stats:", updateError);
+        }
       }
 
       toast({
@@ -336,6 +332,7 @@ export const useMinutesUpload = () => {
     workbodies,
     isLoading,
     userWorkbodyId,
+    hasUploadAccess,
     handleSubmit,
     handleFileChange,
     handleAttendanceChange,

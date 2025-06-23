@@ -5,7 +5,6 @@ import { ScheduledMeeting } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { useMeetingMutations } from './meetings/useMeetingMutations';
 import { useMeetingSubscription } from './meetings/useMeetingSubscription';
-import { format } from 'date-fns';
 
 export const useScheduledMeetings = () => {
   const [meetings, setMeetings] = useState<ScheduledMeeting[]>([]);
@@ -16,7 +15,7 @@ export const useScheduledMeetings = () => {
     console.log("Fetching meetings...");
     setIsLoading(true);
     try {
-      // Get all meetings, including past meetings
+      // Get ALL meetings for ALL users - no role-based filtering
       const { data, error } = await supabase
         .from('scheduled_meetings')
         .select('*')

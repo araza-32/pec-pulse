@@ -14,7 +14,7 @@ export function ThemeToggle() {
     return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   });
 
-  // Apply theme to document
+  // Apply theme to document and persist immediately
   useEffect(() => {
     const root = document.documentElement;
     if (theme === "dark") {
@@ -23,15 +23,31 @@ export function ThemeToggle() {
       root.classList.remove("dark");
     }
     localStorage.setItem("theme", theme);
+    
+    // Force persistence by setting it multiple times
+    setTimeout(() => {
+      localStorage.setItem("theme", theme);
+    }, 100);
   }, [theme]);
+
+  // Ensure theme is applied on component mount
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme && savedTheme !== theme) {
+      setTheme(savedTheme as "light" | "dark");
+    }
+  }, []);
 
   const toggleTheme = () => {
     const newTheme = theme === "light" ? "dark" : "light";
     setTheme(newTheme);
+    
+    // Immediate persistence
+    localStorage.setItem("theme", newTheme);
+    
     toast({
       title: `${newTheme.charAt(0).toUpperCase() + newTheme.slice(1)} mode activated`,
       description: `Switched to ${newTheme} theme.`
-      // Remove 'duration' property as it doesn't exist in Toast type
     });
   };
 

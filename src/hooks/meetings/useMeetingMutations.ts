@@ -28,14 +28,7 @@ export const useMeetingMutations = (
     } = meetingData;
 
     try {
-      // Get current user for RLS policies - removed reference to created_by
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        throw new Error('User must be logged in to create meetings');
-      }
-      
-      console.log("Creating meeting with user:", user.id);
+      console.log("Creating meeting with data:", meetingData);
       
       const meetingPayload = {
         workbody_id: workbodyId,
@@ -50,13 +43,20 @@ export const useMeetingMutations = (
         agenda_file_path: agendaFilePath || null
       };
 
+      console.log("Inserting meeting payload:", meetingPayload);
+
       const { data, error } = await supabase
         .from('scheduled_meetings')
         .insert(meetingPayload)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Database error:", error);
+        throw error;
+      }
+
+      console.log("Successfully inserted meeting:", data);
 
       // Convert data to ScheduledMeeting format
       const newMeeting: ScheduledMeeting = {
@@ -81,7 +81,7 @@ export const useMeetingMutations = (
       console.error('Error adding meeting:', error);
       toast({
         title: 'Error adding meeting',
-        description: error.message || 'Something went wrong',
+        description: error.message || 'Failed to save meeting to database',
         variant: 'destructive',
       });
       throw error;
@@ -92,6 +92,8 @@ export const useMeetingMutations = (
   const updateMeeting = async (id: string, updates: Partial<ScheduledMeeting>) => {
     setIsUpdating(true);
     try {
+      console.log("Updating meeting with ID:", id, "Updates:", updates);
+      
       // Transform updates to database column format
       const dbUpdates: any = {};
       
@@ -106,12 +108,19 @@ export const useMeetingMutations = (
       if (updates.agendaFile !== undefined) dbUpdates.agenda_file_name = updates.agendaFile;
       if (updates.agendaFilePath !== undefined) dbUpdates.agenda_file_path = updates.agendaFilePath;
       
+      console.log("Database updates:", dbUpdates);
+      
       const { error } = await supabase
         .from('scheduled_meetings')
         .update(dbUpdates)
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Database update error:", error);
+        throw error;
+      }
+
+      console.log("Successfully updated meeting in database");
 
       // Update the meetings state
       setMeetings(prev => 
@@ -129,7 +138,7 @@ export const useMeetingMutations = (
       console.error('Error updating meeting:', error);
       toast({
         title: 'Error updating meeting',
-        description: error.message || 'Something went wrong',
+        description: error.message || 'Failed to update meeting in database',
         variant: 'destructive',
       });
       throw error;
@@ -141,12 +150,19 @@ export const useMeetingMutations = (
   // Delete a meeting
   const deleteMeeting = async (id: string) => {
     try {
+      console.log("Deleting meeting with ID:", id);
+      
       const { error } = await supabase
         .from('scheduled_meetings')
         .delete()
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Database delete error:", error);
+        throw error;
+      }
+
+      console.log("Successfully deleted meeting from database");
 
       // Update state by removing the deleted meeting
       setMeetings(prev => prev.filter(meeting => meeting.id !== id));
@@ -156,7 +172,7 @@ export const useMeetingMutations = (
       console.error('Error deleting meeting:', error);
       toast({
         title: 'Error deleting meeting',
-        description: error.message || 'Something went wrong',
+        description: error.message || 'Failed to delete meeting from database',
         variant: 'destructive',
       });
       throw error;
