@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -22,7 +23,9 @@ import {
   Building,
   Briefcase,
   Cog,
-  Target
+  Target,
+  Scale,
+  Shield
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -39,7 +42,7 @@ interface NavigationItem {
   children?: NavigationItem[];
 }
 
-// Workbody categories based on the organizational chart
+// Workbody categories based on the organizational chart with proper filtering
 const workbodyCategories = [
   {
     title: "Executive",
@@ -59,43 +62,40 @@ const workbodyCategories = [
   },
   {
     title: "Regulations",
-    icon: FileText,
+    icon: Scale,
     children: [
       {
-        title: "EC",
+        title: "EC (Examination Committee)",
         href: "/workbodies/ec",
+        icon: FileText
+      },
+      {
+        title: "ESC (Engineering Services Committee)",
+        href: "/workbodies/esc",
         icon: Cog
       },
       {
-        title: "ESC (B, S, P, KP)",
-        href: "/workbodies/esc",
-        icon: Users
-      },
-      {
-        title: "EAB",
+        title: "EAB (Engineering Accreditation Board)",
         href: "/workbodies/eab",
-        icon: Building,
-        subItems: [
-          "VCC", "APMC", "AMRC", "TF-Manual(s) Revision"
-        ]
+        icon: Shield
       },
       {
-        title: "EPDC",
+        title: "EPDC (Engineering Practices & Development Committee)",
         href: "/workbodies/epdc",
-        icon: FileText
+        icon: Target
       },
       {
         title: "TF-CPD Policy Revision",
         href: "/workbodies/tf-cpd-policy",
-        icon: Target
+        icon: Edit
       },
       {
-        title: "A&BC",
+        title: "A&BC (Appeals & Bylaws Committee)",
         href: "/workbodies/abc",
         icon: BarChart3
       },
       {
-        title: "QEC",
+        title: "QEC (Quality Enhancement Committee)",
         href: "/workbodies/qec",
         icon: Settings
       }
@@ -106,17 +106,14 @@ const workbodyCategories = [
     icon: Cog,
     children: [
       {
-        title: "WG-PECIR",
+        title: "WG-PECIR (Working Group - PEC Information Repository)",
         href: "/workbodies/wg-pecir",
         icon: Users
       },
       {
-        title: "WG-PECADM",
+        title: "WG-PECADM (Working Group - PEC Administration)",
         href: "/workbodies/wg-pecadm",
-        icon: Users,
-        subItems: [
-          "TF-R/O Peshawar", "TF-R/O Lahore", "TF-Evaluation, Prequalification and Subsequent Bidding Process of Interior Design Firms"
-        ]
+        icon: Users
       },
       {
         title: "CPC (Central Procurement Committee)",
@@ -126,10 +123,7 @@ const workbodyCategories = [
       {
         title: "Special Initiatives",
         href: "/workbodies/special-initiatives",
-        icon: Target,
-        subItems: [
-          "GET Steering Groups (Central + Regional)"
-        ]
+        icon: Target
       }
     ]
   },
@@ -148,32 +142,32 @@ const workbodyCategories = [
         icon: FileText
       },
       {
-        title: "WG-PSII",
+        title: "WG-PSII (Working Group - Power Sector Industrial Initiative)",
         href: "/workbodies/wg-psii",
         icon: Users
       },
       {
-        title: "TF-Power Sector of Engg.",
+        title: "TF-Power Sector Engineering",
         href: "/workbodies/tf-power-sector",
         icon: Target
       },
       {
-        title: "WG-YEA",
+        title: "WG-YEA (Working Group - Young Engineers Activities)",
         href: "/workbodies/wg-yea",
         icon: Users
       },
       {
-        title: "WG-CID",
+        title: "WG-CID (Working Group - Corporate & Industrial Development)",
         href: "/workbodies/wg-cid",
         icon: Users
       },
       {
-        title: "WG-IALD",
+        title: "WG-IALD (Working Group - International Affairs & Linkages Development)",
         href: "/workbodies/wg-iald",
         icon: Users
       },
       {
-        title: "IPEA-Monitoring",
+        title: "IPEA-Monitoring (Independent Power Evaluation & Assessment)",
         href: "/workbodies/ipea-monitoring",
         icon: BarChart3
       }
@@ -249,7 +243,7 @@ const navigationItems: NavigationItem[] = [
 export function NewSidebar({ className }: SidebarProps) {
   const location = useLocation();
   const { user } = useAuth();
-  const [openItems, setOpenItems] = useState<string[]>(["Workbodies"]);
+  const [openItems, setOpenItems] = useState<string[]>([]);
 
   const toggleItem = (title: string) => {
     setOpenItems(prev => 
