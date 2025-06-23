@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -33,7 +32,7 @@ interface SidebarProps {
 
 interface NavigationItem {
   title: string;
-  href: string;
+  href?: string; // Made optional for parent categories
   icon: React.ComponentType<{ className?: string }>;
   badge?: string;
   roles?: string[];
@@ -197,7 +196,6 @@ const navigationItems: NavigationItem[] = [
   },
   {
     title: "Workbodies",
-    href: "/workbodies",
     icon: Users,
     children: workbodyCategories
   },
@@ -269,12 +267,12 @@ export function NewSidebar({ className }: SidebarProps) {
   const renderNavigationItem = (item: NavigationItem, depth = 0) => {
     if (!hasAccess(item.roles)) return null;
 
-    const isActive = location.pathname === item.href;
+    const isActive = item.href && location.pathname === item.href;
     const hasChildren = item.children && item.children.length > 0;
     const isOpen = openItems.includes(item.title);
     const hasActiveChild = item.children?.some(child => 
-      location.pathname === child.href || 
-      child.children?.some(subChild => location.pathname === subChild.href)
+      child.href && (location.pathname === child.href || 
+      child.children?.some(subChild => subChild.href && location.pathname === subChild.href))
     );
 
     if (hasChildren) {
@@ -311,29 +309,35 @@ export function NewSidebar({ className }: SidebarProps) {
       );
     }
 
-    return (
-      <Button
-        key={item.title}
-        variant="ghost"
-        className={cn(
-          "w-full justify-start gap-2 hover:bg-green-50 hover:text-green-700 text-sm",
-          depth > 0 && "ml-4 w-[calc(100%-1rem)] text-xs",
-          depth > 1 && "ml-8 w-[calc(100%-2rem)] text-xs",
-          isActive && "bg-green-100 text-green-800 font-medium"
-        )}
-        asChild
-      >
-        <Link to={item.href}>
-          <item.icon className={cn("h-4 w-4", depth > 0 && "h-3 w-3")} />
-          <span className="flex-1 text-left">{item.title}</span>
-          {item.badge && (
-            <Badge variant="secondary" className="text-xs">
-              {item.badge}
-            </Badge>
+    // Only render as Link if item has href
+    if (item.href) {
+      return (
+        <Button
+          key={item.title}
+          variant="ghost"
+          className={cn(
+            "w-full justify-start gap-2 hover:bg-green-50 hover:text-green-700 text-sm",
+            depth > 0 && "ml-4 w-[calc(100%-1rem)] text-xs",
+            depth > 1 && "ml-8 w-[calc(100%-2rem)] text-xs",
+            isActive && "bg-green-100 text-green-800 font-medium"
           )}
-        </Link>
-      </Button>
-    );
+          asChild
+        >
+          <Link to={item.href}>
+            <item.icon className={cn("h-4 w-4", depth > 0 && "h-3 w-3")} />
+            <span className="flex-1 text-left">{item.title}</span>
+            {item.badge && (
+              <Badge variant="secondary" className="text-xs">
+                {item.badge}
+              </Badge>
+            )}
+          </Link>
+        </Button>
+      );
+    }
+
+    // Fallback for items without href (shouldn't happen with current structure)
+    return null;
   };
 
   return (
