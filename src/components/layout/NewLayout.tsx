@@ -52,8 +52,10 @@ export function NewLayout({ children }: LayoutProps) {
     
     // Auto-collapse sidebar on mobile
     const handleResize = () => {
-      if (window.innerWidth < 768) {
+      if (window.innerWidth < 1024) {
         setSidebarOpen(false);
+      } else {
+        setSidebarOpen(true);
       }
     };
     
@@ -94,12 +96,34 @@ export function NewLayout({ children }: LayoutProps) {
   }
   
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-white to-green-50/30">
-      <NewSidebar />
+    <div className="flex min-h-screen bg-gradient-to-br from-white to-green-50/30 w-full">
+      {/* Sidebar */}
+      {sidebarOpen && (
+        <div className="hidden lg:block">
+          <NewSidebar />
+        </div>
+      )}
       
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 z-30 bg-gray-600 bg-opacity-75 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+      
+      {/* Mobile sidebar */}
       <div className={cn(
-        "flex-1 flex flex-col transition-all duration-300 w-full",
-        sidebarOpen ? "lg:ml-64" : "lg:ml-16"
+        "fixed inset-y-0 left-0 z-40 lg:hidden transition-transform duration-300 ease-in-out",
+        sidebarOpen ? "translate-x-0" : "-translate-x-full"
+      )}>
+        <NewSidebar />
+      </div>
+      
+      {/* Main content */}
+      <div className={cn(
+        "flex-1 flex flex-col min-h-screen transition-all duration-300",
+        sidebarOpen ? "lg:ml-64" : "lg:ml-0"
       )}>
         <NewHeader onMenuClick={toggleSidebar} />
         
@@ -109,7 +133,7 @@ export function NewLayout({ children }: LayoutProps) {
           </div>
         </main>
           
-        <footer className="border-t bg-gradient-to-r from-green-50 to-green-100 py-4 text-center text-sm text-pec-green-700 shadow-inner">
+        <footer className="border-t bg-gradient-to-r from-green-50 to-green-100 py-4 text-center text-sm text-green-700 shadow-inner">
           © {new Date().getFullYear()} Pakistan Engineering Council. All rights reserved.
           <div className="inline-flex ml-4">
             <ThemeToggle />

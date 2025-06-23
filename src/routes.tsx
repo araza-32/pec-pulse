@@ -1,3 +1,4 @@
+
 import { Navigate } from 'react-router-dom';
 import { NewLayout } from './components/layout/NewLayout';
 import Dashboard from './pages/Dashboard';
@@ -45,6 +46,92 @@ export const router = [
     path: '/workbodies/:id',
     element: <Navigate to={`/workbody/${window.location.pathname.split('/workbodies/')[1]}`} />,
   },
+  // Workbody category routes
+  {
+    path: '/workbodies/governing-body',
+    element: <NewLayout><WorkbodyManagement /></NewLayout>,
+  },
+  {
+    path: '/workbodies/management-committee',
+    element: <NewLayout><WorkbodyManagement /></NewLayout>,
+  },
+  {
+    path: '/workbodies/ec',
+    element: <NewLayout><WorkbodyManagement /></NewLayout>,
+  },
+  {
+    path: '/workbodies/esc',
+    element: <NewLayout><WorkbodyManagement /></NewLayout>,
+  },
+  {
+    path: '/workbodies/eab',
+    element: <NewLayout><WorkbodyManagement /></NewLayout>,
+  },
+  {
+    path: '/workbodies/epdc',
+    element: <NewLayout><WorkbodyManagement /></NewLayout>,
+  },
+  {
+    path: '/workbodies/tf-cpd-policy',
+    element: <NewLayout><WorkbodyManagement /></NewLayout>,
+  },
+  {
+    path: '/workbodies/abc',
+    element: <NewLayout><WorkbodyManagement /></NewLayout>,
+  },
+  {
+    path: '/workbodies/qec',
+    element: <NewLayout><WorkbodyManagement /></NewLayout>,
+  },
+  {
+    path: '/workbodies/wg-pecir',
+    element: <NewLayout><WorkbodyManagement /></NewLayout>,
+  },
+  {
+    path: '/workbodies/wg-pecadm',
+    element: <NewLayout><WorkbodyManagement /></NewLayout>,
+  },
+  {
+    path: '/workbodies/cpc',
+    element: <NewLayout><WorkbodyManagement /></NewLayout>,
+  },
+  {
+    path: '/workbodies/special-initiatives',
+    element: <NewLayout><WorkbodyManagement /></NewLayout>,
+  },
+  {
+    path: '/workbodies/think-tank',
+    element: <NewLayout><WorkbodyManagement /></NewLayout>,
+  },
+  {
+    path: '/workbodies/wg-technical-codes',
+    element: <NewLayout><WorkbodyManagement /></NewLayout>,
+  },
+  {
+    path: '/workbodies/wg-psii',
+    element: <NewLayout><WorkbodyManagement /></NewLayout>,
+  },
+  {
+    path: '/workbodies/tf-power-sector',
+    element: <NewLayout><WorkbodyManagement /></NewLayout>,
+  },
+  {
+    path: '/workbodies/wg-yea',
+    element: <NewLayout><WorkbodyManagement /></NewLayout>,
+  },
+  {
+    path: '/workbodies/wg-cid',
+    element: <NewLayout><WorkbodyManagement /></NewLayout>,
+  },
+  {
+    path: '/workbodies/wg-iald',
+    element: <NewLayout><WorkbodyManagement /></NewLayout>,
+  },
+  {
+    path: '/workbodies/ipea-monitoring',
+    element: <NewLayout><WorkbodyManagement /></NewLayout>,
+  },
+  // Legacy routes
   {
     path: '/workbodies/committees',
     element: <NewLayout><WorkbodyManagement /></NewLayout>,
