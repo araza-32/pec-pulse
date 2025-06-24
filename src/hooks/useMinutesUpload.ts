@@ -30,11 +30,15 @@ export const useMinutesUpload = () => {
 
   const { workbodies = [], isLoading, refetch } = useWorkbodies();
 
-  // Check if user has access to upload minutes
+  // Updated access control - admin and coordination can now draft minutes
   const hasUploadAccess = userRole === 'admin' || 
                          userRole === 'secretary' || 
                          userRole === 'coordination' || 
                          userRole === 'chairman';
+
+  const hasDraftAccess = userRole === 'admin' || 
+                        userRole === 'secretary' || 
+                        userRole === 'coordination';
 
   useEffect(() => {
     if (selectedWorkbody) {
@@ -154,13 +158,17 @@ export const useMinutesUpload = () => {
       return;
     }
 
+    await uploadMinutes();
+  };
+
+  const uploadMinutes = async () => {
     setIsUploading(true);
 
     try {
       console.log("Starting minutes upload process...");
 
       // Upload file to storage
-      const fileExt = selectedFile.name.split('.').pop();
+      const fileExt = selectedFile!.name.split('.').pop();
       const fileName = `${Date.now()}-${selectedWorkbody}-meeting-${meetingNumber}`;
       const filePath = `minutes/${fileName}.${fileExt}`;
       
@@ -168,7 +176,7 @@ export const useMinutesUpload = () => {
       
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('workbody-documents')
-        .upload(filePath, selectedFile, {
+        .upload(filePath, selectedFile!, {
           cacheControl: '3600',
           upsert: false
         });
@@ -223,50 +231,14 @@ export const useMinutesUpload = () => {
       console.log("Successfully saved meeting minutes:", minutesData);
 
       // Update workbody stats
-      const workbody = workbodies.find(wb => wb.id === selectedWorkbody);
-      if (workbody) {
-        const now = new Date();
-        const thisYear = now.getFullYear();
-        const meetingDateObj = new Date(meetingDate);
-        const isMeetingThisYear = meetingDateObj.getFullYear() === thisYear;
-        
-        const updatePayload = {
-          total_meetings: (workbody.totalMeetings || 0) + 1,
-          meetings_this_year: isMeetingThisYear ? (workbody.meetingsThisYear || 0) + 1 : (workbody.meetingsThisYear || 0),
-          actions_agreed: (workbody.actionsAgreed || 0) + actionsAgreedArray.length
-        };
-
-        console.log("Updating workbody stats:", updatePayload);
-
-        const { error: updateError } = await supabase
-          .from('workbodies')
-          .update(updatePayload)
-          .eq('id', selectedWorkbody);
-
-        if (updateError) {
-          console.error("Error updating workbody stats:", updateError);
-        }
-      }
+      await updateWorkbodyStats();
 
       toast({
         title: "Minutes Uploaded Successfully",
         description: `Meeting #${meetingNumber} minutes have been uploaded and saved.`,
       });
 
-      // Reset form
-      setSelectedWorkbodyType("");
-      setSelectedWorkbody("");
-      setMeetingDate("");
-      setMeetingLocation("");
-      setMeetingNumber("");
-      setAgendaItems("");
-      setActionsAgreed("");
-      setSelectedFile(null);
-      setAttendanceRecords([]);
-      setActionItems([]);
-      setPreviousActions([]);
-      
-      // Refresh data
+      resetForm();
       refetch();
       
     } catch (error: any) {
@@ -279,6 +251,49 @@ export const useMinutesUpload = () => {
     } finally {
       setIsUploading(false);
     }
+  };
+
+  const updateWorkbodyStats = async () => {
+    const workbody = workbodies.find(wb => wb.id === selectedWorkbody);
+    if (workbody) {
+      const now = new Date();
+      const thisYear = now.getFullYear();
+      const meetingDateObj = new Date(meetingDate);
+      const isMeetingThisYear = meetingDateObj.getFullYear() === thisYear;
+      
+      const actionsAgreedArray = actionsAgreed.split('\n').filter(item => item.trim() !== '');
+      
+      const updatePayload = {
+        total_meetings: (workbody.totalMeetings || 0) + 1,
+        meetings_this_year: isMeetingThisYear ? (workbody.meetingsThisYear || 0) + 1 : (workbody.meetingsThisYear || 0),
+        actions_agreed: (workbody.actionsAgreed || 0) + actionsAgreedArray.length
+      };
+
+      console.log("Updating workbody stats:", updatePayload);
+
+      const { error: updateError } = await supabase
+        .from('workbodies')
+        .update(updatePayload)
+        .eq('id', selectedWorkbody);
+
+      if (updateError) {
+        console.error("Error updating workbody stats:", updateError);
+      }
+    }
+  };
+
+  const resetForm = () => {
+    setSelectedWorkbodyType("");
+    setSelectedWorkbody("");
+    setMeetingDate("");
+    setMeetingLocation("");
+    setMeetingNumber("");
+    setAgendaItems("");
+    setActionsAgreed("");
+    setSelectedFile(null);
+    setAttendanceRecords([]);
+    setActionItems([]);
+    setPreviousActions([]);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -333,6 +348,7 @@ export const useMinutesUpload = () => {
     isLoading,
     userWorkbodyId,
     hasUploadAccess,
+    hasDraftAccess,
     handleSubmit,
     handleFileChange,
     handleAttendanceChange,

@@ -14,7 +14,7 @@ interface LayoutProps {
 }
 
 export function NewLayout({ children }: LayoutProps) {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // Default closed on mobile
   const { session, logout, isAuthenticated } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const location = useLocation();
@@ -43,19 +43,15 @@ export function NewLayout({ children }: LayoutProps) {
     }
   }, [isAuthenticated, location.pathname, isLoading, navigate]);
 
-  // Handle sidebar state in localStorage
+  // Handle sidebar state and auto-collapse on mobile
   useEffect(() => {
-    const savedState = localStorage.getItem('sidebarOpen');
-    if (savedState !== null) {
-      setSidebarOpen(savedState === 'true');
-    }
-    
-    // Auto-collapse sidebar on mobile
     const handleResize = () => {
       if (window.innerWidth < 1024) {
-        setSidebarOpen(false);
+        setSidebarOpen(false); // Always closed on mobile
       } else {
-        setSidebarOpen(true);
+        // On desktop, check localStorage
+        const savedState = localStorage.getItem('sidebarOpen');
+        setSidebarOpen(savedState !== null ? savedState === 'true' : true);
       }
     };
     
@@ -67,7 +63,11 @@ export function NewLayout({ children }: LayoutProps) {
   const toggleSidebar = () => {
     const newState = !sidebarOpen;
     setSidebarOpen(newState);
-    localStorage.setItem('sidebarOpen', String(newState));
+    
+    // Only save to localStorage on desktop
+    if (window.innerWidth >= 1024) {
+      localStorage.setItem('sidebarOpen', String(newState));
+    }
   };
   
   const handleLogout = () => {
@@ -97,17 +97,17 @@ export function NewLayout({ children }: LayoutProps) {
   
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-white to-green-50/30 w-full">
-      {/* Sidebar */}
+      {/* Desktop sidebar */}
       {sidebarOpen && (
         <div className="hidden lg:block">
           <NewSidebar />
         </div>
       )}
       
-      {/* Mobile sidebar overlay */}
+      {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div 
-          className="fixed inset-0 z-30 bg-gray-600 bg-opacity-75 lg:hidden"
+          className="fixed inset-0 z-30 bg-gray-900/50 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}

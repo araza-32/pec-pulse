@@ -5,17 +5,19 @@ import { ScheduledMeeting } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { useMeetingMutations } from './meetings/useMeetingMutations';
 import { useMeetingSubscription } from './meetings/useMeetingSubscription';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const useScheduledMeetings = () => {
   const [meetings, setMeetings] = useState<ScheduledMeeting[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const { user } = useAuth();
   
   const fetchMeetings = useCallback(async () => {
-    console.log("Fetching meetings...");
+    console.log("Fetching meetings for all users...");
     setIsLoading(true);
     try {
-      // Get ALL meetings for ALL users - no role-based filtering
+      // Get ALL meetings for ALL users - no role-based filtering at database level
       const { data, error } = await supabase
         .from('scheduled_meetings')
         .select('*')
@@ -41,7 +43,7 @@ export const useScheduledMeetings = () => {
           workbodyId: meeting.workbody_id,
           workbodyName: meeting.workbody_name,
           date: meeting.date,
-          time: timeWithoutSeconds, // Use formatted time without seconds
+          time: timeWithoutSeconds,
           location: meeting.location,
           agendaItems: meeting.agenda_items || [],
           notificationFile: meeting.notification_file_name,
@@ -51,19 +53,52 @@ export const useScheduledMeetings = () => {
         };
       }) : [];
 
-      console.log("Formatted meetings:", formattedMeetings);
-      setMeetings(formattedMeetings);
+      console.log("Formatted meetings for display:", formattedMeetings);
+      
+      // Filter meetings based on user role for display purposes only
+      let filteredMeetings = formattedMeetings;
+      
+      if (user?.role) {
+        const userRole = user.role;
+        const userWorkbodyId = user.workbodyId;
+        
+        console.log("User role:", userRole, "Workbody ID:", userWorkbodyId);
+        
+        // Show relevant meetings based on user role
+        if (userRole === 'secretary' && userWorkbodyId) {
+          // Secretaries see their workbody meetings
+          filteredMeetings = formattedMeetings.filter(meeting => 
+            meeting.workbodyId === userWorkbodyId
+          );
+        } else if (['admin', 'coordination', 'registrar', 'chairman'].includes(userRole)) {
+          // Admin, coordination, registrar, and chairman see all meetings
+          filteredMeetings = formattedMeetings;
+        } else {
+          // Members see meetings of their workbody if assigned
+          if (userWorkbodyId) {
+            filteredMeetings = formattedMeetings.filter(meeting => 
+              meeting.workbodyId === userWorkbodyId
+            );
+          } else {
+            // General members can see all meetings for awareness
+            filteredMeetings = formattedMeetings;
+          }
+        }
+      }
+
+      console.log("Filtered meetings for user:", filteredMeetings);
+      setMeetings(filteredMeetings);
     } catch (error) {
       console.error('Error fetching meetings:', error);
       toast({
         title: 'Error',
-        description: 'Failed to fetch scheduled meetings',
+        description: 'Failed to fetch scheduled meetings. Please refresh the page.',
         variant: 'destructive'
       });
     } finally {
       setIsLoading(false);
     }
-  }, [toast]);
+  }, [toast, user]);
   
   // Create improved meeting mutations
   const { addMeeting, updateMeeting, deleteMeeting: deleteFromDatabase } = useMeetingMutations(meetings, setMeetings, fetchMeetings);
@@ -71,11 +106,17 @@ export const useScheduledMeetings = () => {
   // Enhanced delete function that ensures database consistency
   const deleteMeeting = async (id: string) => {
     try {
+      console.log("Attempting to delete meeting:", id);
+      
       // First delete from database
       await deleteFromDatabase(id);
       
       // Then update local state to remove the meeting
-      setMeetings(currentMeetings => currentMeetings.filter(meeting => meeting.id !== id));
+      setMeetings(currentMeetings => {
+        const updated = currentMeetings.filter(meeting => meeting.id !== id);
+        console.log("Updated meetings after deletion:", updated);
+        return updated;
+      });
       
       toast({
         title: 'Success',
@@ -91,7 +132,7 @@ export const useScheduledMeetings = () => {
       
       toast({
         title: 'Error',
-        description: 'Failed to delete meeting',
+        description: 'Failed to delete meeting. Please try again.',
         variant: 'destructive'
       });
       
@@ -101,14 +142,19 @@ export const useScheduledMeetings = () => {
 
   // Initial fetch
   useEffect(() => {
+    console.log("Initializing scheduled meetings hook...");
     fetchMeetings();
     
     // Set up a regular polling interval as a fallback
     const interval = setInterval(() => {
+      console.log("Polling for meeting updates...");
       fetchMeetings();
-    }, 60000); // Poll every minute
+    }, 30000); // Poll every 30 seconds
     
-    return () => clearInterval(interval);
+    return () => {
+      console.log("Cleaning up scheduled meetings hook...");
+      clearInterval(interval);
+    };
   }, [fetchMeetings]);
 
   // Set up real-time subscription
