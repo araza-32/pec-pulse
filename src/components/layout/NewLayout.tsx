@@ -14,7 +14,7 @@ interface LayoutProps {
 }
 
 export function NewLayout({ children }: LayoutProps) {
-  const [sidebarOpen, setSidebarOpen] = useState(false); // Default closed on mobile
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const { session, logout, isAuthenticated } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const location = useLocation();
@@ -26,7 +26,6 @@ export function NewLayout({ children }: LayoutProps) {
     workbodyId: session.workbodyId
   } : null;
   
-  // Simulated loading effect for better user experience
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoading(false);
@@ -35,7 +34,6 @@ export function NewLayout({ children }: LayoutProps) {
     return () => clearTimeout(timer);
   }, []);
 
-  // Redirect to login if not authenticated and not on public pages
   useEffect(() => {
     const isPublicPage = location.pathname === "/" || location.pathname === "/login";
     if (!isAuthenticated && !isPublicPage && !isLoading) {
@@ -43,13 +41,11 @@ export function NewLayout({ children }: LayoutProps) {
     }
   }, [isAuthenticated, location.pathname, isLoading, navigate]);
 
-  // Handle sidebar state and auto-collapse on mobile
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth < 1024) {
-        setSidebarOpen(false); // Always closed on mobile
+        setSidebarOpen(false);
       } else {
-        // On desktop, check localStorage
         const savedState = localStorage.getItem('sidebarOpen');
         setSidebarOpen(savedState !== null ? savedState === 'true' : true);
       }
@@ -64,7 +60,6 @@ export function NewLayout({ children }: LayoutProps) {
     const newState = !sidebarOpen;
     setSidebarOpen(newState);
     
-    // Only save to localStorage on desktop
     if (window.innerWidth >= 1024) {
       localStorage.setItem('sidebarOpen', String(newState));
     }
@@ -80,7 +75,6 @@ export function NewLayout({ children }: LayoutProps) {
     return <Loading />;
   }
   
-  // Public pages like landing, login, etc. don't need the dashboard layout
   const isPublicPage = location.pathname === "/" || location.pathname === "/login";
   
   if (isPublicPage) {
@@ -99,7 +93,7 @@ export function NewLayout({ children }: LayoutProps) {
     <div className="flex min-h-screen bg-gradient-to-br from-white to-green-50/30 w-full">
       {/* Desktop sidebar */}
       {sidebarOpen && (
-        <div className="hidden lg:block">
+        <div className="hidden lg:block fixed inset-y-0 left-0 z-30">
           <NewSidebar />
         </div>
       )}
@@ -107,14 +101,14 @@ export function NewLayout({ children }: LayoutProps) {
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div 
-          className="fixed inset-0 z-30 bg-gray-900/50 lg:hidden"
+          className="fixed inset-0 z-40 bg-gray-900/50 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
       
       {/* Mobile sidebar */}
       <div className={cn(
-        "fixed inset-y-0 left-0 z-40 lg:hidden transition-transform duration-300 ease-in-out",
+        "fixed inset-y-0 left-0 z-50 lg:hidden transition-transform duration-300 ease-in-out",
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <NewSidebar />

@@ -19,7 +19,7 @@ interface MemberHierarchyProps {
 }
 
 export function MemberHierarchy({ members, showActions = false }: MemberHierarchyProps) {
-  // Define role hierarchy order
+  // Define role hierarchy order with proper seniority
   const roleOrder = {
     'convener': 1,
     'chairman': 1,
@@ -28,10 +28,14 @@ export function MemberHierarchy({ members, showActions = false }: MemberHierarch
     'deputy chairman': 2,
     'deputy convener': 2,
     'senior vice chairman': 3,
-    'vice chairman': 4,
-    'vice chair': 4,
-    'member': 5,
-    'secretary': 6
+    'vice chairman sindh': 4,
+    'vice chairman kp': 4,
+    'vice chairman balochistan': 4,
+    'vice chairman punjab': 4,
+    'vice chairman': 5,
+    'vice chair': 5,
+    'member': 6,
+    'secretary': 7
   };
 
   // Sort members by role hierarchy
@@ -55,7 +59,10 @@ export function MemberHierarchy({ members, showActions = false }: MemberHierarch
     if (roleKey.includes('deputy') || roleKey.includes('co-lead')) {
       return 'secondary';
     }
-    if (roleKey.includes('vice')) {
+    if (roleKey.includes('senior vice chairman')) {
+      return 'default';
+    }
+    if (roleKey.includes('vice chairman')) {
       return 'outline';
     }
     return 'secondary';

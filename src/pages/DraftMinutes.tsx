@@ -4,12 +4,20 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 
 export default function DraftMinutes() {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   
   // Allow access for admin, secretary, and coordination roles
   const hasAccess = user?.role === 'admin' || 
                    user?.role === 'secretary' || 
-                   user?.role === 'coordination';
+                   user?.role === 'coordination' ||
+                   session?.role === 'admin' ||
+                   session?.role === 'secretary' ||
+                   session?.role === 'coordination';
+  
+  // If user is not loaded yet, show loading
+  if (!user && !session) {
+    return <div>Loading...</div>;
+  }
   
   if (!hasAccess) {
     return <Navigate to="/dashboard" replace />;

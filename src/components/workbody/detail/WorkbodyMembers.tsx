@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MemberHierarchy } from "@/components/workbody/MemberHierarchy";
+import { MemberManagement } from "@/components/workbody/MemberManagement";
 import { Plus } from "lucide-react";
 
 interface Member {
@@ -22,7 +23,7 @@ interface WorkbodyMembersProps {
 }
 
 export function WorkbodyMembers({ workbodyId, members, userRole, onMembersUpdate }: WorkbodyMembersProps) {
-  const [isAddingMember, setIsAddingMember] = useState(false);
+  const [showManagement, setShowManagement] = useState(false);
   
   const canManageMembers = userRole === 'admin' || userRole === 'coordination';
 
@@ -38,13 +39,14 @@ export function WorkbodyMembers({ workbodyId, members, userRole, onMembersUpdate
               </p>
             </div>
             {canManageMembers && (
-              <Button 
-                onClick={() => setIsAddingMember(true)}
-                className="flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                Add Member
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline"
+                  onClick={() => setShowManagement(!showManagement)}
+                >
+                  {showManagement ? 'Hide Management' : 'Manage Members'}
+                </Button>
+              </div>
             )}
           </div>
         </CardHeader>
@@ -55,6 +57,22 @@ export function WorkbodyMembers({ workbodyId, members, userRole, onMembersUpdate
           />
         </CardContent>
       </Card>
+
+      {canManageMembers && showManagement && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Member Management</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <MemberManagement
+              workbodyId={workbodyId}
+              members={members}
+              onMembersUpdate={onMembersUpdate}
+              canManage={canManageMembers}
+            />
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
