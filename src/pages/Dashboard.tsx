@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useWorkbodies } from "@/hooks/useWorkbodies";
 import { ExpiringTaskForceAlert } from "@/components/workbody/ExpiringTaskForceAlert"; 
@@ -9,6 +8,8 @@ import { useScheduledMeetings } from "@/hooks/useScheduledMeetings";
 import { DashboardContainer } from "@/components/dashboard/DashboardContainer";
 import { DashboardProvider } from "@/contexts/DashboardContext";
 import { supabase } from "@/integrations/supabase/client";
+import { MinutesInsightsPanel } from "@/components/dashboard/MinutesInsightsPanel";
+import { SummaryGenerator } from "@/components/dashboard/SummaryGenerator";
 
 export default function Dashboard() {
   const { workbodies, isLoading, refetch } = useWorkbodies();
@@ -162,7 +163,7 @@ export default function Dashboard() {
 
   return (
     <DashboardProvider>
-      <div className="p-4">
+      <div className="p-4 space-y-6">
         {expiringTaskForces.length > 0 && (
           <div className="mb-4">
             <ExpiringTaskForceAlert expiringTaskForces={expiringTaskForces} />
@@ -175,6 +176,16 @@ export default function Dashboard() {
           upcomingMeetings={upcomingMeetings}
           recentActivities={recentActivities}
         />
+
+        {/* AI Meeting Insights Section */}
+        <div className="grid gap-6 lg:grid-cols-3">
+          <div className="lg:col-span-1">
+            <SummaryGenerator />
+          </div>
+          <div className="lg:col-span-2">
+            <MinutesInsightsPanel />
+          </div>
+        </div>
       </div>
     </DashboardProvider>
   );

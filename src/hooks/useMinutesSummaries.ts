@@ -42,7 +42,7 @@ export const useMinutesSummaries = () => {
       const transformedSummaries: MinutesSummary[] = (data || []).map(summary => ({
         ...summary,
         decisions: Array.isArray(summary.decisions) ? summary.decisions as string[] : [],
-        action_items: Array.isArray(summary.action_items) ? summary.action_items as ActionItem[] : [],
+        action_items: Array.isArray(summary.action_items) ? (summary.action_items as unknown as ActionItem[]) : [],
         sentiment_score: summary.sentiment_score || 0,
         topics: summary.topics || [],
       }));
