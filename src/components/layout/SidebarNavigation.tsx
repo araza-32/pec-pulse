@@ -81,6 +81,12 @@ export function SidebarNavigation() {
       roles: ["admin", "secretary", "chairman", "registrar", "coordination", "member"]
     },
     {
+      label: "Draft Minutes",
+      icon: File,
+      href: "/draft-minutes",
+      roles: ["admin", "secretary", "coordination"]
+    },
+    {
       label: "Upload Minutes",
       icon: File,
       href: "/upload-minutes",

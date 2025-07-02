@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -214,12 +213,16 @@ export function DraftMinutesTab() {
     window.print();
   };
 
-  if (user?.role !== 'secretary') {
+  const hasAccess = user?.role === 'admin' || 
+                   user?.role === 'secretary' || 
+                   user?.role === 'coordination';
+
+  if (!hasAccess) {
     return (
       <div className="text-center p-8">
         <FileText className="mx-auto h-16 w-16 text-gray-300 mb-4" />
         <h3 className="text-lg font-medium text-gray-900 mb-2">Access Restricted</h3>
-        <p className="text-gray-500">Only secretaries can access the draft minutes feature.</p>
+        <p className="text-gray-500">Only secretaries, administrators, and coordination staff can access the draft minutes feature.</p>
       </div>
     );
   }
