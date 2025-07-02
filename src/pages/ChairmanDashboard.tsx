@@ -1,53 +1,33 @@
+
 import { useState } from "react";
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  CardTitle,
-  CardDescription
-} from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
 import { ChairmanStatCards } from "@/components/chairman/ChairmanStatCards";
 import { EngagementChart } from "@/components/chairman/EngagementChart";
 import { ExpiringTaskForceList } from "@/components/chairman/ExpiringTaskForceList";
-import { useWorkBodiesQuery } from "@/hooks/useWorkBodiesQuery";
-import { WorkbodiesStackedCards } from "@/components/chairman-dashboard/WorkbodiesStackedCards";
+import { OrganizedWorkbodiesView } from "@/components/chairman-dashboard/OrganizedWorkbodiesView";
+import { AlertsQuickAccess } from "@/components/chairman-dashboard/AlertsQuickAccess";
 import { Modal } from "@/components/ui/modal";
 import { DonutChart } from "@/components/chairman/DonutChart";
 import { MeetingsList } from "@/components/chairman/MeetingsList";
-import { AlertsQuickAccess } from "@/components/chairman-dashboard/AlertsQuickAccess";
-import { Workbody, ScheduledMeeting, WorkbodyMember } from "@/types";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useChairmanDashboard } from "@/hooks/useChairmanDashboard";
 
 export default function ChairmanDashboard() {
-  const { 
+  const {
     workbodies,
+    organizedWorkbodies,
+    stats,
+    upcomingMeetings,
     isLoading,
-    counts,
-    filteredWorkbodies,
+    selectedCategory,
     setSelectedCategory
-  } = useWorkBodiesQuery();
+  } = useChairmanDashboard();
 
-  const [activeTab, setActiveTab] = useState<string>("expiring");
   const [showDonutModal, setShowDonutModal] = useState(false);
   const [showMeetingsModal, setShowMeetingsModal] = useState(false);
   const [showUpcomingModal, setShowUpcomingModal] = useState(false);
 
-  // Mock stats data (would come from API in production)
-  const meetingStats = {
-    totalWorkbodies: counts.committees + counts.workingGroups + counts.taskForces,
-    committees: counts.committees,
-    workingGroups: counts.workingGroups,
-    taskForces: counts.taskForces,
-    meetingsThisYear: 24,
-    completionRate: 78,
-    upcomingMeetingsCount: 5,
-    actionsCompleted: 87,
-    actionsAgreed: 112,
-    overdueActions: 8,
-  };
-
-  // Mock engagement data (would come from API in production)
+  // Mock engagement data (this would come from analytics in production)
   const mockEngagementData = [
     { month: "Jan", attendance: 78, participation: 65, actionRate: 72 },
     { month: "Feb", attendance: 82, participation: 70, actionRate: 68 },
@@ -57,29 +37,20 @@ export default function ChairmanDashboard() {
     { month: "Jun", attendance: 84, participation: 80, actionRate: 82 },
   ];
 
-  // Mock meetings data
-  const upcomingMeetings = [
-    { 
-      id: "1", 
-      date: new Date(2025, 5, 20), 
-      workbodyName: "Committee on Professional Development",
-      type: "committee"
-    },
-    { 
-      id: "2", 
-      date: new Date(2025, 5, 22), 
-      workbodyName: "Working Group on Young Engineers Affairs",
-      type: "working-group"
-    },
-    { 
-      id: "3", 
-      date: new Date(2025, 5, 25), 
-      workbodyName: "Task Force on Digital Transformation",
-      type: "task-force"
-    },
+  // Convert workbodies for AlertsQuickAccess component
+  const convertedWorkbodies = workbodies.map(wb => ({
+    ...wb,
+    members: wb.members || []
+  }));
+
+  // Type distribution for pie chart
+  const typeDistribution = [
+    { name: "Committees", value: stats.committees, color: "#3B82F6" },
+    { name: "Working Groups", value: stats.workingGroups, color: "#10B981" },
+    { name: "Task Forces", value: stats.taskForces, color: "#F59E0B" }
   ];
 
-  // Mock meeting list data
+  // Mock past meetings data (would come from meeting_minutes table in production)
   const pastMeetings = [
     { 
       id: "001",
@@ -101,52 +72,6 @@ export default function ChairmanDashboard() {
     },
   ];
 
-  // Type distribution for pie chart
-  const typeDistribution = [
-    { name: "Committees", value: counts.committees, color: "#3B82F6" },
-    { name: "Working Groups", value: counts.workingGroups, color: "#10B981" },
-    { name: "Task Forces", value: counts.taskForces, color: "#F59E0B" }
-  ];
-  
-  // Convert enhanced workbodies to the format expected by AlertsQuickAccess
-  const convertedWorkbodies: Workbody[] = workbodies.map(wb => {
-    // Convert member format to match WorkbodyMember type
-    const members: WorkbodyMember[] = wb.members.map(member => ({
-      id: member.id,
-      name: member.name,
-      role: member.role,
-      // Don't try to access email since it doesn't exist on the member type
-      email: undefined,
-      phone: undefined,
-      hasCV: false // Add the required hasCV property
-    }));
-
-    return {
-      id: wb.id,
-      name: wb.name,
-      type: wb.type,
-      description: wb.mandate,
-      createdDate: new Date().toISOString(), // Using current date as fallback
-      termsOfReference: wb.termsOfReference,
-      totalMeetings: Math.round(wb.progressPercent / 10), // Approximation based on existing logic
-      meetingsThisYear: wb.meetingsYtd,
-      actionsAgreed: wb.progressPercent > 0 ? Math.round(wb.progressPercent * 0.8) : 0, // Estimation
-      actionsCompleted: wb.actionsClosed > 0 ? Math.round((wb.actionsClosed / 100) * (wb.progressPercent * 0.8)) : 0,
-      members: members
-    };
-  });
-  
-  // Schedule meetings data for alerts with proper typing
-  const scheduledMeetings: ScheduledMeeting[] = upcomingMeetings.map(m => ({
-    id: m.id,
-    workbodyId: '1', // Adding required property
-    workbodyName: m.workbodyName,
-    date: m.date.toISOString().split('T')[0],
-    time: "14:00",
-    location: "Conference Room", // Adding required property
-    agendaItems: [] // Adding required property
-  }));
-
   return (
     <div className="space-y-6">
       <div className="bg-gradient-to-r from-pec-green to-emerald-700 text-white p-6 rounded-lg shadow-md">
@@ -156,106 +81,71 @@ export default function ChairmanDashboard() {
         </p>
       </div>
 
-      {/* KPI Statistics Cards - Updated to use spread props instead of stats object */}
+      {/* KPI Statistics Cards */}
       <ChairmanStatCards 
-        totalWorkbodies={meetingStats.totalWorkbodies}
-        committees={meetingStats.committees}
-        workingGroups={meetingStats.workingGroups}
-        taskForces={meetingStats.taskForces}
-        meetingsThisYear={meetingStats.meetingsThisYear}
-        completionRate={meetingStats.completionRate}
-        upcomingMeetingsCount={meetingStats.upcomingMeetingsCount}
-        actionsCompleted={meetingStats.actionsCompleted}
-        actionsAgreed={meetingStats.actionsAgreed}
-        overdueActions={meetingStats.overdueActions}
+        totalWorkbodies={stats.totalWorkbodies}
+        committees={stats.committees}
+        workingGroups={stats.workingGroups}
+        taskForces={stats.taskForces}
+        meetingsThisYear={stats.meetingsThisYear}
+        completionRate={stats.completionRate}
+        upcomingMeetingsCount={stats.upcomingMeetingsCount}
+        actionsCompleted={stats.actionsCompleted}
+        actionsAgreed={stats.actionsAgreed}
+        overdueActions={stats.overdueActions}
         onWorkbodiesClick={() => setShowDonutModal(true)}
         onMeetingsClick={() => setShowMeetingsModal(true)}
         onUpcomingClick={() => setShowUpcomingModal(true)}
       />
 
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-        {/* Workbodies Overview (using stacked cards) - 8 columns */}
-        <Card className="md:col-span-8">
-          <CardHeader>
-            <CardTitle className="text-xl flex justify-between">
-              <span>Workbodies Overview</span>
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className={activeTab === "all" ? "bg-muted" : ""}
-                  onClick={() => setSelectedCategory("all")}
-                >
-                  All
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className={activeTab === "committees" ? "bg-muted" : ""}
-                  onClick={() => setSelectedCategory("committees")}
-                >
-                  Committees
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className={activeTab === "workingGroups" ? "bg-muted" : ""}
-                  onClick={() => setSelectedCategory("workingGroups")}
-                >
-                  Working Groups
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className={activeTab === "taskForces" ? "bg-muted" : ""}
-                  onClick={() => setSelectedCategory("taskForces")}
-                >
-                  Task Forces
-                </Button>
-              </div>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <WorkbodiesStackedCards 
-              workbodies={filteredWorkbodies}
-              isLoading={isLoading}
-            />
-          </CardContent>
-        </Card>
+        {/* Main Workbodies Overview - 8 columns */}
+        <div className="md:col-span-8">
+          <OrganizedWorkbodiesView
+            organizedWorkbodies={organizedWorkbodies}
+            selectedCategory={selectedCategory}
+            onCategoryChange={setSelectedCategory}
+            isLoading={isLoading}
+          />
+        </div>
 
-        {/* Right Side: Split Column for Alerts/Quick Access */}
+        {/* Right Side: Split Column for Alerts/Quick Access and Additional Info */}
         <div className="md:col-span-4 space-y-6">
           {/* Alert & Quick Access Card */}
           <AlertsQuickAccess
             workbodies={convertedWorkbodies}
-            meetings={scheduledMeetings}
+            meetings={upcomingMeetings.map(m => ({
+              id: m.id,
+              workbodyId: workbodies.find(wb => wb.name === m.workbodyName)?.id || '',
+              workbodyName: m.workbodyName,
+              date: m.date.toISOString().split('T')[0],
+              time: "14:00",
+              location: "Conference Room",
+              agendaItems: []
+            }))}
             isLoading={isLoading}
           />
           
-          {/* Task Force Status - Fixed structure with Tabs */}
-          <Card className="h-auto">
+          {/* Task Force Status */}
+          <Card>
             <CardHeader>
               <CardTitle>Task Force Status</CardTitle>
             </CardHeader>
             <CardContent>
-              <Tabs defaultValue="expiring" onValueChange={setActiveTab}>
+              <Tabs defaultValue="active">
                 <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="expiring">Expiring Soon</TabsTrigger>
-                  <TabsTrigger value="ended">Recently Ended</TabsTrigger>
+                  <TabsTrigger value="active">Active</TabsTrigger>
+                  <TabsTrigger value="completed">Completed</TabsTrigger>
                 </TabsList>
-                <TabsContent value="expiring" className="mt-0">
+                <TabsContent value="active" className="mt-0">
                   <ExpiringTaskForceList 
-                    taskForces={workbodies.filter(wb => 
-                      wb.type === 'task-force' && wb.progressPercent < 100
-                    )}
+                    taskForces={organizedWorkbodies.taskForces.filter(tf => !tf.endDate || new Date(tf.endDate) > new Date())}
                     isLoading={isLoading}
                   />
                 </TabsContent>
-                <TabsContent value="ended" className="mt-0">
+                <TabsContent value="completed" className="mt-0">
                   <ExpiringTaskForceList 
-                    taskForces={workbodies.filter(wb => 
-                      wb.type === 'task-force' && wb.progressPercent >= 100
-                    )}
+                    taskForces={organizedWorkbodies.taskForces.filter(tf => tf.endDate && new Date(tf.endDate) <= new Date())}
                     isLoading={isLoading}
                     ended
                   />
@@ -265,7 +155,7 @@ export default function ChairmanDashboard() {
           </Card>
 
           {/* Engagement Analysis */}
-          <Card className="h-auto">
+          <Card>
             <CardHeader>
               <CardTitle>Engagement Analysis</CardTitle>
             </CardHeader>
@@ -287,15 +177,15 @@ export default function ChairmanDashboard() {
           <div className="mt-4 space-y-2">
             <div className="grid grid-cols-3 gap-4 text-center">
               <div className="p-3 bg-blue-50 rounded-md">
-                <div className="text-xl font-bold text-blue-600">{counts.committees}</div>
+                <div className="text-xl font-bold text-blue-600">{stats.committees}</div>
                 <div className="text-sm text-blue-800">Committees</div>
               </div>
               <div className="p-3 bg-green-50 rounded-md">
-                <div className="text-xl font-bold text-green-600">{counts.workingGroups}</div>
+                <div className="text-xl font-bold text-green-600">{stats.workingGroups}</div>
                 <div className="text-sm text-green-800">Working Groups</div>
               </div>
               <div className="p-3 bg-amber-50 rounded-md">
-                <div className="text-xl font-bold text-amber-600">{counts.taskForces}</div>
+                <div className="text-xl font-bold text-amber-600">{stats.taskForces}</div>
                 <div className="text-sm text-amber-800">Task Forces</div>
               </div>
             </div>
