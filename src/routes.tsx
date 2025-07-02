@@ -44,7 +44,7 @@ export const router = [
   },
   {
     path: '/workbodies/:id',
-    element: <Navigate to={`/workbody/${window.location.pathname.split('/workbodies/')[1]}`} />,
+    element: <Navigate to="/workbodies" replace />,
   },
   // Workbody category routes
   {

@@ -36,18 +36,24 @@ export default function WorkbodyManagement() {
       title: "Regulations",
       icon: Scale,
       workbodies: workbodies.filter(wb => 
-        wb.name.includes('EC') || wb.name.includes('ESC') || 
-        wb.name.includes('EAB') || wb.name.includes('EPDC') ||
-        wb.name.includes('TF-CPD') || wb.name.includes('A&BC') ||
-        wb.name.includes('QEC')
+        wb.name.toLowerCase().includes('enrollment') ||
+        wb.name.toLowerCase().includes('enrolment') ||
+        wb.name.toLowerCase().includes('engineering accreditation') ||
+        wb.name.toLowerCase().includes('engineering professional development') ||
+        wb.name.toLowerCase().includes('cpd policy') ||
+        wb.name.toLowerCase().includes('act & byelaw') ||
+        wb.name.toLowerCase().includes('quality enhancement') ||
+        wb.name.toLowerCase().includes('accreditation')
       )
     },
     operations: {
       title: "Operations", 
       icon: Cog,
       workbodies: workbodies.filter(wb =>
-        wb.name.includes('WG-PECIR') || wb.name.includes('WG-PECADM') ||
-        wb.name.includes('CPC') || wb.name.toLowerCase().includes('special initiatives')
+        wb.name.toLowerCase().includes('wg-pecir') || 
+        wb.name.toLowerCase().includes('wg-pecadm') ||
+        wb.name.toLowerCase().includes('cpc') || 
+        wb.name.toLowerCase().includes('special initiatives')
       )
     },
     corporateAffairs: {
@@ -55,10 +61,13 @@ export default function WorkbodyManagement() {
       icon: Building,
       workbodies: workbodies.filter(wb =>
         wb.name.toLowerCase().includes('think tank') ||
-        wb.name.includes('WG-Technical') || wb.name.includes('WG-PSII') ||
-        wb.name.includes('TF-Power') || wb.name.includes('WG-YEA') ||
-        wb.name.includes('WG-CID') || wb.name.includes('WG-IALD') ||
-        wb.name.includes('IPEA')
+        wb.name.toLowerCase().includes('wg-technical') || 
+        wb.name.toLowerCase().includes('wg-psii') ||
+        wb.name.toLowerCase().includes('tf-power') || 
+        wb.name.toLowerCase().includes('wg-yea') ||
+        wb.name.toLowerCase().includes('wg-cid') || 
+        wb.name.toLowerCase().includes('wg-iald') ||
+        wb.name.toLowerCase().includes('ipea')
       )
     }
   };
