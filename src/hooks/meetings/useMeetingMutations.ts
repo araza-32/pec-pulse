@@ -12,7 +12,7 @@ export const useMeetingMutations = (
   const [isUpdating, setIsUpdating] = useState(false);
   const { toast } = useToast();
 
-  // Add a new meeting
+  // Add a new meeting with improved validation
   const addMeeting = async (meetingData: Omit<ScheduledMeeting, 'id'>) => {
     const { 
       workbodyId, 
@@ -30,12 +30,30 @@ export const useMeetingMutations = (
     try {
       console.log("Creating meeting with data:", meetingData);
       
+      // Check for exact duplicates before inserting
+      const { data: existingMeetings, error: checkError } = await supabase
+        .from('scheduled_meetings')
+        .select('*')
+        .eq('workbody_id', workbodyId)
+        .eq('date', date)
+        .eq('time', time)
+        .ilike('location', location.trim());
+
+      if (checkError) {
+        console.error("Error checking for duplicates:", checkError);
+        throw checkError;
+      }
+
+      if (existingMeetings && existingMeetings.length > 0) {
+        throw new Error('A meeting with identical details already exists');
+      }
+      
       const meetingPayload = {
         workbody_id: workbodyId,
         workbody_name: workbodyName,
         date,
         time,
-        location,
+        location: location.trim(),
         agenda_items: agendaItems || [],
         notification_file_name: notificationFile || null,
         notification_file_path: notificationFilePath || null,
@@ -101,7 +119,7 @@ export const useMeetingMutations = (
       if (updates.workbodyName !== undefined) dbUpdates.workbody_name = updates.workbodyName;
       if (updates.date !== undefined) dbUpdates.date = updates.date;
       if (updates.time !== undefined) dbUpdates.time = updates.time;
-      if (updates.location !== undefined) dbUpdates.location = updates.location;
+      if (updates.location !== undefined) dbUpdates.location = updates.location.trim();
       if (updates.agendaItems !== undefined) dbUpdates.agenda_items = updates.agendaItems;
       if (updates.notificationFile !== undefined) dbUpdates.notification_file_name = updates.notificationFile;
       if (updates.notificationFilePath !== undefined) dbUpdates.notification_file_path = updates.notificationFilePath;

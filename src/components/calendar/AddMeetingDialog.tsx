@@ -9,7 +9,10 @@ import { WorkbodySelection } from "@/components/minutes/WorkbodySelection";
 import { useToast } from "@/hooks/use-toast";
 import { Workbody } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, FileText, Clock, MapPin, ListChecks, Loader2 } from "lucide-react";
+import { Calendar, FileText, Clock, MapPin, ListChecks, Loader2, AlertTriangle } from "lucide-react";
+import { useMeetingValidation } from "@/hooks/meetings/useMeetingValidation";
+import { useScheduledMeetings } from "@/hooks/useScheduledMeetings";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface AddMeetingDialogProps {
   isOpen: boolean;
@@ -27,11 +30,18 @@ export function AddMeetingDialog({
   isLoadingWorkbodies,
 }: AddMeetingDialogProps) {
   const { toast } = useToast();
+  const { meetings } = useScheduledMeetings();
+  const { validateMeetingData } = useMeetingValidation(meetings);
+  
   const [selectedWorkbodyType, setSelectedWorkbodyType] = useState('');
   const [selectedWorkbodyId, setSelectedWorkbodyId] = useState('');
   const [notificationFile, setNotificationFile] = useState<File | null>(null);
   const [agendaFile, setAgendaFile] = useState<File | null>(null);
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [validationResult, setValidationResult] = useState<{
+    isValid: boolean;
+    errors: string[];
+    warnings: string[];
+  } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [newMeeting, setNewMeeting] = useState({
@@ -41,36 +51,44 @@ export function AddMeetingDialog({
     agendaItems: "",
   });
 
+  const handleFormChange = (field: string, value: string) => {
+    setNewMeeting(prev => ({ ...prev, [field]: value }));
+    
+    // Clear validation when user makes changes
+    if (validationResult) {
+      setValidationResult(null);
+    }
+  };
+
   const validateForm = () => {
-    const errors: Record<string, string> = {};
+    const selectedWorkbody = workbodies.find(wb => wb.id === selectedWorkbodyId);
     
-    if (!selectedWorkbodyType) {
-      errors.workbodyType = 'Workbody type is required';
-    }
-    
-    if (!selectedWorkbodyId) {
-      errors.workbodyId = 'Workbody is required';
-    }
-    
-    if (!newMeeting.location.trim()) {
-      errors.location = 'Location is required';
-    }
-    
-    if (!newMeeting.agendaItems.trim()) {
-      errors.agendaItems = 'At least one agenda item is required';
-    }
-    
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
+    const meetingData = {
+      workbodyId: selectedWorkbodyId,
+      workbodyName: selectedWorkbody?.name || "",
+      date: newMeeting.date,
+      time: newMeeting.time,
+      location: newMeeting.location,
+      agendaItems: newMeeting.agendaItems.split('\n').filter(item => item.trim() !== ''),
+      notificationFile: notificationFile?.name || null,
+      notificationFilePath: null,
+      agendaFile: agendaFile?.name || null,
+      agendaFilePath: null
+    };
+
+    const result = validateMeetingData(meetingData);
+    setValidationResult(result);
+    return result;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm()) {
+    const validation = validateForm();
+    if (!validation.isValid) {
       toast({
-        title: "Form Validation Failed",
-        description: "Please fill all required fields.",
+        title: "Validation Failed",
+        description: validation.errors[0],
         variant: "destructive"
       });
       return;
@@ -188,7 +206,7 @@ export function AddMeetingDialog({
       });
       setNotificationFile(null);
       setAgendaFile(null);
-      setFormErrors({});
+      setValidationResult(null);
       onClose();
     } catch (error: any) {
       console.error("Failed to schedule meeting:", error);
@@ -207,8 +225,8 @@ export function AddMeetingDialog({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Schedule a Meeting</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-left">Schedule a Meeting</DialogTitle>
+          <DialogDescription className="text-left">
             Fill in the details to schedule a new workbody meeting.
           </DialogDescription>
         </DialogHeader>
@@ -221,18 +239,10 @@ export function AddMeetingDialog({
             availableWorkbodies={workbodies}
             isLoading={isLoadingWorkbodies}
           />
-          
-          {formErrors.workbodyType && (
-            <p className="text-sm font-medium text-destructive mt-1">{formErrors.workbodyType}</p>
-          )}
-          
-          {formErrors.workbodyId && (
-            <p className="text-sm font-medium text-destructive mt-1">{formErrors.workbodyId}</p>
-          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="date" className="flex items-center gap-1">
+              <Label htmlFor="date" className="flex items-center gap-1 text-left">
                 <Calendar className="h-4 w-4" />
                 Date <span className="text-destructive">*</span>
               </Label>
@@ -241,13 +251,13 @@ export function AddMeetingDialog({
                 name="date"
                 type="date"
                 value={newMeeting.date}
-                onChange={(e) => setNewMeeting({ ...newMeeting, date: e.target.value })}
+                onChange={(e) => handleFormChange('date', e.target.value)}
                 required
                 className="focus-visible:ring-pec-green"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="time" className="flex items-center gap-1">
+              <Label htmlFor="time" className="flex items-center gap-1 text-left">
                 <Clock className="h-4 w-4" />
                 Time <span className="text-destructive">*</span>
               </Label>
@@ -256,7 +266,7 @@ export function AddMeetingDialog({
                 name="time"
                 type="time"
                 value={newMeeting.time}
-                onChange={(e) => setNewMeeting({ ...newMeeting, time: e.target.value })}
+                onChange={(e) => handleFormChange('time', e.target.value)}
                 required
                 className="focus-visible:ring-pec-green"
               />
@@ -264,7 +274,7 @@ export function AddMeetingDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="location" className="flex items-center gap-1">
+            <Label htmlFor="location" className="flex items-center gap-1 text-left">
               <MapPin className="h-4 w-4" />
               Location <span className="text-destructive">*</span>
             </Label>
@@ -273,14 +283,14 @@ export function AddMeetingDialog({
               name="location"
               placeholder="Meeting location"
               value={newMeeting.location}
-              onChange={(e) => setNewMeeting({ ...newMeeting, location: e.target.value })}
+              onChange={(e) => handleFormChange('location', e.target.value)}
               required
               className="focus-visible:ring-pec-green"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="agendaItems" className="flex items-center gap-1">
+            <Label htmlFor="agendaItems" className="flex items-center gap-1 text-left">
               <ListChecks className="h-4 w-4" />
               Agenda Items (one per line) <span className="text-destructive">*</span>
             </Label>
@@ -290,14 +300,14 @@ export function AddMeetingDialog({
               placeholder="Enter agenda items (one per line)"
               rows={4}
               value={newMeeting.agendaItems}
-              onChange={(e) => setNewMeeting({ ...newMeeting, agendaItems: e.target.value })}
+              onChange={(e) => handleFormChange('agendaItems', e.target.value)}
               required
               className="focus-visible:ring-pec-green resize-none"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="agendaFile" className="flex items-center gap-1">
+            <Label htmlFor="agendaFile" className="flex items-center gap-1 text-left">
               <FileText className="h-4 w-4" />
               Upload Meeting Agenda (PDF)
             </Label>
@@ -308,13 +318,13 @@ export function AddMeetingDialog({
               onChange={(e) => setAgendaFile(e.target.files?.[0] || null)}
               className="focus-visible:ring-pec-green"
             />
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground text-left">
               Upload the detailed agenda document in PDF format
             </p>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="notificationFile" className="flex items-center gap-1">
+            <Label htmlFor="notificationFile" className="flex items-center gap-1 text-left">
               <FileText className="h-4 w-4" />
               Upload Meeting Notification
             </Label>
@@ -325,6 +335,37 @@ export function AddMeetingDialog({
               className="focus-visible:ring-pec-green"
             />
           </div>
+
+          {/* Validation Messages */}
+          {validationResult && (
+            <div className="space-y-2">
+              {validationResult.errors.length > 0 && (
+                <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription className="text-left">
+                    <ul className="list-disc list-inside space-y-1">
+                      {validationResult.errors.map((error, index) => (
+                        <li key={index}>{error}</li>
+                      ))}
+                    </ul>
+                  </AlertDescription>
+                </Alert>
+              )}
+              
+              {validationResult.warnings.length > 0 && (
+                <Alert>
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription className="text-left">
+                    <ul className="list-disc list-inside space-y-1">
+                      {validationResult.warnings.map((warning, index) => (
+                        <li key={index}>{warning}</li>
+                      ))}
+                    </ul>
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
+          )}
 
           <DialogFooter className="pt-4">
             <Button
