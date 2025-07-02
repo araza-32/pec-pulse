@@ -14,15 +14,19 @@ const NotFound = () => {
     );
   }, [location.pathname]);
 
+  // Check if this is a legacy /workbody/ route that should redirect to /workbodies/
+  const isLegacyWorkbodyRoute = location.pathname.includes('/workbody/');
+  const workbodyId = isLegacyWorkbodyRoute ? location.pathname.split('/workbody/')[1] : null;
+
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
       <h1 className="text-9xl font-bold text-gray-900 mb-4">404</h1>
       <p className="text-2xl text-gray-600 mb-6">Oops! Page not found</p>
       <p className="text-gray-500 mb-8 max-w-md">
         The page you are looking for doesn't exist or has been moved.
-        {location.pathname.includes('/workbody/') && (
+        {isLegacyWorkbodyRoute && (
           <span className="block mt-2 text-pec-green">
-            Hint: Try accessing workbodies through the /workbodies/{location.pathname.split('/workbody/')[1]} route.
+            Hint: Try accessing workbodies through the /workbodies/{workbodyId} route.
           </span>
         )}
       </p>
@@ -33,9 +37,9 @@ const NotFound = () => {
             Return to Dashboard
           </Link>
         </Button>
-        {location.pathname.includes('/workbody/') && (
+        {isLegacyWorkbodyRoute && workbodyId && (
           <Button asChild variant="outline">
-            <Link to={`/workbody/${location.pathname.split('/workbody/')[1]}`}>
+            <Link to={`/workbodies/${workbodyId}`}>
               Go to Workbody
             </Link>
           </Button>

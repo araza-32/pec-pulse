@@ -71,6 +71,15 @@ export const router = createBrowserRouter([
         path: 'workbodies/:id/edit',
         element: <WorkbodyEdit />,
       },
+      // Add legacy route redirect for /workbody/* 
+      {
+        path: 'workbody/:id',
+        element: <WorkbodyDetail />,
+      },
+      {
+        path: 'workbody/:id/edit', 
+        element: <WorkbodyEdit />,
+      },
       {
         path: 'calendar',
         element: <MeetingCalendar />,
