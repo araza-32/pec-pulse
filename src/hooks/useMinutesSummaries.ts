@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -10,6 +9,12 @@ interface ActionItem {
   status: string;
 }
 
+interface PerformanceAnalysis {
+  progressHighlights: string[];
+  milestones: string[];
+  risks: string[];
+}
+
 interface MinutesSummary {
   id: string;
   meeting_minutes_id: string;
@@ -18,6 +23,7 @@ interface MinutesSummary {
   action_items: ActionItem[];
   sentiment_score: number;
   topics: string[];
+  performance_analysis?: PerformanceAnalysis;
   created_at: string;
   updated_at: string;
 }
@@ -26,6 +32,7 @@ export const useMinutesSummaries = () => {
   const [summaries, setSummaries] = useState<MinutesSummary[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const { toast } = useToast();
 
   const fetchSummaries = async () => {
@@ -45,6 +52,7 @@ export const useMinutesSummaries = () => {
         action_items: Array.isArray(summary.action_items) ? (summary.action_items as unknown as ActionItem[]) : [],
         sentiment_score: summary.sentiment_score || 0,
         topics: summary.topics || [],
+        performance_analysis: summary.performance_analysis as PerformanceAnalysis || undefined,
       }));
       
       setSummaries(transformedSummaries);
@@ -86,6 +94,35 @@ export const useMinutesSummaries = () => {
       throw error;
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const analyzePerformance = async (meetingId: string) => {
+    setIsAnalyzing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('analyze-performance', {
+        body: { meetingId },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Performance analysis completed successfully',
+      });
+
+      await fetchSummaries(); // Refresh summaries to get updated performance data
+      return data;
+    } catch (error) {
+      console.error('Error analyzing performance:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to analyze meeting performance',
+        variant: 'destructive',
+      });
+      throw error;
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
@@ -157,8 +194,10 @@ export const useMinutesSummaries = () => {
     summaries,
     isLoading,
     isGenerating,
+    isAnalyzing,
     fetchSummaries,
     generateSummary,
+    analyzePerformance,
     getOverdueActions,
     getUpcomingDeadlines,
     getTopicTrends,

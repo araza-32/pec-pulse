@@ -12,17 +12,10 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface SummaryResponse {
-  summary: string;
-  decisions: string[];
-  actionItems: Array<{
-    task: string;
-    owner: string;
-    dueDate: string;
-    status: string;
-  }>;
-  sentiment: number;
-  topics: string[];
+interface PerformanceAnalysis {
+  progressHighlights: string[];
+  milestones: string[];
+  risks: string[];
 }
 
 serve(async (req) => {
@@ -31,7 +24,7 @@ serve(async (req) => {
   }
 
   try {
-    const { minutesId } = await req.json();
+    const { meetingId } = await req.json();
     
     if (!openAIApiKey) {
       throw new Error('OpenAI API key not configured');
@@ -43,45 +36,32 @@ serve(async (req) => {
     const { data: minutes, error: fetchError } = await supabase
       .from('meeting_minutes')
       .select('*')
-      .eq('id', minutesId)
+      .eq('id', meetingId)
       .single();
 
     if (fetchError || !minutes) {
       throw new Error('Meeting minutes not found');
     }
 
-    // Enhanced prompt for both summary and performance analysis
+    // Create a specialized prompt for performance analysis
     const prompt = `
-    Please analyze the following meeting minutes and provide a comprehensive structured response:
+    Analyze the following meeting minutes for performance insights:
 
     Meeting Date: ${minutes.date}
     Location: ${minutes.location}
     Agenda Items: ${minutes.agenda_items.join(', ')}
     Actions Agreed: ${minutes.actions_agreed.join(', ')}
 
-    Please provide:
-    1. A concise summary (2-3 sentences)
-    2. Key decisions made (list format)
-    3. Action items with owner and due date if mentioned
-    4. Sentiment analysis (-1 to +1 scale)
-    5. Main topics discussed (keywords)
-    6. Performance analysis including:
-       - Progress highlights (quantified progress)
-       - Milestones achieved
-       - Risks and blockers identified
+    Extract performance-related information:
+    1. Progress Updates (quantified progress like "75% complete", "Phase 2 finished")
+    2. Milestones Achieved (completed deliverables, approvals, launches)
+    3. Risks & Blockers (challenges, delays, resource constraints)
 
-    Format your response as JSON with these fields:
+    Format as JSON:
     {
-      "summary": "string",
-      "decisions": ["string"],
-      "actionItems": [{"task": "string", "owner": "string", "dueDate": "string", "status": "pending"}],
-      "sentiment": number,
-      "topics": ["string"],
-      "performanceAnalysis": {
-        "progressHighlights": ["string"],
-        "milestones": ["string"],
-        "risks": ["string"]
-      }
+      "progressHighlights": ["string"],
+      "milestones": ["string"], 
+      "risks": ["string"]
     }
     `;
 
@@ -96,11 +76,11 @@ serve(async (req) => {
         messages: [
           { 
             role: 'system', 
-            content: 'You are an expert at analyzing meeting minutes and extracting key information including performance metrics. Always respond with valid JSON.' 
+            content: 'You are an expert at analyzing meeting minutes for performance metrics, progress tracking, and risk assessment. Always respond with valid JSON.' 
           },
           { role: 'user', content: prompt }
         ],
-        temperature: 0.3,
+        temperature: 0.2,
       }),
     });
 
@@ -111,7 +91,7 @@ serve(async (req) => {
     const data = await response.json();
     const aiResponse = data.choices[0].message.content;
     
-    let parsedResponse: any;
+    let parsedResponse: PerformanceAnalysis;
     try {
       parsedResponse = JSON.parse(aiResponse);
     } catch (parseError) {
@@ -119,31 +99,40 @@ serve(async (req) => {
       throw new Error('Invalid AI response format');
     }
 
-    // Save summary with performance analysis to database
-    const { data: savedSummary, error: saveError } = await supabase
+    // Store performance analysis alongside summary
+    const { data: existingSummary } = await supabase
       .from('meeting_minutes_summaries')
-      .upsert({
-        meeting_minutes_id: minutesId,
-        summary_text: parsedResponse.summary,
-        decisions: parsedResponse.decisions,
-        action_items: parsedResponse.actionItems,
-        sentiment_score: parsedResponse.sentiment,
-        topics: parsedResponse.topics,
-        performance_analysis: parsedResponse.performanceAnalysis || {},
-      })
-      .select()
+      .select('*')
+      .eq('meeting_minutes_id', meetingId)
       .single();
 
-    if (saveError) {
-      console.error('Error saving summary:', saveError);
-      throw new Error('Failed to save summary');
+    if (existingSummary) {
+      // Update existing summary with performance data
+      const { data: updatedSummary, error: updateError } = await supabase
+        .from('meeting_minutes_summaries')
+        .update({
+          // Store performance data in a new JSONB field
+          performance_analysis: parsedResponse,
+          updated_at: new Date().toISOString()
+        })
+        .eq('meeting_minutes_id', meetingId)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error('Error updating summary with performance data:', updateError);
+        throw new Error('Failed to save performance analysis');
+      }
+
+      return new Response(JSON.stringify(parsedResponse), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    } else {
+      throw new Error('No existing summary found for this meeting');
     }
 
-    return new Response(JSON.stringify(savedSummary), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
   } catch (error) {
-    console.error('Error in summarize-minutes function:', error);
+    console.error('Error in analyze-performance function:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

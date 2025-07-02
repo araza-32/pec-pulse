@@ -6,27 +6,36 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Brain, Loader2, RefreshCw, CheckCircle } from 'lucide-react';
 import { useMinutesSummaries } from '@/hooks/useMinutesSummaries';
-import { useMinutesManagement } from '@/hooks/useMinutesManagement';
+import { useWorkbodies } from '@/hooks/useWorkbodies';
+import { useScheduledMeetings } from '@/hooks/useScheduledMeetings';
 
 export function SummaryGenerator() {
-  const [selectedMinutesId, setSelectedMinutesId] = useState<string>('');
-  const { meetingMinutes } = useMinutesManagement();
+  const [selectedWorkbodyId, setSelectedWorkbodyId] = useState<string>('');
+  const [selectedMeetingId, setSelectedMeetingId] = useState<string>('');
+  const { workbodies } = useWorkbodies();
+  const { meetings } = useScheduledMeetings();
   const { summaries, isGenerating, generateSummary, fetchSummaries } = useMinutesSummaries();
 
   const handleGenerateSummary = async () => {
-    if (!selectedMinutesId) return;
+    if (!selectedMeetingId) return;
     
     try {
-      await generateSummary(selectedMinutesId);
-      setSelectedMinutesId('');
+      await generateSummary(selectedMeetingId);
+      setSelectedMeetingId('');
+      setSelectedWorkbodyId('');
     } catch (error) {
       console.error('Failed to generate summary:', error);
     }
   };
 
-  const getExistingSummary = (minutesId: string) => {
-    return summaries.find(s => s.meeting_minutes_id === minutesId);
+  const getExistingSummary = (meetingId: string) => {
+    return summaries.find(s => s.meeting_minutes_id === meetingId);
   };
+
+  // Filter meetings for selected workbody
+  const filteredMeetings = selectedWorkbodyId 
+    ? meetings.filter(meeting => meeting.workbodyId === selectedWorkbodyId)
+    : [];
 
   return (
     <Card>
@@ -38,36 +47,62 @@ export function SummaryGenerator() {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <label className="text-sm font-medium">Select Meeting Minutes</label>
-          <Select value={selectedMinutesId} onValueChange={setSelectedMinutesId}>
+          <label className="text-sm font-medium">Select Workbody</label>
+          <Select value={selectedWorkbodyId} onValueChange={(value) => {
+            setSelectedWorkbodyId(value);
+            setSelectedMeetingId(''); // Reset meeting selection
+          }}>
             <SelectTrigger>
-              <SelectValue placeholder="Choose meeting minutes to summarize" />
+              <SelectValue placeholder="Choose a workbody" />
             </SelectTrigger>
             <SelectContent>
-              {meetingMinutes.map((minutes) => {
-                const existingSummary = getExistingSummary(minutes.id);
-                return (
-                  <SelectItem key={minutes.id} value={minutes.id}>
-                    <div className="flex items-center justify-between w-full">
-                      <span>{minutes.workbodyName} - {minutes.date}</span>
-                      {existingSummary && (
-                        <Badge variant="outline" className="text-xs ml-2">
-                          <CheckCircle className="h-3 w-3 mr-1" />
-                          Summarized
-                        </Badge>
-                      )}
-                    </div>
-                  </SelectItem>
-                );
-              })}
+              {workbodies.map((workbody) => (
+                <SelectItem key={workbody.id} value={workbody.id}>
+                  <div className="flex items-center justify-between w-full">
+                    <span>{workbody.name}</span>
+                    <Badge variant="outline" className="text-xs ml-2">
+                      {workbody.type}
+                    </Badge>
+                  </div>
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
 
+        {selectedWorkbodyId && (
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Select Meeting</label>
+            <Select value={selectedMeetingId} onValueChange={setSelectedMeetingId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Choose a meeting" />
+              </SelectTrigger>
+              <SelectContent>
+                {filteredMeetings.map((meeting) => {
+                  const existingSummary = getExistingSummary(meeting.id);
+                  return (
+                    <SelectItem key={meeting.id} value={meeting.id}>
+                      <div className="flex items-center justify-between w-full">
+                        <span>{meeting.date} - {meeting.location}</span>
+                        {existingSummary && (
+                          <Badge variant="outline" className="text-xs ml-2">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Summarized
+                          </Badge>
+                        )}
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
         <div className="flex items-center gap-2">
           <Button 
             onClick={handleGenerateSummary}
-            disabled={!selectedMinutesId || isGenerating}
+            disabled={!selectedMeetingId || isGenerating}
             className="flex items-center gap-2"
           >
             {isGenerating ? (
@@ -78,7 +113,7 @@ export function SummaryGenerator() {
             ) : (
               <>
                 <Brain className="h-4 w-4" />
-                Generate Summary
+                Summarize Minutes
               </>
             )}
           </Button>
@@ -92,7 +127,7 @@ export function SummaryGenerator() {
           </Button>
         </div>
 
-        {selectedMinutesId && getExistingSummary(selectedMinutesId) && (
+        {selectedMeetingId && getExistingSummary(selectedMeetingId) && (
           <div className="p-3 bg-blue-50 rounded-lg border">
             <div className="flex items-center gap-2 text-blue-700">
               <CheckCircle className="h-4 w-4" />
@@ -106,8 +141,8 @@ export function SummaryGenerator() {
 
         <div className="text-xs text-gray-500 space-y-1">
           <div>• AI will extract key decisions and action items</div>
+          <div>• Performance insights will be analyzed</div>
           <div>• Sentiment analysis will be performed</div>
-          <div>• Topics will be automatically tagged</div>
           <div className="flex items-center gap-1 pt-2">
             <span>Last refresh:</span>
             <Badge variant="outline" className="text-xs">
