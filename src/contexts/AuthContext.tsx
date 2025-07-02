@@ -1,7 +1,6 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
 
 // Define the User type with specific role types
 export type UserRole = 'admin' | 'secretary' | 'chairman' | 'registrar' | 'coordination' | 'member';
@@ -45,7 +44,6 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
 
   // Check for existing session on mount
   useEffect(() => {
@@ -248,8 +246,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.removeItem('userEmail');
       localStorage.removeItem('userStatus');
       
-      // Redirect to login page after logout
-      navigate('/login');
+      // Use window.location for redirect since we don't have router context here
+      window.location.href = '/login';
     } catch (error) {
       console.error('Logout error:', error);
       throw error;
