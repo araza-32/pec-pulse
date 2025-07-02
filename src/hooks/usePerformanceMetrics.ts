@@ -125,13 +125,19 @@ export function usePerformanceMetrics(timePeriod: TimePeriod = 'quarter') {
     }
   }));
 
-  // Update performance targets
+  // Update performance targets - fix the type issue
   const updateTargets = useMutation({
-    mutationFn: async (newTargets: Partial<PerformanceTarget>[]) => {
-      const updates = newTargets.map(target => 
+    mutationFn: async (targetUpdates: Array<{ id: string; target_value: number; warning_threshold: number; danger_threshold: number }>) => {
+      const updates = targetUpdates.map(target => 
         supabase
           .from('performance_targets')
-          .upsert(target)
+          .update({
+            target_value: target.target_value,
+            warning_threshold: target.warning_threshold,
+            danger_threshold: target.danger_threshold,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', target.id)
       );
       
       await Promise.all(updates);

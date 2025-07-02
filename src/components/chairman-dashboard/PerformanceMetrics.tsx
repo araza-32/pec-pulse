@@ -126,7 +126,8 @@ export const PerformanceMetrics = ({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {Object.entries(overallMetrics).slice(0, 6).map(([metric, value]) => {
           const metricType = metric as MetricType;
-          const status = { value, status: 'good' as const, trend: 'stable' as const };
+          const numericValue = typeof value === 'number' ? value : 0;
+          const status = { value: numericValue, status: 'good' as const, trend: 'stable' as const };
           
           return (
             <PerformanceMetricsCard
