@@ -28,14 +28,14 @@ const NotFound = () => {
       </p>
       <div className="flex gap-4">
         <Button asChild>
-          <Link to="/" className="flex items-center">
+          <Link to="/dashboard" className="flex items-center">
             <Home className="mr-2 h-4 w-4" />
             Return to Dashboard
           </Link>
         </Button>
         {location.pathname.includes('/workbody/') && (
           <Button asChild variant="outline">
-            <Link to={`/workbodies/${location.pathname.split('/workbody/')[1]}`}>
+            <Link to={`/workbody/${location.pathname.split('/workbody/')[1]}`}>
               Go to Workbody
             </Link>
           </Button>
