@@ -63,6 +63,7 @@ export type Database = {
           decisions: Json | null
           id: string
           meeting_minutes_id: string
+          performance_analysis: Json | null
           sentiment_score: number | null
           summary_text: string
           topics: string[] | null
@@ -74,6 +75,7 @@ export type Database = {
           decisions?: Json | null
           id?: string
           meeting_minutes_id: string
+          performance_analysis?: Json | null
           sentiment_score?: number | null
           summary_text: string
           topics?: string[] | null
@@ -85,6 +87,7 @@ export type Database = {
           decisions?: Json | null
           id?: string
           meeting_minutes_id?: string
+          performance_analysis?: Json | null
           sentiment_score?: number | null
           summary_text?: string
           topics?: string[] | null

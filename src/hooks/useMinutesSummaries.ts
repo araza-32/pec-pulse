@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -45,14 +46,14 @@ export const useMinutesSummaries = () => {
 
       if (error) throw error;
       
-      // Transform the data to match our interface
+      // Transform the data to match our interface, handling the new performance_analysis field
       const transformedSummaries: MinutesSummary[] = (data || []).map(summary => ({
         ...summary,
         decisions: Array.isArray(summary.decisions) ? summary.decisions as string[] : [],
         action_items: Array.isArray(summary.action_items) ? (summary.action_items as unknown as ActionItem[]) : [],
         sentiment_score: summary.sentiment_score || 0,
         topics: summary.topics || [],
-        performance_analysis: summary.performance_analysis as PerformanceAnalysis || undefined,
+        performance_analysis: summary.performance_analysis ? (summary.performance_analysis as unknown as PerformanceAnalysis) : undefined,
       }));
       
       setSummaries(transformedSummaries);
