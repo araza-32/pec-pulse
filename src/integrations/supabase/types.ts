@@ -56,6 +56,50 @@ export type Database = {
           },
         ]
       }
+      meeting_minutes_summaries: {
+        Row: {
+          action_items: Json | null
+          created_at: string
+          decisions: Json | null
+          id: string
+          meeting_minutes_id: string
+          sentiment_score: number | null
+          summary_text: string
+          topics: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          action_items?: Json | null
+          created_at?: string
+          decisions?: Json | null
+          id?: string
+          meeting_minutes_id: string
+          sentiment_score?: number | null
+          summary_text: string
+          topics?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          action_items?: Json | null
+          created_at?: string
+          decisions?: Json | null
+          id?: string
+          meeting_minutes_id?: string
+          sentiment_score?: number | null
+          summary_text?: string
+          topics?: string[] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_minutes_summaries_meeting_minutes_id_fkey"
+            columns: ["meeting_minutes_id"]
+            isOneToOne: false
+            referencedRelation: "meeting_minutes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       performance_targets: {
         Row: {
           created_at: string | null
