@@ -89,26 +89,38 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string | null
+          email: string | null
           id: string
+          invite_expires: string | null
+          invite_token: string | null
           name: string | null
           phone: string | null
           role: string
+          status: string | null
           title: string | null
         }
         Insert: {
           created_at?: string | null
+          email?: string | null
           id: string
+          invite_expires?: string | null
+          invite_token?: string | null
           name?: string | null
           phone?: string | null
           role?: string
+          status?: string | null
           title?: string | null
         }
         Update: {
           created_at?: string | null
+          email?: string | null
           id?: string
+          invite_expires?: string | null
+          invite_token?: string | null
           name?: string | null
           phone?: string | null
           role?: string
+          status?: string | null
           title?: string | null
         }
         Relationships: []

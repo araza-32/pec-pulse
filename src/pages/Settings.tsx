@@ -43,7 +43,7 @@ export default function Settings() {
         value={activeTab}
         onValueChange={setActiveTab}
       >
-        <TabsList className="grid w-full max-w-md grid-cols-4 mx-auto">
+        <TabsList className={`grid w-full max-w-md mx-auto ${isAdmin ? 'grid-cols-4' : 'grid-cols-3'}`}>
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="app">Application</TabsTrigger>

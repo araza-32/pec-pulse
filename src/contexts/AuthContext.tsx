@@ -12,6 +12,7 @@ interface User {
   email: string;
   role: UserRole;
   workbodyId?: string;
+  status?: string;
 }
 
 interface AuthContextType {
@@ -56,6 +57,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const workbodyId = localStorage.getItem('workbodyId') || undefined;
         const userName = localStorage.getItem('userName') || '';
         const userEmail = localStorage.getItem('userEmail') || '';
+        const userStatus = localStorage.getItem('userStatus') || 'active';
         
         // Reconstruct user from localStorage
         if (userId && userRole) {
@@ -64,7 +66,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             name: userName,
             email: userEmail,
             role: userRole,
-            workbodyId
+            workbodyId,
+            status: userStatus
           });
         }
       }
@@ -82,6 +85,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (data.name) localStorage.setItem('userName', data.name);
       if (data.email) localStorage.setItem('userEmail', data.email);
       if (data.role) localStorage.setItem('userRole', data.role);
+      if (data.status) localStorage.setItem('userStatus', data.status);
       
       // Update the user state
       setUser(prev => prev ? { ...prev, ...data } : null);
@@ -92,7 +96,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           .from('profiles')
           .update({ 
             name: data.name || user.name,
-            role: data.role || user.role
+            role: data.role || user.role,
+            status: data.status || user.status
           })
           .eq('id', user.id);
         
@@ -129,6 +134,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         let id = '1';
         let name = 'Admin User';
         let workbodyId: string | undefined = undefined;
+        let status = 'active';
         
         if (email.includes('secretary')) {
           role = 'secretary';
@@ -159,7 +165,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           name,
           email,
           role,
-          workbodyId
+          workbodyId,
+          status
         };
         
         setUser(userData);
@@ -169,6 +176,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem('userId', id);
         localStorage.setItem('userName', name);
         localStorage.setItem('userEmail', email);
+        localStorage.setItem('userStatus', status);
         if (workbodyId) {
           localStorage.setItem('workbodyId', workbodyId);
         }
@@ -182,6 +190,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           
         const role = (profileData?.role || 'admin') as UserRole;
         const name = profileData?.name || authData.user.email?.split('@')[0] || 'User';
+        const status = profileData?.status || 'active';
         
         // For secretary roles, we'll hardcode the workbody ID for now
         // In a real application, you would store this in a separate table
@@ -198,7 +207,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           name: name,
           email: authData.user.email || '',
           role: role,
-          workbodyId: workbodyId
+          workbodyId: workbodyId,
+          status: status
         };
         
         setUser(userData);
@@ -208,6 +218,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem('userId', authData.user.id);
         localStorage.setItem('userName', name);
         localStorage.setItem('userEmail', authData.user.email || '');
+        localStorage.setItem('userStatus', status);
         if (workbodyId) {
           localStorage.setItem('workbodyId', workbodyId);
         }
@@ -235,6 +246,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.removeItem('workbodyId');
       localStorage.removeItem('userName');
       localStorage.removeItem('userEmail');
+      localStorage.removeItem('userStatus');
       
       // Redirect to login page after logout
       navigate('/login');
