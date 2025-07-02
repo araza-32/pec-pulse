@@ -6,40 +6,36 @@ import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface CalendarDayProps {
-  day: { day: number; isCurrentMonth: boolean };
-  currentDate: Date;
-  meetings: ScheduledMeeting[];
-  onViewMeeting: (meeting: ScheduledMeeting) => void;
+  dayData: {
+    date: Date;
+    dateString: string;
+    day: number;
+    meetings: ScheduledMeeting[];
+    isToday: boolean;
+    isCurrentMonth: boolean;
+  } | null;
+  onDateClick: (date: Date) => void;
+  onMeetingClick: (meeting: ScheduledMeeting) => void;
 }
 
 export function CalendarDay({
-  day,
-  currentDate,
-  meetings,
-  onViewMeeting,
+  dayData,
+  onDateClick,
+  onMeetingClick,
 }: CalendarDayProps) {
-  if (!day.isCurrentMonth) {
+  if (!dayData || !dayData.isCurrentMonth) {
     return <div className="border rounded-md min-h-[120px] p-1 bg-gray-50/40" />;
   }
 
-  const dateStr = format(
-    new Date(currentDate.getFullYear(), currentDate.getMonth(), day.day),
-    "yyyy-MM-dd"
-  );
-
-  const isToday = isSameDay(
-    new Date(currentDate.getFullYear(), currentDate.getMonth(), day.day),
-    new Date()
-  );
-
-  const dayMeetings = meetings.filter(meeting => meeting.date === dateStr);
+  const { date, day, meetings, isToday } = dayData;
 
   return (
     <div
       className={cn(
-        "border rounded-md min-h-[120px] p-2 transition-colors",
+        "border rounded-md min-h-[120px] p-2 transition-colors cursor-pointer",
         isToday ? "bg-blue-50 border-blue-300 shadow-sm" : "hover:bg-gray-50/70"
       )}
+      onClick={() => onDateClick(date)}
     >
       <div className="flex justify-between items-center mb-1">
         <span 
@@ -48,18 +44,21 @@ export function CalendarDay({
             isToday ? "bg-blue-600 text-white" : "text-gray-700"
           )}
         >
-          {day.day}
+          {day}
         </span>
       </div>
       <div className="mt-1 space-y-1 max-h-[80px] overflow-y-auto">
-        {dayMeetings.length > 0 ? (
-          dayMeetings.map((meeting) => (
+        {meetings.length > 0 ? (
+          meetings.map((meeting) => (
             <TooltipProvider key={meeting.id} delayDuration={300}>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div
                     className="bg-pec-green-50 border-l-2 border-pec-green-500 px-1.5 py-1 rounded text-xs cursor-pointer hover:bg-pec-green-100 transition-colors flex items-center gap-1"
-                    onClick={() => onViewMeeting(meeting)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onMeetingClick(meeting);
+                    }}
                   >
                     <CalendarClock className="h-3 w-3 text-pec-green-600 flex-shrink-0" />
                     <div className="font-medium truncate flex-1">

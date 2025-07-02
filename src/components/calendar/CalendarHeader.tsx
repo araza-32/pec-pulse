@@ -5,24 +5,37 @@ import { format } from "date-fns";
 
 interface CalendarHeaderProps {
   currentDate: Date;
-  onPrevMonth: () => void;
-  onNextMonth: () => void;
-  onAddMeeting?: () => void;
+  onDateChange: (date: Date) => void;
 }
 
 export function CalendarHeader({
   currentDate,
-  onPrevMonth,
-  onNextMonth,
-  onAddMeeting,
+  onDateChange,
 }: CalendarHeaderProps) {
+  const handlePrevMonth = () => {
+    const newDate = new Date(currentDate);
+    newDate.setMonth(newDate.getMonth() - 1);
+    onDateChange(newDate);
+  };
+
+  const handleNextMonth = () => {
+    const newDate = new Date(currentDate);
+    newDate.setMonth(newDate.getMonth() + 1);
+    onDateChange(newDate);
+  };
+
+  const handleToday = () => {
+    const today = new Date();
+    onDateChange(today);
+  };
+
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center space-x-2">
         <Button
           variant="outline"
           size="icon"
-          onClick={onPrevMonth}
+          onClick={handlePrevMonth}
           aria-label="Previous month"
         >
           <ChevronLeft className="h-4 w-4" />
@@ -33,7 +46,7 @@ export function CalendarHeader({
         <Button
           variant="outline"
           size="icon"
-          onClick={onNextMonth}
+          onClick={handleNextMonth}
           aria-label="Next month"
         >
           <ChevronRight className="h-4 w-4" />
@@ -41,19 +54,7 @@ export function CalendarHeader({
         <Button
           variant="outline"
           size="sm"
-          onClick={() => {
-            const today = new Date();
-            if (
-              today.getMonth() !== currentDate.getMonth() ||
-              today.getFullYear() !== currentDate.getFullYear()
-            ) {
-              // Only set to today if not already on current month
-              const newDate = new Date();
-              // Update the currentDate with today's date (just month and year)
-              currentDate.setMonth(newDate.getMonth());
-              currentDate.setFullYear(newDate.getFullYear());
-            }
-          }}
+          onClick={handleToday}
         >
           Today
         </Button>
