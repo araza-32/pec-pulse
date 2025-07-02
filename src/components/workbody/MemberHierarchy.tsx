@@ -20,7 +20,7 @@ interface MemberHierarchyProps {
 
 export function MemberHierarchy({ members, showActions = false }: MemberHierarchyProps) {
   // Define role hierarchy order with proper seniority
-  const roleOrder = {
+  const roleOrder: Record<string, number> = {
     'convener': 1,
     'chairman': 1,
     'senior vice chairman': 2,
@@ -40,8 +40,8 @@ export function MemberHierarchy({ members, showActions = false }: MemberHierarch
 
   // Sort members by role hierarchy
   const sortedMembers = [...members].sort((a, b) => {
-    const roleA = roleOrder[a.role.toLowerCase() as keyof typeof roleOrder] || 999;
-    const roleB = roleOrder[b.role.toLowerCase() as keyof typeof roleOrder] || 999;
+    const roleA = roleOrder[a.role.toLowerCase()] || 999;
+    const roleB = roleOrder[b.role.toLowerCase()] || 999;
     
     if (roleA !== roleB) {
       return roleA - roleB;
@@ -51,7 +51,7 @@ export function MemberHierarchy({ members, showActions = false }: MemberHierarch
     return a.name.localeCompare(b.name);
   });
 
-  const getRoleBadgeVariant = (role: string) => {
+  const getRoleBadgeVariant = (role: string): "default" | "secondary" | "outline" => {
     const roleKey = role.toLowerCase();
     if (roleKey.includes('convener') || roleKey.includes('chairman')) {
       return 'default';

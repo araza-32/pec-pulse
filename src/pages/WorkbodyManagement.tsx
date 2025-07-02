@@ -22,7 +22,7 @@ export default function WorkbodyManagement() {
   const userRole = user?.role || 'member';
   const canManage = userRole === 'admin' || userRole === 'coordination';
 
-  // Organize workbodies by categories
+  // Organize workbodies by categories with proper filtering
   const workbodyCategories = {
     executive: {
       title: "Executive",
@@ -43,7 +43,9 @@ export default function WorkbodyManagement() {
         wb.name.toLowerCase().includes('cpd policy') ||
         wb.name.toLowerCase().includes('act & byelaw') ||
         wb.name.toLowerCase().includes('quality enhancement') ||
-        wb.name.toLowerCase().includes('accreditation')
+        wb.name.toLowerCase().includes('accreditation') ||
+        wb.name.toLowerCase().includes('examination') ||
+        wb.name.toLowerCase().includes('engineering services')
       )
     },
     operations: {
@@ -53,6 +55,7 @@ export default function WorkbodyManagement() {
         wb.name.toLowerCase().includes('wg-pecir') || 
         wb.name.toLowerCase().includes('wg-pecadm') ||
         wb.name.toLowerCase().includes('cpc') || 
+        wb.name.toLowerCase().includes('central procurement') ||
         wb.name.toLowerCase().includes('special initiatives')
       )
     },
@@ -67,7 +70,10 @@ export default function WorkbodyManagement() {
         wb.name.toLowerCase().includes('wg-yea') ||
         wb.name.toLowerCase().includes('wg-cid') || 
         wb.name.toLowerCase().includes('wg-iald') ||
-        wb.name.toLowerCase().includes('ipea')
+        wb.name.toLowerCase().includes('ipea') ||
+        wb.name.toLowerCase().includes('young engineers') ||
+        wb.name.toLowerCase().includes('corporate & industrial') ||
+        wb.name.toLowerCase().includes('international affairs')
       )
     }
   };

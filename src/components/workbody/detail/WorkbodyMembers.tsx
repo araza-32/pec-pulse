@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MemberHierarchy } from "@/components/workbody/MemberHierarchy";
 import { MemberManagement } from "@/components/workbody/MemberManagement";
-import { Plus } from "lucide-react";
 
 interface Member {
   id: string;

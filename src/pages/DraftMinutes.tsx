@@ -16,7 +16,11 @@ export default function DraftMinutes() {
   
   // If user is not loaded yet, show loading
   if (!user && !session) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-lg">Loading...</div>
+      </div>
+    );
   }
   
   if (!hasAccess) {

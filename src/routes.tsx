@@ -42,11 +42,12 @@ export const router = [
     path: '/workbody/edit/:id',
     element: <NewLayout><WorkbodyEdit /></NewLayout>,
   },
+  // Fix redirect for old workbodies routes
   {
     path: '/workbodies/:id',
     element: <Navigate to="/workbodies" replace />,
   },
-  // Workbody category routes
+  // Workbody category routes - all properly configured
   {
     path: '/workbodies/governing-body',
     element: <NewLayout><WorkbodyManagement /></NewLayout>,
@@ -131,7 +132,7 @@ export const router = [
     path: '/workbodies/ipea-monitoring',
     element: <NewLayout><WorkbodyManagement /></NewLayout>,
   },
-  // Legacy routes
+  // Legacy routes for backward compatibility
   {
     path: '/workbodies/committees',
     element: <NewLayout><WorkbodyManagement /></NewLayout>,
