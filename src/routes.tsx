@@ -1,5 +1,6 @@
 
 import { createBrowserRouter } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import Index from './pages/Index';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -37,7 +38,7 @@ export const router = createBrowserRouter([
   },
   {
     path: '/',
-    element: <Layout />,
+    element: <Layout><Outlet /></Layout>,
     children: [
       {
         path: 'dashboard',

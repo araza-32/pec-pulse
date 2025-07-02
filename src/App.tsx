@@ -1,6 +1,6 @@
 
 import { useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { RouterProvider } from 'react-router-dom';
 import { router } from './routes';
 import { Toaster } from '@/components/ui/toaster';
 import './App.css';
@@ -17,11 +17,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-green-50/50 text-foreground">
-      <Routes>
-        {router.map((route) => (
-          <Route key={route.path} path={route.path} element={route.element} />
-        ))}
-      </Routes>
+      <RouterProvider router={router} />
       <Toaster />
     </div>
   );

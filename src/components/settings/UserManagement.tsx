@@ -284,7 +284,7 @@ export function UserManagement() {
   };
 
   const getRoleBadge = (role: string) => {
-    const roleColors = {
+    const roleColors: Record<string, "default" | "destructive" | "secondary" | "outline"> = {
       admin: 'destructive',
       chairman: 'default',
       secretary: 'secondary',
@@ -294,7 +294,7 @@ export function UserManagement() {
     };
     
     return (
-      <Badge variant={roleColors[role as keyof typeof roleColors] || 'secondary'}>
+      <Badge variant={roleColors[role] || 'secondary'}>
         {role}
       </Badge>
     );
