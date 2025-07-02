@@ -37,7 +37,17 @@ export const useMinutesSummaries = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setSummaries(data || []);
+      
+      // Transform the data to match our interface
+      const transformedSummaries: MinutesSummary[] = (data || []).map(summary => ({
+        ...summary,
+        decisions: Array.isArray(summary.decisions) ? summary.decisions as string[] : [],
+        action_items: Array.isArray(summary.action_items) ? summary.action_items as ActionItem[] : [],
+        sentiment_score: summary.sentiment_score || 0,
+        topics: summary.topics || [],
+      }));
+      
+      setSummaries(transformedSummaries);
     } catch (error) {
       console.error('Error fetching summaries:', error);
       toast({
