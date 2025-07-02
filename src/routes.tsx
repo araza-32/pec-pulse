@@ -1,6 +1,5 @@
 
 import { createBrowserRouter } from 'react-router-dom';
-import { Outlet } from 'react-router-dom';
 import Index from './pages/Index';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -21,25 +20,25 @@ import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import SetPassword from './pages/SetPassword';
 import NotFound from './pages/NotFound';
-import { Layout } from './components/layout/Layout';
+import { AppLayout } from './components/layout/AppLayout';
 
 export const router = createBrowserRouter([
   {
     path: '/',
-    element: <Index />,
-  },
-  {
-    path: '/login',
-    element: <Login />,
-  },
-  {
-    path: '/auth/set-password',
-    element: <SetPassword />,
-  },
-  {
-    path: '/',
-    element: <Layout><Outlet /></Layout>,
+    element: <AppLayout />,
     children: [
+      {
+        index: true,
+        element: <Index />,
+      },
+      {
+        path: 'login',
+        element: <Login />,
+      },
+      {
+        path: 'auth/set-password',
+        element: <SetPassword />,
+      },
       {
         path: 'dashboard',
         element: <Dashboard />,
@@ -104,10 +103,10 @@ export const router = createBrowserRouter([
         path: 'settings',
         element: <Settings />,
       },
+      {
+        path: '*',
+        element: <NotFound />,
+      },
     ],
-  },
-  {
-    path: '*',
-    element: <NotFound />,
   },
 ]);

@@ -6,17 +6,17 @@ import { Toaster } from '@/components/ui/toaster';
 import './App.css';
 
 function App() {
-  // Apply theme with enhanced colors
+  // Apply consistent theme
   useEffect(() => {
     document.documentElement.classList.remove('dark');
     localStorage.setItem('theme', 'light');
     
-    // Set background color for body
-    document.body.classList.add('bg-green-50/30');
+    // Set consistent background
+    document.body.classList.add('bg-gradient-to-br', 'from-white', 'to-green-50/30');
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-green-50/50 text-foreground">
+    <div className="min-h-screen bg-gradient-to-br from-white to-green-50/30 text-foreground">
       <RouterProvider router={router} />
       <Toaster />
     </div>
