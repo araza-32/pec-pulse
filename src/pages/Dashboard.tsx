@@ -1,5 +1,5 @@
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useWorkbodies } from "@/hooks/useWorkbodies";
 import { ExpiringTaskForceAlert } from "@/components/workbody/ExpiringTaskForceAlert"; 
 import { Skeleton } from "@/components/ui/skeleton";
@@ -8,11 +8,36 @@ import { toast } from "@/hooks/use-toast";
 import { useScheduledMeetings } from "@/hooks/useScheduledMeetings";
 import { DashboardContainer } from "@/components/dashboard/DashboardContainer";
 import { DashboardProvider } from "@/contexts/DashboardContext";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Dashboard() {
   const { workbodies, isLoading, refetch } = useWorkbodies();
   const { meetings, isLoading: isLoadingMeetings } = useScheduledMeetings();
   const { session } = useAuth();
+  const [recentMinutes, setRecentMinutes] = useState<any[]>([]);
+  const [isLoadingMinutes, setIsLoadingMinutes] = useState(true);
+  
+  // TODO: ISSUE-001 - Replace mock data with real Supabase queries
+  useEffect(() => {
+    const fetchRecentMinutes = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('meeting_minutes')
+          .select('*')
+          .order('uploaded_at', { ascending: false })
+          .limit(5);
+        
+        if (error) throw error;
+        setRecentMinutes(data || []);
+      } catch (error) {
+        console.error('Error fetching recent minutes:', error);
+      } finally {
+        setIsLoadingMinutes(false);
+      }
+    };
+
+    fetchRecentMinutes();
+  }, []);
   
   useEffect(() => {
     const isFirstVisit = !localStorage.getItem('dashboardVisited');
@@ -59,127 +84,71 @@ export default function Dashboard() {
   const thirtyDaysFromNow = new Date();
   thirtyDaysFromNow.setDate(today.getDate() + 30);
   
-  const expiringTaskForces = useMemo(() => {
-    return workbodies
-      .filter(wb => 
-        wb.type === 'task-force' && 
-        wb.endDate && 
-        new Date(wb.endDate) >= today && 
-        new Date(wb.endDate) <= thirtyDaysFromNow
-      )
-      .sort((a, b) => new Date(a.endDate!).getTime() - new Date(b.endDate!).getTime());
-  }, [workbodies]);
+  const expiringTaskForces = workbodies
+    .filter(wb => 
+      wb.type === 'task-force' && 
+      wb.endDate && 
+      new Date(wb.endDate) >= today && 
+      new Date(wb.endDate) <= thirtyDaysFromNow
+    )
+    .sort((a, b) => new Date(a.endDate!).getTime() - new Date(b.endDate!).getTime());
 
-  // Transform meetings data
-  const upcomingMeetings = useMemo(() => {
-    if (!meetings) return [];
-    
-    return meetings.map(meeting => ({
-      id: meeting.id,
-      date: new Date(meeting.date),
-      workbodyName: meeting.workbodyName,
-      type: sortedFilteredWorkbodies.find(w => w.id === meeting.workbodyId)?.type || 'unknown'
-    }));
-  }, [meetings, sortedFilteredWorkbodies]);
+  // Generate real activity data from actual database records
+  const recentActivities = [
+    ...recentMinutes.slice(0, 3).map((minute, index) => ({
+      id: `minute-${minute.id}`,
+      type: 'document' as const,
+      title: 'Minutes Uploaded',
+      description: `Minutes for ${minute.workbody_id} meeting have been uploaded.`,
+      timestamp: new Date(minute.uploaded_at),
+      user: 'Admin User',
+      workbody: minute.workbody_id
+    })),
+    ...meetings.slice(0, 2).map((meeting, index) => ({
+      id: `meeting-${meeting.id}`,
+      type: 'meeting' as const,
+      title: 'Meeting Scheduled',
+      description: `${meeting.workbodyName} meeting has been scheduled.`,
+      timestamp: new Date(meeting.date),
+      user: 'System',
+      workbody: meeting.workbodyName
+    }))
+  ].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
-  // Calculate stats for dashboard
-  const workbodiesStats = useMemo(() => {
-    const committees = sortedFilteredWorkbodies.filter(w => w.type === 'committee').length;
-    const workingGroups = sortedFilteredWorkbodies.filter(w => w.type === 'working-group').length;
-    const taskForces = sortedFilteredWorkbodies.filter(w => w.type === 'task-force').length;
-    const actionsCompleted = sortedFilteredWorkbodies.reduce((sum, w) => sum + w.actionsCompleted, 0);
-    const actionsAgreed = sortedFilteredWorkbodies.reduce((sum, w) => sum + w.actionsAgreed, 0);
-    const completionRate = actionsAgreed ? Math.round((actionsCompleted / actionsAgreed) * 100) : 0;
-    const meetingsThisYear = sortedFilteredWorkbodies.reduce((sum, w) => sum + w.meetingsThisYear, 0);
-    
-    // Mock data for now, would come from API
-    const overdueActions = Math.round(actionsAgreed * 0.15);
-    
-    return {
-      totalWorkbodies: sortedFilteredWorkbodies.length,
-      committees,
-      workingGroups,
-      taskForces,
-      actionsCompleted,
-      actionsAgreed,
-      completionRate,
-      meetingsThisYear,
-      upcomingMeetingsCount: upcomingMeetings.length,
-      overdueActions
-    };
-  }, [sortedFilteredWorkbodies, upcomingMeetings.length]);
-  
-  // Mock activity data
-  const recentActivities = useMemo(() => {
-    // Generate sample activities based on workbodies and meetings
-    const activities = [];
-    
-    // Add meeting activities
-    if (meetings && meetings.length) {
-      for (let i = 0; i < Math.min(3, meetings.length); i++) {
-        activities.push({
-          id: `meeting-${i}`,
-          type: 'meeting' as const,
-          title: `Meeting Scheduled`,
-          description: `${meetings[i].workbodyName} meeting has been scheduled.`,
-          timestamp: new Date(Date.now() - i * 24 * 60 * 60 * 1000), // days ago
-          user: 'System',
-          workbody: meetings[i].workbodyName
-        });
-      }
-    }
-    
-    // Add document activities
-    if (sortedFilteredWorkbodies.length) {
-      for (let i = 0; i < Math.min(2, sortedFilteredWorkbodies.length); i++) {
-        activities.push({
-          id: `doc-${i}`,
-          type: 'document' as const,
-          title: `Minutes Uploaded`,
-          description: `Minutes for ${sortedFilteredWorkbodies[i].name} have been uploaded.`,
-          timestamp: new Date(Date.now() - (i + 3) * 24 * 60 * 60 * 1000), // days ago
-          user: 'Admin User',
-          workbody: sortedFilteredWorkbodies[i].name
-        });
-      }
-    }
-    
-    // Add action activities
-    activities.push({
-      id: 'action-1',
-      type: 'action' as const,
-      title: 'Action Item Completed',
-      description: 'Finalize annual report action has been completed.',
-      timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // 5 days ago
-      user: 'Coordination Team',
-      workbody: 'Annual Report Committee'
-    });
-    
-    // Add progress activity
-    activities.push({
-      id: 'progress-1',
-      type: 'progress' as const,
-      title: 'Progress Updated',
-      description: 'ICT Taskforce progress has been updated to 75%.',
-      timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
-      user: 'ICT Manager',
-      workbody: 'ICT Taskforce'
-    });
-    
-    // Sort by timestamp (newest first)
-    return activities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-  }, [meetings, sortedFilteredWorkbodies]);
+  const upcomingMeetings = meetings.map(meeting => ({
+    id: meeting.id,
+    date: new Date(meeting.date),
+    workbodyName: meeting.workbodyName,
+    type: sortedFilteredWorkbodies.find(w => w.id === meeting.workbodyId)?.type || 'unknown'
+  }));
 
-  if (isLoading) {
+  const workbodiesStats = {
+    totalWorkbodies: sortedFilteredWorkbodies.length,
+    committees: sortedFilteredWorkbodies.filter(w => w.type === 'committee').length,
+    workingGroups: sortedFilteredWorkbodies.filter(w => w.type === 'working-group').length,
+    taskForces: sortedFilteredWorkbodies.filter(w => w.type === 'task-force').length,
+    actionsCompleted: sortedFilteredWorkbodies.reduce((sum, w) => sum + w.actionsCompleted, 0),
+    actionsAgreed: sortedFilteredWorkbodies.reduce((sum, w) => sum + w.actionsAgreed, 0),
+    completionRate: (() => {
+      const agreed = sortedFilteredWorkbodies.reduce((sum, w) => sum + w.actionsAgreed, 0);
+      const completed = sortedFilteredWorkbodies.reduce((sum, w) => sum + w.actionsCompleted, 0);
+      return agreed ? Math.round((completed / agreed) * 100) : 0;
+    })(),
+    meetingsThisYear: sortedFilteredWorkbodies.reduce((sum, w) => sum + w.meetingsThisYear, 0),
+    upcomingMeetingsCount: upcomingMeetings.length,
+    overdueActions: Math.round(sortedFilteredWorkbodies.reduce((sum, w) => sum + w.actionsAgreed, 0) * 0.15)
+  };
+
+  if (isLoading || isLoadingMeetings || isLoadingMinutes) {
     return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground">Loading workbody statistics...</p>
+      <div className="space-y-6 p-4">
+        <div className="text-left">
+          <h1 className="text-3xl font-bold text-left">Dashboard</h1>
+          <p className="text-muted-foreground text-left">Loading workbody statistics...</p>
         </div>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="bg-card rounded-lg p-6 shadow-sm">
+            <div key={i} className="bg-card rounded-lg p-4 shadow-sm">
               <div className="space-y-2">
                 <Skeleton className="h-4 w-24" />
                 <Skeleton className="h-8 w-16" />
@@ -193,9 +162,11 @@ export default function Dashboard() {
 
   return (
     <DashboardProvider>
-      <>
+      <div className="p-4">
         {expiringTaskForces.length > 0 && (
-          <ExpiringTaskForceAlert expiringTaskForces={expiringTaskForces} />
+          <div className="mb-4">
+            <ExpiringTaskForceAlert expiringTaskForces={expiringTaskForces} />
+          </div>
         )}
         
         <DashboardContainer 
@@ -204,7 +175,7 @@ export default function Dashboard() {
           upcomingMeetings={upcomingMeetings}
           recentActivities={recentActivities}
         />
-      </>
+      </div>
     </DashboardProvider>
   );
 }

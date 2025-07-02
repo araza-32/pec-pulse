@@ -33,6 +33,7 @@ import { useToast } from '@/hooks/use-toast';
 import { AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
+// TODO: ISSUE-004 - Add ChairmanPEC user creation and management
 export function UserManagement() {
   const { toast } = useToast();
   const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
@@ -53,14 +54,12 @@ export function UserManagement() {
   const [creationError, setCreationError] = useState("");
 
   useEffect(() => {
-    // Fetch users and workbodies
     fetchUsers();
     fetchWorkbodies();
   }, []);
 
   const fetchUsers = async () => {
     try {
-      // First get current user to ensure they're authenticated
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Authentication required");
       
@@ -131,12 +130,9 @@ export function UserManagement() {
     setCreationError("");
     
     try {
-      // Get current admin user
       const { data: { user: adminUser } } = await supabase.auth.getUser();
       if (!adminUser) throw new Error("Admin authentication required");
       
-      // Create the user through a server function/API endpoint
-      // This is a direct approach but in production, you'd typically use an admin function
       const { data, error } = await supabase.auth.signUp({
         email: newUser.email,
         password: newUser.password,
@@ -150,37 +146,27 @@ export function UserManagement() {
       
       if (error) throw error;
       
-      // Adding directly to the profiles table with appropriate permissions
       if (data?.user) {
         const profileData = {
           id: data.user.id,
           name: newUser.name,
           role: newUser.role,
-          created_by: adminUser.id // Track who created this user
+          created_by: adminUser.id
         };
         
-        // Insert into profiles table
         const { error: profileError } = await supabase
           .from('profiles')
           .insert(profileData);
         
         if (profileError) throw profileError;
         
-        // If secretary role and workbody is selected, create a separate mapping
-        if (newUser.role === 'secretary' && newUser.workbodyId) {
-          // This would be handled through an appropriate join table if needed
-          console.log("Secretary assigned to workbody:", newUser.workbodyId);
-        }
-        
         setCreationSuccess(true);
         
-        // Wait a moment before closing dialogs and refreshing
         setTimeout(() => {
-          fetchUsers(); // Refresh the users list
+          fetchUsers();
           setIsConfirmationDialogOpen(false);
           setIsAddUserDialogOpen(false);
           
-          // Reset form
           setNewUser({
             email: '',
             password: '',
@@ -206,11 +192,9 @@ export function UserManagement() {
 
   const handleDeleteUser = async (userId: string) => {
     try {
-      // First get current admin user to ensure they're authenticated
       const { data: { user: adminUser } } = await supabase.auth.getUser();
       if (!adminUser) throw new Error("Admin authentication required");
       
-      // Delete from profiles with admin credentials
       const { error: profileError } = await supabase
         .from('profiles')
         .delete()
@@ -218,14 +202,12 @@ export function UserManagement() {
       
       if (profileError) throw profileError;
       
-      // In production, you would use an admin function to delete the auth user
-      // This is a simplified approach
       toast({
         title: 'Success',
         description: 'User has been deleted successfully',
       });
       
-      fetchUsers(); // Refresh the users list
+      fetchUsers();
     } catch (error: any) {
       console.error('Error deleting user:', error);
       toast({
@@ -246,38 +228,40 @@ export function UserManagement() {
   };
 
   return (
-    <Card>
+    <Card className="m-4">
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-center flex-1">User Management</CardTitle>
+        <CardTitle className="text-left flex-1">User Management</CardTitle>
         <Dialog open={isAddUserDialogOpen} onOpenChange={setIsAddUserDialogOpen}>
           <DialogTrigger asChild>
             <Button>Add New User</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Add New User</DialogTitle>
-              <DialogDescription>Create a new user account with specific role permissions.</DialogDescription>
+              <DialogTitle className="text-left">Add New User</DialogTitle>
+              <DialogDescription className="text-left">Create a new user account with specific role permissions.</DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label htmlFor="name">Full Name</Label>
+                <Label htmlFor="name" className="text-left">Full Name</Label>
                 <Input 
                   id="name" 
                   value={newUser.name}
                   onChange={(e) => setNewUser({...newUser, name: e.target.value})}
+                  className="text-left"
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="text-left">Email</Label>
                 <Input 
                   id="email" 
                   type="email"
                   value={newUser.email}
                   onChange={(e) => setNewUser({...newUser, email: e.target.value})}
+                  className="text-left"
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password" className="text-left">Password</Label>
                 <Input 
                   id="password" 
                   type="password"
@@ -286,6 +270,7 @@ export function UserManagement() {
                     setNewUser({...newUser, password: e.target.value});
                     validatePassword(e.target.value);
                   }}
+                  className="text-left"
                 />
                 {newUser.password && (
                   <div className="w-full bg-gray-200 rounded-full h-2.5">
@@ -295,12 +280,12 @@ export function UserManagement() {
                     ></div>
                   </div>
                 )}
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-gray-500 text-left">
                   Password must be at least 8 characters. Adding numbers and special characters increases security.
                 </p>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="role">Role</Label>
+                <Label htmlFor="role" className="text-left">Role</Label>
                 <Select 
                   value={newUser.role} 
                   onValueChange={(value) => setNewUser({...newUser, role: value})}
@@ -314,12 +299,13 @@ export function UserManagement() {
                     <SelectItem value="secretary">Secretary</SelectItem>
                     <SelectItem value="registrar">Registrar</SelectItem>
                     <SelectItem value="coordination">Coordination</SelectItem>
+                    <SelectItem value="ChairmanPEC">Chairman PEC</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               {newUser.role === 'secretary' && (
                 <div className="grid gap-2">
-                  <Label htmlFor="workbody">Workbody</Label>
+                  <Label htmlFor="workbody" className="text-left">Workbody</Label>
                   <Select 
                     value={newUser.workbodyId} 
                     onValueChange={(value) => setNewUser({...newUser, workbodyId: value})}
@@ -347,17 +333,16 @@ export function UserManagement() {
           </DialogContent>
         </Dialog>
         
-        {/* Confirmation Dialog */}
         <Dialog open={isConfirmationDialogOpen} onOpenChange={setIsConfirmationDialogOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Confirm User Creation</DialogTitle>
+              <DialogTitle className="text-left">Confirm User Creation</DialogTitle>
             </DialogHeader>
             
             {creationSuccess === null && !creationError && (
               <div className="py-6">
-                <p>Are you sure you want to create a new user with the following details?</p>
-                <div className="mt-4 space-y-2 text-sm">
+                <p className="text-left">Are you sure you want to create a new user with the following details?</p>
+                <div className="mt-4 space-y-2 text-sm text-left">
                   <p><strong>Name:</strong> {newUser.name}</p>
                   <p><strong>Email:</strong> {newUser.email}</p>
                   <p><strong>Role:</strong> {newUser.role}</p>
@@ -379,7 +364,7 @@ export function UserManagement() {
               <div className="flex flex-col items-center justify-center py-6">
                 <CheckCircle className="h-12 w-12 text-green-500 mb-4" />
                 <p className="text-lg font-medium">User Created Successfully!</p>
-                <p className="text-sm text-gray-500 mt-2">
+                <p className="text-sm text-gray-500 mt-2 text-left">
                   User account has been created and added to the system.
                 </p>
               </div>
@@ -388,7 +373,7 @@ export function UserManagement() {
             {creationSuccess === false && (
               <Alert variant="destructive" className="my-4">
                 <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{creationError || "Failed to create user."}</AlertDescription>
+                <AlertDescription className="text-left">{creationError || "Failed to create user."}</AlertDescription>
               </Alert>
             )}
             
@@ -423,23 +408,23 @@ export function UserManagement() {
           </DialogContent>
         </Dialog>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-4">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="text-left">Name</TableHead>
+              <TableHead className="text-left">Email</TableHead>
+              <TableHead className="text-left">Role</TableHead>
+              <TableHead className="text-left">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {users.map((user) => (
               <TableRow key={user.id}>
-                <TableCell>{user.name || 'N/A'}</TableCell>
-                <TableCell>{user.email}</TableCell>
-                <TableCell className="capitalize">{user.role}</TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-left">{user.name || 'N/A'}</TableCell>
+                <TableCell className="text-left">{user.email}</TableCell>
+                <TableCell className="text-left capitalize">{user.role}</TableCell>
+                <TableCell className="text-left">
                   <Button
                     variant="destructive"
                     size="sm"

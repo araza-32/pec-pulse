@@ -1,4 +1,5 @@
 
+// TODO: ISSUE-005 - Consolidated type definitions
 // Re-export workbody types to maintain compatibility
 export type { Workbody, WorkbodyMember, WorkbodyFormData } from './workbody';
 
@@ -68,7 +69,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  role: 'admin' | 'chairman' | 'secretary' | 'member' | 'registrar' | 'coordination';
+  role: 'admin' | 'chairman' | 'secretary' | 'member' | 'registrar' | 'coordination' | 'ChairmanPEC';
   workbodyId?: string;
 }
 
@@ -87,4 +88,45 @@ export interface AttendanceRecord {
   present: boolean;
   organization?: string;
   attendanceStatus: 'absent' | 'present-physical' | 'present-virtual';
+}
+
+// Activity feed types
+export interface Activity {
+  id: string;
+  type: 'meeting' | 'document' | 'member' | 'action' | 'progress';
+  title: string;
+  description: string;
+  timestamp: Date;
+  user: string;
+  workbody?: string;
+}
+
+// Dashboard statistics
+export interface DashboardStats {
+  totalWorkbodies: number;
+  committees: number;
+  workingGroups: number;
+  taskForces: number;
+  meetingsThisYear: number;
+  completionRate: number;
+  upcomingMeetingsCount: number;
+  actionsCompleted: number;
+  actionsAgreed: number;
+  overdueActions: number;
+}
+
+// Form types
+export interface CreateUserForm {
+  email: string;
+  password: string;
+  name: string;
+  role: string;
+  workbodyId?: string;
+}
+
+// Meeting validation types
+export interface MeetingValidation {
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
 }

@@ -1,73 +1,98 @@
-# Welcome to your Lovable project
 
-## Project info
+# PEC Pulse - Pakistan Engineering Council Management System
 
-**URL**: https://lovable.dev/projects/31ec0092-d119-482a-80ae-b840ae0011c0
+A comprehensive workbody management system for Pakistan Engineering Council built with React, TypeScript, and Supabase.
 
-## How can I edit this code?
+## 🚀 Quick Start
 
-There are several ways of editing your application.
+Before making any changes to this project, please:
 
-**Use Lovable**
+1. **Read the documentation files first:**
+   - `/features.md` - Current feature status and roadmap
+   - `/known_issues.md` - Active bugs and issues that need attention
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/31ec0092-d119-482a-80ae-b840ae0011c0) and start prompting.
+2. **Development Setup:**
+   ```bash
+   npm install
+   npm run dev
+   ```
 
-Changes made via Lovable will be committed automatically to this repo.
+3. **Architecture Overview:**
+   - Frontend: React + TypeScript + Tailwind CSS
+   - Backend: Supabase (PostgreSQL + Auth + Storage)
+   - State Management: React Query + Context API
+   - UI Components: shadcn/ui
 
-**Use your preferred IDE**
+## 📋 Current Status
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### ✅ Implemented Features
+- Dashboard with real-time workbody overview
+- Workbody management (CRUD operations)
+- Meeting calendar and scheduling
+- Minutes upload and document management
+- User authentication and role-based access
+- Task force extension functionality
+- Reports generation
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### 🚧 Known Issues
+Please refer to `known_issues.md` for detailed bug reports and fixes needed.
 
-Follow these steps:
+## 🏗️ Project Structure
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```
+src/
+├── components/          # Reusable UI components
+├── pages/              # Page components
+├── hooks/              # Custom React hooks
+├── contexts/           # React context providers
+├── types/              # TypeScript type definitions
+├── integrations/       # External service integrations
+└── utils/              # Utility functions
 ```
 
-**Edit a file directly in GitHub**
+## 🔧 Development Guidelines
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+1. **Text Alignment**: Use `text-left` by default, only center KPIs and hero sections
+2. **Responsive Design**: Ensure all components work on mobile devices
+3. **TypeScript**: All new code must be properly typed
+4. **Consistent Spacing**: Use standardized Tailwind classes (p-4, m-4)
+5. **Error Handling**: Always implement proper error states and loading indicators
 
-**Use GitHub Codespaces**
+## 📊 Database Schema
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+The application uses Supabase with the following main tables:
+- `workbodies` - Committee/working group information
+- `workbody_members` - Member assignments and roles
+- `scheduled_meetings` - Meeting calendar entries
+- `meeting_minutes` - Uploaded meeting documents
+- `profiles` - User profile information
 
-## What technologies are used for this project?
+## 🔑 Environment Setup
 
-This project is built with:
+Supabase configuration is handled automatically. No manual environment variables needed.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## 🧪 Testing
 
-## How can I deploy this project?
+```bash
+npm run build    # Check for build errors
+npm run dev      # Start development server
+```
 
-Simply open [Lovable](https://lovable.dev/projects/31ec0092-d119-482a-80ae-b840ae0011c0) and click on Share -> Publish.
+## 📝 Contributing
 
-## Can I connect a custom domain to my Lovable project?
+1. Check `known_issues.md` for priority fixes
+2. Update `features.md` when adding new functionality
+3. Follow the existing code patterns and TypeScript conventions
+4. Test responsive design on multiple screen sizes
+5. Ensure proper error handling and loading states
 
-Yes, you can!
+## 🔗 Useful Links
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+- [Lovable Documentation](https://docs.lovable.dev/)
+- [Supabase Docs](https://supabase.com/docs)
+- [Tailwind CSS](https://tailwindcss.com/docs)
+- [shadcn/ui](https://ui.shadcn.com/)
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+---
+
+**Important**: Always read `features.md` and `known_issues.md` before starting development work.
