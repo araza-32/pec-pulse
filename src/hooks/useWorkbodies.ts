@@ -29,6 +29,8 @@ export const useWorkbodies = () => {
         id: item.id,
         name: item.name,
         type: item.type as WorkbodyType,
+        category: item.category || undefined,
+        subcategory: item.subcategory || undefined,
         description: item.description || undefined,
         createdDate: item.created_date,
         endDate: item.end_date || undefined,

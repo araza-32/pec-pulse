@@ -176,6 +176,7 @@ export type Database = {
           actions_completed: number | null
           attendance_rate: number | null
           average_decision_turnaround: number | null
+          category: string | null
           created_at: string | null
           created_date: string
           cross_workbody_collaborations: number | null
@@ -189,6 +190,7 @@ export type Database = {
           member_turnover: number | null
           name: string
           recommendations_issued: number | null
+          subcategory: string | null
           terms_of_reference: string | null
           total_meetings: number | null
           type: string
@@ -199,6 +201,7 @@ export type Database = {
           actions_completed?: number | null
           attendance_rate?: number | null
           average_decision_turnaround?: number | null
+          category?: string | null
           created_at?: string | null
           created_date: string
           cross_workbody_collaborations?: number | null
@@ -212,6 +215,7 @@ export type Database = {
           member_turnover?: number | null
           name: string
           recommendations_issued?: number | null
+          subcategory?: string | null
           terms_of_reference?: string | null
           total_meetings?: number | null
           type: string
@@ -222,6 +226,7 @@ export type Database = {
           actions_completed?: number | null
           attendance_rate?: number | null
           average_decision_turnaround?: number | null
+          category?: string | null
           created_at?: string | null
           created_date?: string
           cross_workbody_collaborations?: number | null
@@ -235,6 +240,7 @@ export type Database = {
           member_turnover?: number | null
           name?: string
           recommendations_issued?: number | null
+          subcategory?: string | null
           terms_of_reference?: string | null
           total_meetings?: number | null
           type?: string

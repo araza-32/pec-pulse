@@ -4,6 +4,8 @@ export interface Workbody {
   name: string;
   description?: string;
   type: 'committee' | 'working-group' | 'task-force';
+  category?: string;
+  subcategory?: string;
   abbreviation?: string;
   status?: 'active' | 'inactive' | 'pending';
   chairman?: string;
@@ -40,6 +42,8 @@ export interface CompositionHistoryProps {
 export interface WorkbodyFormData {
   name: string;
   type: 'committee' | 'working-group' | 'task-force';
+  category?: string;
+  subcategory?: string;
   description?: string;
   createdDate: Date;
   endDate?: Date;

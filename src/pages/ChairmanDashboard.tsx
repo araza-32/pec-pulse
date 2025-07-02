@@ -3,7 +3,7 @@ import { useState } from "react";
 import { ChairmanStatCards } from "@/components/chairman/ChairmanStatCards";
 import { EngagementChart } from "@/components/chairman/EngagementChart";
 import { ExpiringTaskForceList } from "@/components/chairman/ExpiringTaskForceList";
-import { CategorizedWorkbodiesView } from "@/components/chairman-dashboard/CategorizedWorkbodiesView";
+import { NestedWorkbodiesView } from "@/components/chairman-dashboard/NestedWorkbodiesView";
 import { AlertsQuickAccess } from "@/components/chairman-dashboard/AlertsQuickAccess";
 import { PerformanceMetrics } from "@/components/chairman-dashboard/PerformanceMetrics";
 import { Modal } from "@/components/ui/modal";
@@ -115,8 +115,8 @@ export default function ChairmanDashboard() {
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
             {/* Main Workbodies Overview - 8 columns */}
             <div className="md:col-span-8">
-              <CategorizedWorkbodiesView
-                categorizedWorkbodies={organizedWorkbodies.categorized}
+              <NestedWorkbodiesView
+                nestedWorkbodies={organizedWorkbodies.nested}
                 selectedCategory={selectedCategory}
                 onCategoryChange={setSelectedCategory}
                 isLoading={isLoading}

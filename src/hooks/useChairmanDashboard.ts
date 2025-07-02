@@ -17,81 +17,60 @@ export interface DashboardStats {
   overdueActions: number;
 }
 
-export interface CategorizedWorkbodies {
-  executive: Workbody[];
-  regulations: Workbody[];
-  operations: Workbody[];
-  corporateAffairs: Workbody[];
+export interface NestedWorkbodies {
+  [category: string]: {
+    [subcategory: string]: Workbody[];
+  } | Workbody[];
 }
 
 export interface OrganizedWorkbodies {
   committees: Workbody[];
   workingGroups: Workbody[];
   taskForces: Workbody[];
-  categorized: CategorizedWorkbodies;
+  nested: NestedWorkbodies;
 }
-
-// Workbody categorization based on organizational structure
-const categorizeWorkbody = (workbody: Workbody): keyof CategorizedWorkbodies => {
-  const name = workbody.name.toLowerCase();
-  
-  // Executive category
-  if (name.includes('governing body') || name.includes('management committee')) {
-    return 'executive';
-  }
-  
-  // Regulations category  
-  if (name.includes('examination committee') || name.includes('ec ') ||
-      name.includes('engineering services committee') || name.includes('esc ') ||
-      name.includes('engineering accreditation board') || name.includes('eab ') ||
-      name.includes('engineering practices') || name.includes('epdc ') ||
-      name.includes('cpd policy') || name.includes('tf-cpd') ||
-      name.includes('appeals') || name.includes('bylaws') || name.includes('a&bc') ||
-      name.includes('quality enhancement') || name.includes('qec ')) {
-    return 'regulations';
-  }
-  
-  // Operations category
-  if (name.includes('pec information repository') || name.includes('wg-pecir') ||
-      name.includes('pec administration') || name.includes('wg-pecadm') ||
-      name.includes('central procurement') || name.includes('cpc ') ||
-      name.includes('special initiatives')) {
-    return 'operations';
-  }
-  
-  // Corporate Affairs category (default for most working groups)
-  return 'corporateAffairs';
-};
 
 export function useChairmanDashboard() {
   const { workbodies, isLoading: workbodiesLoading } = useWorkbodies();
   const { meetings, isLoading: meetingsLoading } = useScheduledMeetings();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
-  // Organize workbodies by type and category
+  // Organize workbodies by type and nested structure
   const organizedWorkbodies: OrganizedWorkbodies = useMemo(() => {
     const committees = workbodies.filter(wb => wb.type === 'committee');
     const workingGroups = workbodies.filter(wb => wb.type === 'working-group');
     const taskForces = workbodies.filter(wb => wb.type === 'task-force');
     
-    // Categorize all workbodies
-    const categorized: CategorizedWorkbodies = {
-      executive: [],
-      regulations: [],
-      operations: [],
-      corporateAffairs: []
-    };
+    // Create nested structure by category and subcategory
+    const nested: NestedWorkbodies = {};
     
     workbodies.forEach(wb => {
-      const category = categorizeWorkbody(wb);
-      categorized[category].push(wb);
+      const category = wb.category || 'Uncategorized';
+      const subcategory = wb.subcategory;
+      
+      if (!nested[category]) {
+        nested[category] = {};
+      }
+      
+      if (subcategory) {
+        if (!nested[category][subcategory]) {
+          nested[category][subcategory] = [];
+        }
+        (nested[category][subcategory] as Workbody[]).push(wb);
+      } else {
+        // For categories without subcategories (like Executive)
+        if (!Array.isArray(nested[category])) {
+          nested[category] = [];
+        }
+        (nested[category] as Workbody[]).push(wb);
+      }
     });
 
     return {
       committees,
       workingGroups,
       taskForces,
-      categorized
+      nested
     };
   }, [workbodies]);
 
@@ -134,13 +113,43 @@ export function useChairmanDashboard() {
       case 'taskForces':
         return organizedWorkbodies.taskForces;
       case 'executive':
-        return organizedWorkbodies.categorized.executive;
+        return (organizedWorkbodies.nested['Executive'] as Workbody[]) || [];
       case 'regulations':
-        return organizedWorkbodies.categorized.regulations;
+        const regulationsWorkbodies: Workbody[] = [];
+        const regulations = organizedWorkbodies.nested['Regulations'];
+        if (regulations && typeof regulations === 'object' && !Array.isArray(regulations)) {
+          Object.values(regulations).forEach(subcategoryWorkbodies => {
+            regulationsWorkbodies.push(...subcategoryWorkbodies);
+          });
+        }
+        return regulationsWorkbodies;
       case 'operations':
-        return organizedWorkbodies.categorized.operations;
+        const operationsWorkbodies: Workbody[] = [];
+        const operations = organizedWorkbodies.nested['Operations'];
+        if (operations && typeof operations === 'object' && !Array.isArray(operations)) {
+          Object.values(operations).forEach(subcategoryWorkbodies => {
+            operationsWorkbodies.push(...subcategoryWorkbodies);
+          });
+        }
+        return operationsWorkbodies;
       case 'corporateAffairs':
-        return organizedWorkbodies.categorized.corporateAffairs;
+        const corporateWorkbodies: Workbody[] = [];
+        const corporate = organizedWorkbodies.nested['Corporate Affairs'];
+        if (corporate && typeof corporate === 'object' && !Array.isArray(corporate)) {
+          Object.values(corporate).forEach(subcategoryWorkbodies => {
+            corporateWorkbodies.push(...subcategoryWorkbodies);
+          });
+        }
+        return corporateWorkbodies;
+      case 'specialInitiatives':
+        const specialWorkbodies: Workbody[] = [];
+        const special = organizedWorkbodies.nested['Special Initiatives'];
+        if (special && typeof special === 'object' && !Array.isArray(special)) {
+          Object.values(special).forEach(subcategoryWorkbodies => {
+            specialWorkbodies.push(...subcategoryWorkbodies);
+          });
+        }
+        return specialWorkbodies;
       default:
         return workbodies;
     }
