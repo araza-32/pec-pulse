@@ -5,12 +5,15 @@ import { EngagementChart } from "@/components/chairman/EngagementChart";
 import { ExpiringTaskForceList } from "@/components/chairman/ExpiringTaskForceList";
 import { OrganizedWorkbodiesView } from "@/components/chairman-dashboard/OrganizedWorkbodiesView";
 import { AlertsQuickAccess } from "@/components/chairman-dashboard/AlertsQuickAccess";
+import { PerformanceMetrics } from "@/components/chairman-dashboard/PerformanceMetrics";
 import { Modal } from "@/components/ui/modal";
 import { DonutChart } from "@/components/chairman/DonutChart";
 import { MeetingsList } from "@/components/chairman/MeetingsList";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { useChairmanDashboard } from "@/hooks/useChairmanDashboard";
+import { TimePeriod } from "@/hooks/usePerformanceMetrics";
 
 export default function ChairmanDashboard() {
   const {
@@ -26,6 +29,8 @@ export default function ChairmanDashboard() {
   const [showDonutModal, setShowDonutModal] = useState(false);
   const [showMeetingsModal, setShowMeetingsModal] = useState(false);
   const [showUpcomingModal, setShowUpcomingModal] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
+  const [performanceTimeFilter, setPerformanceTimeFilter] = useState<TimePeriod>("quarter");
 
   // Mock engagement data (this would come from analytics in production)
   const mockEngagementData = [
@@ -98,22 +103,114 @@ export default function ChairmanDashboard() {
         onUpcomingClick={() => setShowUpcomingModal(true)}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-        {/* Main Workbodies Overview - 8 columns */}
-        <div className="md:col-span-8">
-          <OrganizedWorkbodiesView
-            organizedWorkbodies={organizedWorkbodies}
-            selectedCategory={selectedCategory}
-            onCategoryChange={setSelectedCategory}
-            isLoading={isLoading}
-          />
-        </div>
+      {/* Main Dashboard Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="performance">Performance Metrics</TabsTrigger>
+          <TabsTrigger value="analysis">Analysis</TabsTrigger>
+        </TabsList>
 
-        {/* Right Side: Split Column for Alerts/Quick Access and Additional Info */}
-        <div className="md:col-span-4 space-y-6">
-          {/* Alert & Quick Access Card */}
-          <AlertsQuickAccess
-            workbodies={convertedWorkbodies}
+        <TabsContent value="overview" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+            {/* Main Workbodies Overview - 8 columns */}
+            <div className="md:col-span-8">
+              <OrganizedWorkbodiesView
+                organizedWorkbodies={organizedWorkbodies}
+                selectedCategory={selectedCategory}
+                onCategoryChange={setSelectedCategory}
+                isLoading={isLoading}
+              />
+            </div>
+
+            {/* Right Side: Split Column for Alerts/Quick Access and Additional Info */}
+            <div className="md:col-span-4 space-y-6">
+              {/* Alert & Quick Access Card */}
+              <AlertsQuickAccess
+                workbodies={convertedWorkbodies}
+                meetings={upcomingMeetings.map(m => ({
+                  id: m.id,
+                  workbodyId: workbodies.find(wb => wb.name === m.workbodyName)?.id || '',
+                  workbodyName: m.workbodyName,
+                  date: m.date.toISOString().split('T')[0],
+                  time: "14:00",
+                  location: "Conference Room",
+                  agendaItems: []
+                }))}
+                isLoading={isLoading}
+              />
+              
+              {/* Task Force Status */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle>Task Force Status</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Tabs defaultValue="active">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="active">Active</TabsTrigger>
+                      <TabsTrigger value="completed">Completed</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="active" className="mt-4">
+                      <ExpiringTaskForceList 
+                        taskForces={organizedWorkbodies.taskForces.filter(tf => !tf.endDate || new Date(tf.endDate) > new Date())}
+                        isLoading={isLoading}
+                      />
+                    </TabsContent>
+                    <TabsContent value="completed" className="mt-4">
+                      <ExpiringTaskForceList 
+                        taskForces={organizedWorkbodies.taskForces.filter(tf => tf.endDate && new Date(tf.endDate) <= new Date())}
+                        isLoading={isLoading}
+                        ended
+                      />
+                    </TabsContent>
+                  </Tabs>
+                </CardContent>
+              </Card>
+
+              {/* Engagement Analysis */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle>Engagement Analysis</CardTitle>
+                </CardHeader>
+                <CardContent className="h-64">
+                  <EngagementChart data={mockEngagementData} />
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="performance" className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h2 className="text-2xl font-bold">Performance Metrics</h2>
+            <div className="flex gap-2">
+              <Button 
+                variant={performanceTimeFilter === "30days" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setPerformanceTimeFilter("30days")}
+              >
+                30 Days
+              </Button>
+              <Button 
+                variant={performanceTimeFilter === "quarter" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setPerformanceTimeFilter("quarter")}
+              >
+                Quarter
+              </Button>
+              <Button 
+                variant={performanceTimeFilter === "year" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setPerformanceTimeFilter("year")}
+              >
+                Year
+              </Button>
+            </div>
+          </div>
+          
+          <PerformanceMetrics 
+            workbodies={workbodies}
             meetings={upcomingMeetings.map(m => ({
               id: m.id,
               workbodyId: workbodies.find(wb => wb.name === m.workbodyName)?.id || '',
@@ -123,48 +220,18 @@ export default function ChairmanDashboard() {
               location: "Conference Room",
               agendaItems: []
             }))}
+            timeFilter={performanceTimeFilter}
             isLoading={isLoading}
           />
-          
-          {/* Task Force Status */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Task Force Status</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Tabs defaultValue="active">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="active">Active</TabsTrigger>
-                  <TabsTrigger value="completed">Completed</TabsTrigger>
-                </TabsList>
-                <TabsContent value="active" className="mt-0">
-                  <ExpiringTaskForceList 
-                    taskForces={organizedWorkbodies.taskForces.filter(tf => !tf.endDate || new Date(tf.endDate) > new Date())}
-                    isLoading={isLoading}
-                  />
-                </TabsContent>
-                <TabsContent value="completed" className="mt-0">
-                  <ExpiringTaskForceList 
-                    taskForces={organizedWorkbodies.taskForces.filter(tf => tf.endDate && new Date(tf.endDate) <= new Date())}
-                    isLoading={isLoading}
-                    ended
-                  />
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
+        </TabsContent>
 
-          {/* Engagement Analysis */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Engagement Analysis</CardTitle>
-            </CardHeader>
-            <CardContent className="h-64">
-              <EngagementChart data={mockEngagementData} />
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+        <TabsContent value="analysis" className="space-y-6">
+          <div className="text-center py-12 text-muted-foreground">
+            <h3 className="text-lg font-semibold mb-2">Advanced Analysis</h3>
+            <p>Detailed analysis and reporting tools will be available here.</p>
+          </div>
+        </TabsContent>
+      </Tabs>
 
       {/* Modals */}
       <Modal

@@ -56,6 +56,36 @@ export type Database = {
           },
         ]
       }
+      performance_targets: {
+        Row: {
+          created_at: string | null
+          danger_threshold: number
+          id: string
+          metric_name: string
+          target_value: number
+          updated_at: string | null
+          warning_threshold: number
+        }
+        Insert: {
+          created_at?: string | null
+          danger_threshold: number
+          id?: string
+          metric_name: string
+          target_value: number
+          updated_at?: string | null
+          warning_threshold: number
+        }
+        Update: {
+          created_at?: string | null
+          danger_threshold?: number
+          id?: string
+          metric_name?: string
+          target_value?: number
+          updated_at?: string | null
+          warning_threshold?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null
@@ -141,43 +171,70 @@ export type Database = {
       }
       workbodies: {
         Row: {
+          action_item_completion: number | null
           actions_agreed: number | null
           actions_completed: number | null
+          attendance_rate: number | null
+          average_decision_turnaround: number | null
           created_at: string | null
           created_date: string
+          cross_workbody_collaborations: number | null
+          deliverable_quality_score: number | null
           description: string | null
+          doc_submission_timeliness: number | null
           end_date: string | null
           id: string
+          meetings_held: number | null
           meetings_this_year: number | null
+          member_turnover: number | null
           name: string
+          recommendations_issued: number | null
           terms_of_reference: string | null
           total_meetings: number | null
           type: string
         }
         Insert: {
+          action_item_completion?: number | null
           actions_agreed?: number | null
           actions_completed?: number | null
+          attendance_rate?: number | null
+          average_decision_turnaround?: number | null
           created_at?: string | null
           created_date: string
+          cross_workbody_collaborations?: number | null
+          deliverable_quality_score?: number | null
           description?: string | null
+          doc_submission_timeliness?: number | null
           end_date?: string | null
           id?: string
+          meetings_held?: number | null
           meetings_this_year?: number | null
+          member_turnover?: number | null
           name: string
+          recommendations_issued?: number | null
           terms_of_reference?: string | null
           total_meetings?: number | null
           type: string
         }
         Update: {
+          action_item_completion?: number | null
           actions_agreed?: number | null
           actions_completed?: number | null
+          attendance_rate?: number | null
+          average_decision_turnaround?: number | null
           created_at?: string | null
           created_date?: string
+          cross_workbody_collaborations?: number | null
+          deliverable_quality_score?: number | null
           description?: string | null
+          doc_submission_timeliness?: number | null
           end_date?: string | null
           id?: string
+          meetings_held?: number | null
           meetings_this_year?: number | null
+          member_turnover?: number | null
           name?: string
+          recommendations_issued?: number | null
           terms_of_reference?: string | null
           total_meetings?: number | null
           type?: string
@@ -255,6 +312,71 @@ export type Database = {
           },
           {
             foreignKeyName: "workbody_members_workbody_id_fkey"
+            columns: ["workbody_id"]
+            isOneToOne: false
+            referencedRelation: "workbodies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workbody_performance_history: {
+        Row: {
+          action_item_completion: number | null
+          attendance_rate: number | null
+          average_decision_turnaround: number | null
+          created_at: string | null
+          cross_workbody_collaborations: number | null
+          deliverable_quality_score: number | null
+          doc_submission_timeliness: number | null
+          id: string
+          meetings_held: number | null
+          member_turnover: number | null
+          period_end: string
+          period_start: string
+          period_type: string
+          recommendations_issued: number | null
+          updated_at: string | null
+          workbody_id: string | null
+        }
+        Insert: {
+          action_item_completion?: number | null
+          attendance_rate?: number | null
+          average_decision_turnaround?: number | null
+          created_at?: string | null
+          cross_workbody_collaborations?: number | null
+          deliverable_quality_score?: number | null
+          doc_submission_timeliness?: number | null
+          id?: string
+          meetings_held?: number | null
+          member_turnover?: number | null
+          period_end: string
+          period_start: string
+          period_type: string
+          recommendations_issued?: number | null
+          updated_at?: string | null
+          workbody_id?: string | null
+        }
+        Update: {
+          action_item_completion?: number | null
+          attendance_rate?: number | null
+          average_decision_turnaround?: number | null
+          created_at?: string | null
+          cross_workbody_collaborations?: number | null
+          deliverable_quality_score?: number | null
+          doc_submission_timeliness?: number | null
+          id?: string
+          meetings_held?: number | null
+          member_turnover?: number | null
+          period_end?: string
+          period_start?: string
+          period_type?: string
+          recommendations_issued?: number | null
+          updated_at?: string | null
+          workbody_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workbody_performance_history_workbody_id_fkey"
             columns: ["workbody_id"]
             isOneToOne: false
             referencedRelation: "workbodies"
