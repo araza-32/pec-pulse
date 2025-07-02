@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -46,7 +45,6 @@ export const useMinutesSummaries = () => {
 
       if (error) throw error;
       
-      // Transform the data to match our interface, handling the new performance_analysis field
       const transformedSummaries: MinutesSummary[] = (data || []).map(summary => ({
         ...summary,
         decisions: Array.isArray(summary.decisions) ? summary.decisions as string[] : [],
@@ -72,8 +70,24 @@ export const useMinutesSummaries = () => {
   const generateSummary = async (minutesId: string) => {
     setIsGenerating(true);
     try {
+      // First, get the file content using our new edge function
+      const { data: contentData, error: contentError } = await supabase.functions.invoke('get-minutes-content', {
+        body: { meetingId: minutesId },
+      });
+
+      if (contentError) {
+        console.error('Error fetching minutes content:', contentError);
+        throw new Error('Failed to retrieve minutes content');
+      }
+
+      // Then generate summary with the content
       const { data, error } = await supabase.functions.invoke('summarize-minutes', {
-        body: { minutesId },
+        body: { 
+          minutesId,
+          content: contentData.content,
+          agendaItems: contentData.agendaItems,
+          actionsAgreed: contentData.actionsAgreed
+        },
       });
 
       if (error) throw error;
@@ -83,7 +97,7 @@ export const useMinutesSummaries = () => {
         description: 'Meeting summary generated successfully',
       });
 
-      await fetchSummaries(); // Refresh summaries
+      await fetchSummaries();
       return data;
     } catch (error) {
       console.error('Error generating summary:', error);
@@ -112,7 +126,7 @@ export const useMinutesSummaries = () => {
         description: 'Performance analysis completed successfully',
       });
 
-      await fetchSummaries(); // Refresh summaries to get updated performance data
+      await fetchSummaries();
       return data;
     } catch (error) {
       console.error('Error analyzing performance:', error);
