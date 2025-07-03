@@ -38,6 +38,22 @@ export default function ChairmanExecutiveDashboard() {
     members: wb.members || []
   }));
 
+  // Convert ScheduledMeeting to MeetingMinutes format for RecentMeetingMinutes
+  const meetingMinutes = meetings.slice(0, 5).map(meeting => ({
+    id: meeting.id,
+    workbodyId: meeting.workbodyId,
+    workbodyName: meeting.workbodyName,
+    date: meeting.date,
+    location: meeting.location,
+    meetingDate: meeting.date,
+    venue: meeting.location,
+    attendees: [],
+    agenda: meeting.agendaItems || [],
+    actionsAgreed: [],
+    decisions: [],
+    fileUrl: null
+  }));
+
   // Calculate summary statistics
   const stats = {
     totalWorkbodies: transformedWorkbodies.length,
@@ -105,7 +121,7 @@ export default function ChairmanExecutiveDashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <MonthlyMeetingsChart />
             <RecentMeetingMinutes 
-              recentMeetings={meetings.slice(0, 5)} 
+              recentMeetings={meetingMinutes} 
               workbodies={transformedWorkbodies}
             />
           </div>
