@@ -1,5 +1,5 @@
 
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, redirect } from 'react-router-dom';
 import Index from './pages/Index';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -70,6 +70,13 @@ export const router = createBrowserRouter([
       {
         path: 'workbodies/:id/edit',
         element: <WorkbodyEdit />,
+      },
+      // Legacy redirect for old workbody routes
+      {
+        path: 'workbody/:id',
+        loader: ({ params }) => {
+          return redirect(`/workbodies/${params.id}`);
+        },
       },
       {
         path: 'calendar',

@@ -1,7 +1,7 @@
 
 import { useLocation, Link } from "react-router-dom";
 import { useEffect } from "react";
-import { Home } from "lucide-react";
+import { Home, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const NotFound = () => {
@@ -26,7 +26,7 @@ const NotFound = () => {
         The page you are looking for doesn't exist or has been moved.
         {isLegacyWorkbodyRoute && (
           <span className="block mt-2 text-pec-green">
-            Hint: Try accessing workbodies through the /workbodies/{workbodyId} route.
+            This workbody link has been updated. Please use the button below to access it.
           </span>
         )}
       </p>
@@ -40,10 +40,16 @@ const NotFound = () => {
         {isLegacyWorkbodyRoute && workbodyId && (
           <Button asChild variant="outline">
             <Link to={`/workbodies/${workbodyId}`}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
               Go to Workbody
             </Link>
           </Button>
         )}
+        <Button asChild variant="outline">
+          <Link to="/workbodies">
+            View All Workbodies
+          </Link>
+        </Button>
       </div>
     </div>
   );

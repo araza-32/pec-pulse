@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { useWorkbodies } from "@/hooks/useWorkbodies";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -13,8 +13,8 @@ import { WorkbodyStats } from "@/components/workbody/detail/WorkbodyStats";
 import { WorkbodyMembers } from "@/components/workbody/detail/WorkbodyMembers";
 import { WorkbodyMeetings } from "@/components/workbody/detail/WorkbodyMeetings";
 import { useAuth } from "@/contexts/AuthContext";
+import { ArrowLeft } from "lucide-react";
 import type { MeetingMinutes } from "@/types";
-import { v4 as uuidv4 } from 'uuid';
 
 export default function WorkbodyDetail() {
   const { id } = useParams<{ id: string }>();
@@ -108,12 +108,21 @@ export default function WorkbodyDetail() {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4 py-12">
         <h2 className="text-2xl font-bold">Workbody not found</h2>
-        <p className="text-muted-foreground">
+        <p className="text-muted-foreground text-center max-w-md">
           The workbody you are looking for doesn't exist or you don't have access to it.
+          Please check the URL or contact your administrator.
         </p>
-        <Button asChild className="mt-4" variant="outline">
-          <a href="/">Return to Dashboard</a>
-        </Button>
+        <div className="flex gap-4 mt-4">
+          <Button asChild variant="outline">
+            <Link to="/workbodies" className="flex items-center">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Workbodies
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link to="/dashboard">Return to Dashboard</Link>
+          </Button>
+        </div>
       </div>
     );
   }
@@ -125,10 +134,20 @@ export default function WorkbodyDetail() {
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center gap-4 mb-6">
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/workbodies" className="flex items-center">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Workbodies
+          </Link>
+        </Button>
+      </div>
+
       <WorkbodyHeader 
         name={workbody.name}
         type={workbody.type}
         description={workbody.description}
+        code={workbody.code}
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">

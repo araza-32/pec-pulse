@@ -1,12 +1,9 @@
-
 export interface Workbody {
   id: string;
+  code: string; // Short code like "EC", "ESC"
   name: string;
   description?: string;
   type: 'committee' | 'working-group' | 'task-force';
-  category?: string;
-  subcategory?: string;
-  abbreviation?: string;
   status?: 'active' | 'inactive' | 'pending';
   chairman?: string;
   secretary?: string;
