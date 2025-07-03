@@ -33,7 +33,7 @@ interface NestedWorkbodiesViewProps {
 }
 
 const WorkbodyCard = ({ workbody }: { workbody: Workbody }) => (
-  <Link to={`/workbody/${workbody.id}`}>
+  <Link to={`/workbodies/${workbody.id}`}>
     <Card className="hover:shadow-md transition-all duration-200 transform hover:-translate-y-1 border-2 border-gray-100 hover:border-pec-green-200 group">
       <CardContent className="p-4">
         <div className="flex justify-between items-start mb-3">
@@ -41,7 +41,7 @@ const WorkbodyCard = ({ workbody }: { workbody: Workbody }) => (
             {workbody.name}
           </h4>
           <Link 
-            to={`/workbody/edit/${workbody.id}`} 
+            to={`/workbodies/${workbody.id}/edit`} 
             className="text-xs text-pec-green-600 hover:text-pec-green-700 opacity-0 group-hover:opacity-100 transition-opacity"
             onClick={(e) => e.stopPropagation()}
           >
@@ -62,13 +62,13 @@ const WorkbodyCard = ({ workbody }: { workbody: Workbody }) => (
              workbody.type === "working-group" ? "Working Group" : "Task Force"}
           </Badge>
           
-          {workbody.subcategory && (
-            <Badge variant="outline" className="bg-gray-100 text-gray-700 border-gray-300 text-xs">
-              {workbody.subcategory}
+          {workbody.code && (
+            <Badge variant="outline" className="bg-gray-100 text-gray-700 border-gray-300 text-xs font-mono">
+              {workbody.code}
             </Badge>
           )}
           
-          {workbody.meetingsThisYear > 0 && (
+          {workbody.meetingsThisYear && workbody.meetingsThisYear > 0 && (
             <Badge 
               variant="outline" 
               className="bg-pec-green-50 text-pec-green-700 border-pec-green-200"
@@ -97,55 +97,6 @@ const WorkbodyCard = ({ workbody }: { workbody: Workbody }) => (
   </Link>
 );
 
-const SubcategorySection = ({ 
-  title, 
-  workbodies,
-  isSpecialInitiatives = false
-}: { 
-  title: string; 
-  workbodies: Workbody[];
-  isSpecialInitiatives?: boolean;
-}) => {
-  const [isOpen, setIsOpen] = useState(true);
-
-  if (workbodies.length === 0) return null;
-
-  return (
-    <div className={`ml-4 ${isSpecialInitiatives ? 'bg-gradient-to-r from-yellow-50 to-orange-50 p-4 rounded-lg border-l-4 border-yellow-400' : ''}`}>
-      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <CollapsibleTrigger asChild>
-          <Button 
-            variant="ghost" 
-            className="w-full justify-between p-2 h-auto hover:bg-gray-50"
-          >
-            <div className="flex items-center gap-2">
-              <h4 className={`font-medium text-sm ${isSpecialInitiatives ? 'text-yellow-800' : 'text-gray-700'}`}>
-                {title}
-              </h4>
-              <Badge variant="outline" className="text-xs">
-                {workbodies.length}
-              </Badge>
-            </div>
-            {isOpen ? (
-              <ChevronDown className="h-4 w-4" />
-            ) : (
-              <ChevronRight className="h-4 w-4" />
-            )}
-          </Button>
-        </CollapsibleTrigger>
-        
-        <CollapsibleContent className="mt-2">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {workbodies.map((workbody) => (
-              <WorkbodyCard key={workbody.id} workbody={workbody} />
-            ))}
-          </div>
-        </CollapsibleContent>
-      </Collapsible>
-    </div>
-  );
-};
-
 const CategorySection = ({ 
   title, 
   categoryData, 
@@ -155,7 +106,7 @@ const CategorySection = ({
   defaultOpen = true
 }: { 
   title: string; 
-  categoryData: { [subcategory: string]: Workbody[] } | Workbody[];
+  categoryData: Workbody[];
   icon: any; 
   colorScheme: { bg: string; text: string; border: string; };
   isSpecialInitiatives?: boolean;
@@ -163,12 +114,7 @@ const CategorySection = ({
 }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
-  // Count total workbodies in this category
-  const totalCount = Array.isArray(categoryData) 
-    ? categoryData.length 
-    : Object.values(categoryData).reduce((sum, workbodies) => sum + workbodies.length, 0);
-
-  if (totalCount === 0) return null;
+  if (categoryData.length === 0) return null;
 
   return (
     <div className={isSpecialInitiatives ? 'bg-gradient-to-r from-yellow-50 to-orange-50 p-4 rounded-lg border-2 border-yellow-200' : ''}>
@@ -184,7 +130,7 @@ const CategorySection = ({
                 {title}
               </h3>
               <Badge variant="outline" className="ml-2">
-                {totalCount}
+                {categoryData.length}
               </Badge>
             </div>
             {isOpen ? (
@@ -196,26 +142,11 @@ const CategorySection = ({
         </CollapsibleTrigger>
         
         <CollapsibleContent className="pb-4">
-          {Array.isArray(categoryData) ? (
-            // Category without subcategories (like Executive)
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 px-4">
-              {categoryData.map((workbody) => (
-                <WorkbodyCard key={workbody.id} workbody={workbody} />
-              ))}
-            </div>
-          ) : (
-            // Category with subcategories
-            <div className="space-y-4">
-              {Object.entries(categoryData).map(([subcategory, workbodies]) => (
-                <SubcategorySection
-                  key={subcategory}
-                  title={subcategory}
-                  workbodies={workbodies}
-                  isSpecialInitiatives={isSpecialInitiatives}
-                />
-              ))}
-            </div>
-          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 px-4">
+            {categoryData.map((workbody) => (
+              <WorkbodyCard key={workbody.id} workbody={workbody} />
+            ))}
+          </div>
         </CollapsibleContent>
       </Collapsible>
     </div>
@@ -250,9 +181,7 @@ export function NestedWorkbodiesView({
   const categories = [
     { key: 'all', label: 'All Categories' },
     { key: 'executive', label: 'Executive' },
-    { key: 'regulations', label: 'Regulations' },
     { key: 'operations', label: 'Operations' },
-    { key: 'corporateAffairs', label: 'Corporate Affairs' },
     { key: 'specialInitiatives', label: 'Special Initiatives' }
   ];
 
@@ -288,30 +217,12 @@ export function NestedWorkbodiesView({
                 defaultOpen={true}
               />
             )}
-            {nestedWorkbodies['Regulations'] && (
-              <CategorySection
-                title="Regulations"
-                categoryData={nestedWorkbodies['Regulations']}
-                icon={Scale}
-                colorScheme={{ bg: "bg-red-100", text: "text-red-700", border: "border-red-300" }}
-                defaultOpen={true}
-              />
-            )}
             {nestedWorkbodies['Operations'] && (
               <CategorySection
                 title="Operations"
                 categoryData={nestedWorkbodies['Operations']}
                 icon={Cog}
                 colorScheme={{ bg: "bg-blue-100", text: "text-blue-700", border: "border-blue-300" }}
-                defaultOpen={true}
-              />
-            )}
-            {nestedWorkbodies['Corporate Affairs'] && (
-              <CategorySection
-                title="Corporate Affairs"
-                categoryData={nestedWorkbodies['Corporate Affairs']}
-                icon={Building}
-                colorScheme={{ bg: "bg-green-100", text: "text-green-700", border: "border-green-300" }}
                 defaultOpen={true}
               />
             )}

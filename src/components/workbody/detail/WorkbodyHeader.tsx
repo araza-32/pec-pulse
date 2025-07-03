@@ -7,14 +7,18 @@ interface WorkbodyHeaderProps {
   name: string;
   type: string;
   description?: string;
+  code: string;
 }
 
-export function WorkbodyHeader({ name, type, description }: WorkbodyHeaderProps) {
+export function WorkbodyHeader({ name, type, description, code }: WorkbodyHeaderProps) {
   return (
     <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
       <div>
         <div className="flex items-center gap-2">
           <h1 className="text-3xl font-bold">{name}</h1>
+          <Badge variant="outline" className="text-sm font-mono">
+            {code}
+          </Badge>
           <Badge variant="outline" className="capitalize">
             {type.replace("-", " ")}
           </Badge>

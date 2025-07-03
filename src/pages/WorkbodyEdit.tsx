@@ -28,7 +28,7 @@ export default function WorkbodyEdit() {
   
   const [formData, setFormData] = useState<Partial<Workbody>>({
     name: "",
-    abbreviation: "",
+    code: "",
     description: "",
     type: "committee",
     status: "active"
@@ -40,7 +40,7 @@ export default function WorkbodyEdit() {
     if (workbody) {
       setFormData({
         name: workbody.name,
-        abbreviation: workbody.abbreviation || "",
+        code: workbody.code || "",
         description: workbody.description || "",
         type: workbody.type || "committee",
         status: workbody.status || "active"
@@ -62,10 +62,9 @@ export default function WorkbodyEdit() {
         .from('workbodies')
         .update({
           name: formData.name,
-          abbreviation: formData.abbreviation,
+          code: formData.code,
           description: formData.description,
           type: formData.type,
-          status: formData.status,
           updated_at: new Date().toISOString()
         })
         .eq('id', id);
@@ -82,7 +81,7 @@ export default function WorkbodyEdit() {
       refetch();
       
       // Navigate back to the workbody detail page
-      navigate(`/workbody/${id}`);
+      navigate(`/workbodies/${id}`);
     } catch (error: any) {
       console.error('Error updating workbody:', error);
       toast({
@@ -101,7 +100,7 @@ export default function WorkbodyEdit() {
         <Button 
           variant="outline" 
           size="icon"
-          onClick={() => navigate(`/workbody/${id}`)}
+          onClick={() => navigate(`/workbodies/${id}`)}
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
@@ -133,11 +132,12 @@ export default function WorkbodyEdit() {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="abbreviation">Abbreviation</Label>
+              <Label htmlFor="code">Code</Label>
               <Input 
-                id="abbreviation"
-                value={formData.abbreviation}
-                onChange={(e) => handleChange('abbreviation', e.target.value)}
+                id="code"
+                value={formData.code}
+                onChange={(e) => handleChange('code', e.target.value)}
+                placeholder="e.g., EC, RC, DTWG"
               />
             </div>
             
@@ -159,23 +159,6 @@ export default function WorkbodyEdit() {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <Select 
-                value={formData.status} 
-                onValueChange={(value) => handleChange('status', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
               <Textarea 
                 id="description"
@@ -190,7 +173,7 @@ export default function WorkbodyEdit() {
             <Button 
               type="button" 
               variant="outline"
-              onClick={() => navigate(`/workbody/${id}`)}
+              onClick={() => navigate(`/workbodies/${id}`)}
             >
               Cancel
             </Button>

@@ -18,9 +18,7 @@ export interface DashboardStats {
 }
 
 export interface NestedWorkbodies {
-  [category: string]: {
-    [subcategory: string]: Workbody[];
-  } | Workbody[];
+  [category: string]: Workbody[];
 }
 
 export interface OrganizedWorkbodies {
@@ -35,36 +33,18 @@ export function useChairmanDashboard() {
   const { meetings, isLoading: meetingsLoading } = useScheduledMeetings();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
-  // Organize workbodies by type and nested structure
+  // Organize workbodies by type and simplified structure
   const organizedWorkbodies: OrganizedWorkbodies = useMemo(() => {
     const committees = workbodies.filter(wb => wb.type === 'committee');
     const workingGroups = workbodies.filter(wb => wb.type === 'working-group');
     const taskForces = workbodies.filter(wb => wb.type === 'task-force');
     
-    // Create nested structure by category and subcategory
-    const nested: NestedWorkbodies = {};
-    
-    workbodies.forEach(wb => {
-      const category = wb.category || 'Uncategorized';
-      const subcategory = wb.subcategory;
-      
-      if (!nested[category]) {
-        nested[category] = {};
-      }
-      
-      if (subcategory) {
-        if (!nested[category][subcategory]) {
-          nested[category][subcategory] = [];
-        }
-        (nested[category][subcategory] as Workbody[]).push(wb);
-      } else {
-        // For categories without subcategories (like Executive)
-        if (!Array.isArray(nested[category])) {
-          nested[category] = [];
-        }
-        (nested[category] as Workbody[]).push(wb);
-      }
-    });
+    // Create simplified nested structure - just group by type for now
+    const nested: NestedWorkbodies = {
+      'Executive': committees.slice(0, 2), // Sample grouping
+      'Operations': workingGroups.slice(0, 2),
+      'Special Initiatives': taskForces
+    };
 
     return {
       committees,
@@ -113,43 +93,11 @@ export function useChairmanDashboard() {
       case 'taskForces':
         return organizedWorkbodies.taskForces;
       case 'executive':
-        return (organizedWorkbodies.nested['Executive'] as Workbody[]) || [];
-      case 'regulations':
-        const regulationsWorkbodies: Workbody[] = [];
-        const regulations = organizedWorkbodies.nested['Regulations'];
-        if (regulations && typeof regulations === 'object' && !Array.isArray(regulations)) {
-          Object.values(regulations).forEach(subcategoryWorkbodies => {
-            regulationsWorkbodies.push(...subcategoryWorkbodies);
-          });
-        }
-        return regulationsWorkbodies;
+        return organizedWorkbodies.nested['Executive'] || [];
       case 'operations':
-        const operationsWorkbodies: Workbody[] = [];
-        const operations = organizedWorkbodies.nested['Operations'];
-        if (operations && typeof operations === 'object' && !Array.isArray(operations)) {
-          Object.values(operations).forEach(subcategoryWorkbodies => {
-            operationsWorkbodies.push(...subcategoryWorkbodies);
-          });
-        }
-        return operationsWorkbodies;
-      case 'corporateAffairs':
-        const corporateWorkbodies: Workbody[] = [];
-        const corporate = organizedWorkbodies.nested['Corporate Affairs'];
-        if (corporate && typeof corporate === 'object' && !Array.isArray(corporate)) {
-          Object.values(corporate).forEach(subcategoryWorkbodies => {
-            corporateWorkbodies.push(...subcategoryWorkbodies);
-          });
-        }
-        return corporateWorkbodies;
+        return organizedWorkbodies.nested['Operations'] || [];
       case 'specialInitiatives':
-        const specialWorkbodies: Workbody[] = [];
-        const special = organizedWorkbodies.nested['Special Initiatives'];
-        if (special && typeof special === 'object' && !Array.isArray(special)) {
-          Object.values(special).forEach(subcategoryWorkbodies => {
-            specialWorkbodies.push(...subcategoryWorkbodies);
-          });
-        }
-        return specialWorkbodies;
+        return organizedWorkbodies.nested['Special Initiatives'] || [];
       default:
         return workbodies;
     }

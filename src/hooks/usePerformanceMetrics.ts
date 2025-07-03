@@ -94,6 +94,7 @@ export function usePerformanceMetrics(timePeriod: TimePeriod = 'quarter') {
   const workbodiesWithPerformance: WorkbodyPerformance[] = workbodies.map(wb => ({
     ...wb,
     id: wb.id,
+    code: wb.code || wb.name.split(' ').map(word => word[0]).join('').toUpperCase().substring(0, 3),
     name: wb.name,
     type: wb.type as 'committee' | 'working-group' | 'task-force',
     description: wb.description,

@@ -35,6 +35,7 @@ export const users: User[] = [
 export const workbodies: Workbody[] = [
   {
     id: 'committee-1',
+    code: 'EC',
     name: 'Education Committee',
     type: 'committee',
     totalMeetings: 24,
@@ -52,6 +53,7 @@ export const workbodies: Workbody[] = [
   },
   {
     id: 'committee-2',
+    code: 'RC',
     name: 'Registration Committee',
     type: 'committee',
     totalMeetings: 32,
@@ -69,6 +71,7 @@ export const workbodies: Workbody[] = [
   },
   {
     id: 'workgroup-1',
+    code: 'DTWG',
     name: 'Digital Transformation Working Group',
     type: 'working-group',
     totalMeetings: 16,
@@ -85,6 +88,7 @@ export const workbodies: Workbody[] = [
   },
   {
     id: 'taskforce-1',
+    code: 'CPDTF',
     name: 'CPD Framework Task Force',
     type: 'task-force',
     totalMeetings: 8,
@@ -102,6 +106,7 @@ export const workbodies: Workbody[] = [
   },
   {
     id: 'taskforce-2',
+    code: 'BCRTF',
     name: 'Building Codes Review Task Force',
     type: 'task-force',
     totalMeetings: 5,
