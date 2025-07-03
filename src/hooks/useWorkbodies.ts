@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { WorkbodyType } from "@/types";
@@ -26,7 +27,7 @@ export const useWorkbodies = () => {
       console.log("Workbodies fetched:", data);
       return (data || []).map(item => ({
         id: item.id,
-        code: item.code || item.name.split(' ').map(word => word[0]).join('').toUpperCase().substring(0, 3),
+        code: item.name.split(' ').map(word => word[0]).join('').toUpperCase().substring(0, 3),
         name: item.name,
         type: item.type as WorkbodyType,
         description: item.description || undefined,

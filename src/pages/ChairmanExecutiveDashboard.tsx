@@ -49,10 +49,23 @@ export default function ChairmanExecutiveDashboard() {
     venue: meeting.location,
     attendees: [],
     agenda: meeting.agendaItems || [],
+    minutes: [],
+    actionItems: [],
     actionsAgreed: [],
     decisions: [],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
     fileUrl: null
   }));
+
+  // Filter expiring task forces
+  const expiringTaskForces = transformedWorkbodies.filter(wb => {
+    if (wb.type !== 'task-force' || !wb.endDate) return false;
+    const today = new Date();
+    const endDate = new Date(wb.endDate);
+    const daysUntilEnd = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    return daysUntilEnd <= 60 && daysUntilEnd >= 0;
+  });
 
   // Calculate summary statistics
   const stats = {
@@ -194,7 +207,7 @@ export default function ChairmanExecutiveDashboard() {
 
         <TabsContent value="alerts">
           <div className="space-y-6">
-            <ExpiringTaskForces workbodies={transformedWorkbodies} />
+            <ExpiringTaskForces expiringTaskForces={expiringTaskForces} />
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
