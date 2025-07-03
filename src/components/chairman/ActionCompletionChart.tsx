@@ -10,8 +10,10 @@ import {
   ResponsiveContainer
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Workbody } from "@/types";
 
 interface ActionCompletionChartProps {
+  workbodies?: Workbody[];
   completionByType?: {
     name: string;
     agreed: number;
@@ -22,18 +24,48 @@ interface ActionCompletionChartProps {
 }
 
 export function ActionCompletionChart({ 
+  workbodies = [],
   completionByType = [],
   completed = 0,
   total = 0 
 }: ActionCompletionChartProps) {
-  // If completionByType is provided, use that, otherwise generate default data
-  const chartData = completionByType.length > 0 ? completionByType : [
-    {
-      name: "All Types",
-      agreed: total,
-      completed: completed
-    }
-  ];
+  // Generate data from workbodies if provided
+  let chartData = completionByType;
+  
+  if (workbodies.length > 0 && completionByType.length === 0) {
+    const committees = workbodies.filter(wb => wb.type === 'committee');
+    const workingGroups = workbodies.filter(wb => wb.type === 'working-group');
+    const taskForces = workbodies.filter(wb => wb.type === 'task-force');
+    
+    chartData = [
+      {
+        name: "Committees",
+        agreed: committees.reduce((sum, wb) => sum + (wb.actionsAgreed || 0), 0),
+        completed: committees.reduce((sum, wb) => sum + (wb.actionsCompleted || 0), 0)
+      },
+      {
+        name: "Working Groups",
+        agreed: workingGroups.reduce((sum, wb) => sum + (wb.actionsAgreed || 0), 0),
+        completed: workingGroups.reduce((sum, wb) => sum + (wb.actionsCompleted || 0), 0)
+      },
+      {
+        name: "Task Forces",
+        agreed: taskForces.reduce((sum, wb) => sum + (wb.actionsAgreed || 0), 0),
+        completed: taskForces.reduce((sum, wb) => sum + (wb.actionsCompleted || 0), 0)
+      }
+    ];
+  }
+  
+  // Fallback to simple data if no other data available
+  if (chartData.length === 0) {
+    chartData = [
+      {
+        name: "All Types",
+        agreed: total,
+        completed: completed
+      }
+    ];
+  }
 
   return (
     <Card className="col-span-1">

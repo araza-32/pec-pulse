@@ -1,10 +1,10 @@
 
 import { useState } from "react";
 import { useWorkbodies } from "@/hooks/useWorkbodies";
+import { useScheduledMeetings } from "@/hooks/useScheduledMeetings";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Calendar, Clock, FileText, Users, TrendingUp, AlertCircle } from "lucide-react";
 import { WorkbodyTypeCards } from "@/components/chairman/WorkbodyTypeCards";
 import { MeetingsList } from "@/components/chairman/MeetingsList";
@@ -18,6 +18,7 @@ import { WorkbodyType } from "@/types";
 
 export default function ChairmanExecutiveDashboard() {
   const { workbodies, isLoading } = useWorkbodies();
+  const { meetings, isLoading: meetingsLoading } = useScheduledMeetings();
   const [activeTab, setActiveTab] = useState("overview");
 
   // Transform workbodies to match the expected interface
@@ -103,13 +104,16 @@ export default function ChairmanExecutiveDashboard() {
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <MonthlyMeetingsChart />
-            <RecentMeetingMinutes />
+            <RecentMeetingMinutes 
+              recentMeetings={meetings.slice(0, 5)} 
+              workbodies={transformedWorkbodies}
+            />
           </div>
         </TabsContent>
 
         <TabsContent value="meetings">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <MeetingsList />
+            <MeetingsList meetings={meetings} />
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -141,7 +145,7 @@ export default function ChairmanExecutiveDashboard() {
 
         <TabsContent value="performance">
           <div className="space-y-6">
-            <LowCompletionWorkbodies workbodies={transformedWorkbodies} />
+            <LowCompletionWorkbodies workbodies={transformedWorkbodies} isLoading={isLoading} />
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <ActionCompletionChart workbodies={transformedWorkbodies} />
               <Card>
