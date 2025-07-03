@@ -105,16 +105,16 @@ export function SimplifiedSidebar({ className }: SidebarProps) {
         key={item.title}
         variant="ghost"
         className={cn(
-          "w-full justify-start gap-2 hover:bg-green-50 hover:text-green-700 text-sm",
+          "w-full justify-start gap-2 hover:bg-green-50 hover:text-green-700 text-sm h-10",
           isActive && "bg-green-100 text-green-800 font-medium"
         )}
         asChild
       >
         <Link to={item.href}>
-          <item.icon className="h-4 w-4" />
-          <span className="flex-1 text-left">{item.title}</span>
+          <item.icon className="h-4 w-4 flex-shrink-0" />
+          <span className="flex-1 text-left truncate">{item.title}</span>
           {item.badge && (
-            <Badge variant="secondary" className="text-xs">
+            <Badge variant="secondary" className="text-xs flex-shrink-0">
               {item.badge}
             </Badge>
           )}
@@ -131,7 +131,7 @@ export function SimplifiedSidebar({ className }: SidebarProps) {
         key={workbody.id}
         variant="ghost"
         className={cn(
-          "w-full justify-start gap-2 hover:bg-green-50 hover:text-green-700 text-sm ml-4",
+          "w-full justify-start gap-2 hover:bg-green-50 hover:text-green-700 text-sm ml-4 h-9",
           isActive && "bg-green-100 text-green-800 font-medium"
         )}
         asChild
@@ -140,7 +140,7 @@ export function SimplifiedSidebar({ className }: SidebarProps) {
           to={`/workbodies/${workbody.id}`}
           aria-label={`View ${workbody.name}`}
         >
-          <Users className="h-3 w-3" />
+          <Users className="h-3 w-3 flex-shrink-0" />
           <span className="flex-1 text-left text-xs truncate">
             {workbody.name} ({workbody.code})
           </span>
@@ -150,34 +150,34 @@ export function SimplifiedSidebar({ className }: SidebarProps) {
   };
 
   return (
-    <div className={cn("app-sidebar", className)}>
-      <ScrollArea className="h-full py-4">
+    <div className={cn("fixed left-0 top-0 z-30 h-screen w-64 bg-white border-r border-gray-200 flex flex-col", className)}>
+      <div className="flex items-center gap-2 px-4 py-4 border-b border-gray-200 flex-shrink-0">
+        <div className="w-2 h-8 bg-green-600 rounded-full flex-shrink-0"></div>
+        <h2 className="text-lg font-semibold text-green-800 truncate">Navigation</h2>
+      </div>
+      
+      <ScrollArea className="flex-1 px-3 py-4">
         <div className="space-y-4">
-          <div className="px-3 py-2">
-            <div className="flex items-center gap-2 px-4 mb-4">
-              <div className="w-2 h-8 bg-green-600 rounded-full"></div>
-              <h2 className="text-lg font-semibold text-green-800">Navigation</h2>
-            </div>
-            
-            <div className="space-y-1">
-              <nav className="grid gap-1">
-                {navigationItems.map(renderNavigationItem)}
-                
-                {/* Workbodies Section */}
-                <div className="pt-4">
-                  <div className="px-2 mb-2">
-                    <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide">
-                      Workbodies
-                    </h3>
-                  </div>
-                  {isLoading ? (
-                    <div className="ml-4 text-xs text-gray-500">Loading workbodies...</div>
-                  ) : (
-                    workbodies.map(renderWorkbodyItem)
-                  )}
+          <div className="space-y-1">
+            <nav className="grid gap-1">
+              {navigationItems.map(renderNavigationItem)}
+              
+              {/* Workbodies Section */}
+              <div className="pt-4">
+                <div className="px-2 mb-2">
+                  <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide">
+                    Workbodies
+                  </h3>
                 </div>
-              </nav>
-            </div>
+                {isLoading ? (
+                  <div className="ml-4 text-xs text-gray-500">Loading workbodies...</div>
+                ) : (
+                  <div className="space-y-1">
+                    {workbodies.map(renderWorkbodyItem)}
+                  </div>
+                )}
+              </div>
+            </nav>
           </div>
         </div>
       </ScrollArea>

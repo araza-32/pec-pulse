@@ -4,10 +4,12 @@ import { SimplifiedSidebar } from "./SimplifiedSidebar";
 
 export function AppLayout() {
   return (
-    <div className="min-h-screen flex w-full">
-      <SimplifiedSidebar className="w-64 border-r bg-white" />
-      <main className="flex-1 p-6 bg-gray-50">
-        <Outlet />
+    <div className="min-h-screen flex w-full bg-gray-50">
+      <SimplifiedSidebar />
+      <main className="flex-1 ml-64 p-6">
+        <div className="max-w-7xl mx-auto">
+          <Outlet />
+        </div>
       </main>
     </div>
   );
