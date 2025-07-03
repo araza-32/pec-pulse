@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Home,
   Users,
@@ -105,14 +106,15 @@ export function SimplifiedSidebar({ className }: SidebarProps) {
         key={item.title}
         variant="ghost"
         className={cn(
-          "w-full justify-start gap-2 hover:bg-green-50 hover:text-green-700 text-sm h-10",
+          "w-full justify-start gap-2 hover:bg-green-50 hover:text-green-700 text-sm h-10 px-3 py-2",
+          "whitespace-normal text-left break-words min-h-[2.5rem]",
           isActive && "bg-green-100 text-green-800 font-medium"
         )}
         asChild
       >
         <Link to={item.href}>
           <item.icon className="h-4 w-4 flex-shrink-0" />
-          <span className="flex-1 text-left truncate">{item.title}</span>
+          <span className="flex-1 text-left leading-tight">{item.title}</span>
           {item.badge && (
             <Badge variant="secondary" className="text-xs flex-shrink-0">
               {item.badge}
@@ -125,35 +127,46 @@ export function SimplifiedSidebar({ className }: SidebarProps) {
 
   const renderWorkbodyItem = (workbody: any) => {
     const isActive = location.pathname === `/workbodies/${workbody.id}`;
+    const displayText = `${workbody.name} (${workbody.code})`;
     
     return (
-      <Button
-        key={workbody.id}
-        variant="ghost"
-        className={cn(
-          "w-full justify-start gap-2 hover:bg-green-50 hover:text-green-700 text-sm ml-4 h-9",
-          isActive && "bg-green-100 text-green-800 font-medium"
-        )}
-        asChild
-      >
-        <Link 
-          to={`/workbodies/${workbody.id}`}
-          aria-label={`View ${workbody.name}`}
-        >
-          <Users className="h-3 w-3 flex-shrink-0" />
-          <span className="flex-1 text-left text-xs truncate">
-            {workbody.name} ({workbody.code})
-          </span>
-        </Link>
-      </Button>
+      <TooltipProvider key={workbody.id}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              className={cn(
+                "w-full justify-start gap-2 hover:bg-green-50 hover:text-green-700 text-sm ml-4 px-3 py-2",
+                "whitespace-normal text-left break-words min-h-[2.25rem]",
+                isActive && "bg-green-100 text-green-800 font-medium"
+              )}
+              asChild
+            >
+              <Link 
+                to={`/workbodies/${workbody.id}`}
+                aria-label={`View ${workbody.name}`}
+              >
+                <Users className="h-3 w-3 flex-shrink-0 mt-0.5" />
+                <span className="flex-1 text-xs leading-tight">
+                  {displayText}
+                </span>
+              </Link>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="right" className="max-w-xs">
+            <p className="text-sm font-medium">{workbody.name}</p>
+            <p className="text-xs text-muted-foreground">Code: {workbody.code}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     );
   };
 
   return (
-    <div className={cn("fixed left-0 top-0 z-30 h-screen w-64 bg-white border-r border-gray-200 flex flex-col", className)}>
+    <div className={cn("fixed left-0 top-0 z-30 h-screen w-72 bg-white border-r border-gray-200 flex flex-col", className)}>
       <div className="flex items-center gap-2 px-4 py-4 border-b border-gray-200 flex-shrink-0">
         <div className="w-2 h-8 bg-green-600 rounded-full flex-shrink-0"></div>
-        <h2 className="text-lg font-semibold text-green-800 truncate">Navigation</h2>
+        <h2 className="text-lg font-semibold text-green-800">Navigation</h2>
       </div>
       
       <ScrollArea className="flex-1 px-3 py-4">
