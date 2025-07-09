@@ -50,40 +50,33 @@ serve(async (req) => {
       throw new Error('Meeting minutes not found');
     }
 
-    // Enhanced prompt for both summary and performance analysis
-    const prompt = `
-    Please analyze the following meeting minutes and provide a comprehensive structured response:
-
-    Meeting Date: ${minutes.date}
-    Location: ${minutes.location}
-    Agenda Items: ${minutes.agenda_items.join(', ')}
-    Actions Agreed: ${minutes.actions_agreed.join(', ')}
-
-    Please provide:
-    1. A concise summary (2-3 sentences)
-    2. Key decisions made (list format)
-    3. Action items with owner and due date if mentioned
-    4. Sentiment analysis (-1 to +1 scale)
-    5. Main topics discussed (keywords)
-    6. Performance analysis including:
-       - Progress highlights (quantified progress)
-       - Milestones achieved
-       - Risks and blockers identified
-
-    Format your response as JSON with these fields:
-    {
-      "summary": "string",
-      "decisions": ["string"],
-      "actionItems": [{"task": "string", "owner": "string", "dueDate": "string", "status": "pending"}],
-      "sentiment": number,
-      "topics": ["string"],
-      "performanceAnalysis": {
-        "progressHighlights": ["string"],
-        "milestones": ["string"],
-        "risks": ["string"]
-      }
+    // Check if OCR text is available
+    if (!minutes.ocr_text || minutes.ocr_text.trim() === '') {
+      throw new Error('No OCR text available for summarization');
     }
-    `;
+
+    // Enhanced prompt for structured summarization
+    const prompt = `You are a minute-taking assistant. Summarize these meeting minutes into:
+• A 1-paragraph summary
+• Bullet list of key decisions
+• Bullet list of action items
+
+Meeting Date: ${minutes.date}
+Location: ${minutes.location}
+Agenda Items: ${minutes.agenda_items.join(', ')}
+Actions Agreed: ${minutes.actions_agreed.join(', ')}
+
+Minutes text:
+${minutes.ocr_text}
+
+Format your response as JSON with these fields:
+{
+  "summaryText": "string (1 paragraph summary)",
+  "decisions": ["string (each key decision)"],
+  "actionItems": [{"task": "string", "assignee": "string", "dueDate": "string", "status": "pending"}],
+  "sentiment": number,
+  "topics": ["string"]
+}`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -119,17 +112,20 @@ serve(async (req) => {
       throw new Error('Invalid AI response format');
     }
 
-    // Save summary with performance analysis to database
+    // Save summary to database with upsert logic
     const { data: savedSummary, error: saveError } = await supabase
       .from('meeting_minutes_summaries')
       .upsert({
         meeting_minutes_id: minutesId,
-        summary_text: parsedResponse.summary,
+        summary_text: parsedResponse.summaryText,
         decisions: parsedResponse.decisions,
         action_items: parsedResponse.actionItems,
         sentiment_score: parsedResponse.sentiment,
         topics: parsedResponse.topics,
         performance_analysis: parsedResponse.performanceAnalysis || {},
+      }, { 
+        onConflict: 'meeting_minutes_id',
+        ignoreDuplicates: false 
       })
       .select()
       .single();

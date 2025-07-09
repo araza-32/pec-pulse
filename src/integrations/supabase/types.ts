@@ -23,6 +23,8 @@ export type Database = {
           file_url: string
           id: string
           location: string
+          ocr_status: string | null
+          ocr_text: string | null
           uploaded_at: string
           uploaded_by: string | null
           workbody_id: string | null
@@ -35,6 +37,8 @@ export type Database = {
           file_url: string
           id?: string
           location: string
+          ocr_status?: string | null
+          ocr_text?: string | null
           uploaded_at?: string
           uploaded_by?: string | null
           workbody_id?: string | null
@@ -47,6 +51,8 @@ export type Database = {
           file_url?: string
           id?: string
           location?: string
+          ocr_status?: string | null
+          ocr_text?: string | null
           uploaded_at?: string
           uploaded_by?: string | null
           workbody_id?: string | null
