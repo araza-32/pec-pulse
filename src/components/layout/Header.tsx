@@ -13,6 +13,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { RoleBadge } from "./RoleBadge";
 
 interface HeaderProps {
   toggleSidebar: () => void;
@@ -179,7 +180,9 @@ export function Header({ toggleSidebar, user, onLogout }: HeaderProps) {
               </div>
               <div className="hidden md:block text-left">
                 <p className="text-sm font-medium">{user.name}</p>
-                <p className="text-xs text-muted-foreground capitalize">{user.role}</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <RoleBadge role={user.role} size="sm" />
+                </div>
               </div>
             </Button>
             

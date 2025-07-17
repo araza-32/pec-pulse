@@ -10,6 +10,8 @@ import { DashboardProvider } from "@/contexts/DashboardContext";
 import { supabase } from "@/integrations/supabase/client";
 import { MinutesInsightsPanel } from "@/components/dashboard/MinutesInsightsPanel";
 import { SummaryGenerator } from "@/components/dashboard/SummaryGenerator";
+import { EnhancedOverviewStats } from "@/components/dashboard/EnhancedOverviewStats";
+import { ActivityFeed } from "@/components/dashboard/ActivityFeed";
 
 export default function Dashboard() {
   const { workbodies, isLoading, refetch } = useWorkbodies();
@@ -170,12 +172,29 @@ export default function Dashboard() {
           </div>
         )}
         
-        <DashboardContainer 
-          userRole={user?.role || 'user'}
-          workbodiesStats={workbodiesStats}
-          upcomingMeetings={upcomingMeetings}
-          recentActivities={recentActivities}
-        />
+        {/* Enhanced Dashboard Header */}
+        <div className="text-left">
+          <h1 className="text-3xl font-bold text-gray-900">Enhanced Dashboard</h1>
+          <p className="text-gray-600 mt-2">Comprehensive workbody management and analytics</p>
+        </div>
+
+        {/* Enhanced 8-Metric Overview */}
+        <EnhancedOverviewStats />
+        
+        {/* Enhanced Layout with Activity Feed */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <DashboardContainer 
+              userRole={user?.role || 'user'}
+              workbodiesStats={workbodiesStats}
+              upcomingMeetings={upcomingMeetings}
+              recentActivities={recentActivities}
+            />
+          </div>
+          <div className="space-y-6">
+            <ActivityFeed />
+          </div>
+        </div>
 
         {/* AI Meeting Insights Section */}
         <div className="grid gap-6 lg:grid-cols-3">

@@ -2,8 +2,8 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-// Define the User type with specific role types
-export type UserRole = 'admin' | 'secretary' | 'chairman' | 'registrar' | 'coordination' | 'member';
+// Enhanced User roles with all 7 types
+export type UserRole = 'admin' | 'secretary' | 'chairman' | 'registrar' | 'coordination' | 'member' | 'ChairmanPEC';
 
 interface User {
   id: string;
@@ -140,7 +140,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           name = 'Secretary User';
           workbodyId = 'wb-1'; // Mock workbody ID for secretary
         } else if (email.includes('chairman')) {
-          role = 'chairman';
+          role = 'ChairmanPEC';
           id = '3';
           name = 'Chairman PEC';
         } else if (email.includes('registrar')) {
