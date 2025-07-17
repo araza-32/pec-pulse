@@ -10,12 +10,34 @@ import { AIExtractionInterface } from "@/components/dashboard/AIExtractionInterf
 import { DashboardChatbot } from "@/components/dashboard/DashboardChatbot";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BarChart3, Brain, MessageSquare, Settings } from "lucide-react";
+import { BarChart3, Brain, MessageSquare, Settings, AlertCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function EnhancedDashboard() {
-  const { workbodies, isLoading } = useWorkbodies();
-  const { meetings, isLoading: isLoadingMeetings } = useScheduledMeetings();
+  const { workbodies, isLoading, error: workbodiesError } = useWorkbodies();
+  const { meetings, isLoading: isLoadingMeetings, error: meetingsError } = useScheduledMeetings();
   const { session } = useAuth();
+  const { toast } = useToast();
+
+  // Add error handling for failed data fetching
+  useEffect(() => {
+    if (workbodiesError) {
+      console.error('Workbodies error:', workbodiesError);
+      toast({
+        title: "Data Loading Error",
+        description: "Failed to load workbodies data. Some features may not work properly.",
+        variant: "destructive",
+      });
+    }
+    if (meetingsError) {
+      console.error('Meetings error:', meetingsError);
+      toast({
+        title: "Meetings Loading Error", 
+        description: "Failed to load meetings data.",
+        variant: "destructive",
+      });
+    }
+  }, [workbodiesError, meetingsError, toast]);
 
   const user = session || JSON.parse(localStorage.getItem('user') || '{}');
   const isCoordinationUser = user?.email?.includes('coordination');
@@ -43,16 +65,16 @@ export default function EnhancedDashboard() {
     committees: filteredWorkbodies.filter(w => w.type === 'committee').length,
     workingGroups: filteredWorkbodies.filter(w => w.type === 'working-group').length,
     taskForces: filteredWorkbodies.filter(w => w.type === 'task-force').length,
-    actionsCompleted: filteredWorkbodies.reduce((sum, w) => sum + w.actionsCompleted, 0),
-    actionsAgreed: filteredWorkbodies.reduce((sum, w) => sum + w.actionsAgreed, 0),
+    actionsCompleted: filteredWorkbodies.reduce((sum, w) => sum + (w.actions_completed || 0), 0),
+    actionsAgreed: filteredWorkbodies.reduce((sum, w) => sum + (w.actions_agreed || 0), 0),
     completionRate: (() => {
-      const agreed = filteredWorkbodies.reduce((sum, w) => sum + w.actionsAgreed, 0);
-      const completed = filteredWorkbodies.reduce((sum, w) => sum + w.actionsCompleted, 0);
+      const agreed = filteredWorkbodies.reduce((sum, w) => sum + (w.actions_agreed || 0), 0);
+      const completed = filteredWorkbodies.reduce((sum, w) => sum + (w.actions_completed || 0), 0);
       return agreed ? Math.round((completed / agreed) * 100) : 0;
     })(),
-    meetingsThisYear: filteredWorkbodies.reduce((sum, w) => sum + w.meetingsThisYear, 0),
+    meetingsThisYear: filteredWorkbodies.reduce((sum, w) => sum + (w.meetings_this_year || 0), 0),
     upcomingMeetingsCount: meetings.length,
-    overdueActions: Math.round(filteredWorkbodies.reduce((sum, w) => sum + w.actionsAgreed, 0) * 0.15)
+    overdueActions: Math.round(filteredWorkbodies.reduce((sum, w) => sum + (w.actions_agreed || 0), 0) * 0.15)
   };
 
   if (isLoading || isLoadingMeetings) {
@@ -69,6 +91,23 @@ export default function EnhancedDashboard() {
           ))}
         </div>
         <Skeleton className="h-[400px] w-full" />
+      </div>
+    );
+  }
+
+  // Show error state if data failed to load
+  if (workbodiesError || meetingsError) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="flex items-center gap-2 p-4 border border-red-200 bg-red-50 rounded-lg">
+          <AlertCircle className="h-5 w-5 text-red-500" />
+          <div>
+            <h3 className="font-medium text-red-800">Dashboard Loading Error</h3>
+            <p className="text-sm text-red-600">
+              Unable to load dashboard data. Please refresh the page or contact support.
+            </p>
+          </div>
+        </div>
       </div>
     );
   }

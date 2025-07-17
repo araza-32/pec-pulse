@@ -39,6 +39,8 @@ export function DashboardChatbot() {
   const generateBotResponse = (userMessage: string): string => {
     const message = userMessage.toLowerCase();
     
+    console.log('Processing user message:', userMessage);
+    
     if (message.includes('workbody') || message.includes('committee')) {
       return "I can help you with workbody information! You can view all workbodies in the system, check their composition, meeting schedules, and performance metrics. Would you like me to show you specific workbody details or statistics?";
     }
@@ -62,12 +64,23 @@ export function DashboardChatbot() {
     if (message.includes('ai') || message.includes('extraction')) {
       return "The AI extraction feature can process uploaded documents to automatically extract member information, meeting details, and other structured data. You can access this through the AI Extraction panel on the dashboard.";
     }
+
+    if (message.includes('error') || message.includes('not working')) {
+      return "I see you're experiencing issues. Here are some troubleshooting steps:\n• Check your internet connection\n• Refresh the page\n• Clear your browser cache\n• Make sure you're logged in properly\n\nIf issues persist, please contact system administrators.";
+    }
     
     return "I understand you're asking about the PEC Pulse system. Could you be more specific about what you'd like to know? I can help with workbodies, meetings, reports, member management, and system features.";
   };
 
   const handleSendMessage = async () => {
-    if (!inputMessage.trim()) return;
+    if (!inputMessage.trim()) {
+      toast({
+        title: "Empty Message",
+        description: "Please enter a message before sending.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
@@ -76,22 +89,33 @@ export function DashboardChatbot() {
       timestamp: new Date()
     };
 
+    console.log('Sending message:', inputMessage);
     setMessages(prev => [...prev, userMessage]);
     setInputMessage('');
     setIsTyping(true);
 
-    // Simulate typing delay
-    setTimeout(() => {
-      const botResponse: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        type: 'bot',
-        content: generateBotResponse(inputMessage),
-        timestamp: new Date()
-      };
+    try {
+      // Simulate typing delay
+      setTimeout(() => {
+        const botResponse: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          type: 'bot',
+          content: generateBotResponse(inputMessage),
+          timestamp: new Date()
+        };
 
-      setMessages(prev => [...prev, botResponse]);
+        setMessages(prev => [...prev, botResponse]);
+        setIsTyping(false);
+      }, 1500);
+    } catch (error) {
+      console.error('Error generating response:', error);
       setIsTyping(false);
-    }, 1500);
+      toast({
+        title: "Error",
+        description: "Failed to generate response. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {

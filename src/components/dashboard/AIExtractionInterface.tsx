@@ -25,21 +25,35 @@ export function AIExtractionInterface() {
   const [selectedWorkbodyId, setSelectedWorkbodyId] = useState<string>('');
   const [extractionJobs, setExtractionJobs] = useState<ExtractionJob[]>([]);
   const [isExtracting, setIsExtracting] = useState(false);
-  const { workbodies } = useWorkbodies();
+  const { workbodies, isLoading, error } = useWorkbodies();
   const { toast } = useToast();
 
   const handleStartExtraction = async () => {
-    if (!selectedWorkbodyId) return;
+    if (!selectedWorkbodyId) {
+      toast({
+        title: "Selection Required",
+        description: "Please select a workbody to extract from",
+        variant: "destructive",
+      });
+      return;
+    }
     
     setIsExtracting(true);
     try {
+      console.log('Starting extraction for workbody:', selectedWorkbodyId);
+      
       // Fetch documents for the selected workbody
       const { data: documents, error } = await supabase
         .from('workbody_documents')
         .select('*')
         .eq('workbody_id', selectedWorkbodyId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching documents:', error);
+        throw error;
+      }
+
+      console.log('Documents found:', documents?.length || 0);
 
       const workbody = workbodies.find(w => w.id === selectedWorkbodyId);
       
@@ -56,6 +70,21 @@ export function AIExtractionInterface() {
       };
 
       setExtractionJobs(prev => [newJob, ...prev]);
+
+      // Simulate extraction progress if no documents exist
+      if (!documents || documents.length === 0) {
+        toast({
+          title: "No Documents Found",
+          description: `No documents found for ${workbody?.name}. Upload some documents first.`,
+          variant: "destructive",
+        });
+        setExtractionJobs(prev => prev.map(job => 
+          job.id === newJob.id 
+            ? { ...job, status: 'error' as const }
+            : job
+        ));
+        return;
+      }
 
       // Simulate extraction progress
       let progress = 0;
@@ -76,14 +105,14 @@ export function AIExtractionInterface() {
           ));
           toast({
             title: "Extraction Complete",
-            description: `Successfully processed ${documents?.length || 0} documents`,
+            description: `Successfully processed ${documents.length} documents`,
           });
         }
       }, 1000);
 
       toast({
         title: "Extraction Started",
-        description: `Processing ${documents?.length || 0} documents for ${workbody?.name}`,
+        description: `Processing ${documents.length} documents for ${workbody?.name}`,
       });
 
     } catch (error) {
@@ -123,6 +152,33 @@ export function AIExtractionInterface() {
         return 'bg-gray-100 text-gray-800';
     }
   };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="animate-pulse space-y-4">
+            <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+            <div className="h-10 bg-gray-200 rounded"></div>
+            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center gap-2 text-red-600">
+            <AlertCircle className="h-5 w-5" />
+            <span>Failed to load workbodies data</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
