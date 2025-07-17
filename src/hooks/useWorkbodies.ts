@@ -7,7 +7,7 @@ import { Workbody, WorkbodyFormData } from "@/types/workbody";
 export const useWorkbodies = () => {
   const queryClient = useQueryClient();
 
-  const { data: workbodies = [], isLoading, refetch } = useQuery({
+  const { data: workbodies = [], isLoading, error, refetch } = useQuery({
     queryKey: ['workbodies'],
     queryFn: async () => {
       console.log("Fetching workbodies from Supabase");
@@ -140,6 +140,7 @@ export const useWorkbodies = () => {
   return {
     workbodies,
     isLoading,
+    error,
     refetch,
     createWorkbody,
     updateWorkbody,

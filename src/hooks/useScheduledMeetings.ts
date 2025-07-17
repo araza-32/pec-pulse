@@ -10,12 +10,14 @@ import { useAuth } from '@/contexts/AuthContext';
 export const useScheduledMeetings = () => {
   const [meetings, setMeetings] = useState<ScheduledMeeting[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
   
   const fetchMeetings = useCallback(async () => {
     console.log("Fetching meetings for all users...");
     setIsLoading(true);
+    setError(null);
     try {
       // Get ALL meetings for ALL users - no role-based filtering at database level
       const { data, error } = await supabase
@@ -90,6 +92,7 @@ export const useScheduledMeetings = () => {
       setMeetings(filteredMeetings);
     } catch (error) {
       console.error('Error fetching meetings:', error);
+      setError(error as Error);
       toast({
         title: 'Error',
         description: 'Failed to fetch scheduled meetings. Please refresh the page.',
@@ -162,7 +165,8 @@ export const useScheduledMeetings = () => {
 
   return { 
     meetings, 
-    isLoading, 
+    isLoading,
+    error,
     addMeeting, 
     updateMeeting,
     deleteMeeting,

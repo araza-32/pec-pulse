@@ -65,16 +65,16 @@ export default function EnhancedDashboard() {
     committees: filteredWorkbodies.filter(w => w.type === 'committee').length,
     workingGroups: filteredWorkbodies.filter(w => w.type === 'working-group').length,
     taskForces: filteredWorkbodies.filter(w => w.type === 'task-force').length,
-    actionsCompleted: filteredWorkbodies.reduce((sum, w) => sum + (w.actions_completed || 0), 0),
-    actionsAgreed: filteredWorkbodies.reduce((sum, w) => sum + (w.actions_agreed || 0), 0),
+    actionsCompleted: filteredWorkbodies.reduce((sum, w) => sum + (w.actionsCompleted || 0), 0),
+    actionsAgreed: filteredWorkbodies.reduce((sum, w) => sum + (w.actionsAgreed || 0), 0),
     completionRate: (() => {
-      const agreed = filteredWorkbodies.reduce((sum, w) => sum + (w.actions_agreed || 0), 0);
-      const completed = filteredWorkbodies.reduce((sum, w) => sum + (w.actions_completed || 0), 0);
+      const agreed = filteredWorkbodies.reduce((sum, w) => sum + (w.actionsAgreed || 0), 0);
+      const completed = filteredWorkbodies.reduce((sum, w) => sum + (w.actionsCompleted || 0), 0);
       return agreed ? Math.round((completed / agreed) * 100) : 0;
     })(),
-    meetingsThisYear: filteredWorkbodies.reduce((sum, w) => sum + (w.meetings_this_year || 0), 0),
+    meetingsThisYear: filteredWorkbodies.reduce((sum, w) => sum + (w.meetingsThisYear || 0), 0),
     upcomingMeetingsCount: meetings.length,
-    overdueActions: Math.round(filteredWorkbodies.reduce((sum, w) => sum + (w.actions_agreed || 0), 0) * 0.15)
+    overdueActions: Math.round(filteredWorkbodies.reduce((sum, w) => sum + (w.actionsAgreed || 0), 0) * 0.15)
   };
 
   if (isLoading || isLoadingMeetings) {
