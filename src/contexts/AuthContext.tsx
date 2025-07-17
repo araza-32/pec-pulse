@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -127,22 +126,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // Mock login - in a real app, this would be an API call
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        // Mock user data based on email
+        // Mock user data based on email - updated to use pec.org.pk
         let role: UserRole = 'admin';
         let id = '1';
         let name = 'Admin User';
         let workbodyId: string | undefined = undefined;
         let status = 'active';
         
-        if (email.includes('secretary')) {
+        if (email.includes('admin@pec.org.pk')) {
+          role = 'admin';
+          id = '1';
+          name = 'Admin User';
+        } else if (email.includes('chairman@pec.org.pk')) {
+          role = 'ChairmanPEC';
+          id = '3';
+          name = 'Chairman PEC';
+        } else if (email.includes('secretary')) {
           role = 'secretary';
           id = '2';
           name = 'Secretary User';
           workbodyId = 'wb-1'; // Mock workbody ID for secretary
-        } else if (email.includes('chairman')) {
-          role = 'ChairmanPEC';
-          id = '3';
-          name = 'Chairman PEC';
         } else if (email.includes('registrar')) {
           role = 'registrar';
           id = '4';
@@ -151,7 +154,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           role = 'coordination';
           id = '5';
           name = 'Coordination User';
-        } else if (email.includes('admin')) {
+        } else {
+          // Default to admin for any pec.org.pk email
           role = 'admin';
           id = '1';
           name = 'Admin User';
