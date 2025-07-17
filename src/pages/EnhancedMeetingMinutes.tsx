@@ -23,6 +23,7 @@ interface MeetingMinute {
   file_url: string;
   ocr_status?: string;
   ocr_text?: string;
+  workbody_name: string; // Added this property to fix TypeScript errors
   workbodies?: {
     name: string;
   };
@@ -108,10 +109,6 @@ export default function EnhancedMeetingMinutes() {
 
     // Filter by status
     if (selectedStatus !== "all") {
-      const minuteSummaries = summaries.filter(s => 
-        filtered.some(m => m.id === s.meeting_minutes_id)
-      );
-      
       if (selectedStatus === "summarized") {
         filtered = filtered.filter(minute => 
           summaries.some(s => s.meeting_minutes_id === minute.id)
@@ -371,7 +368,7 @@ export default function EnhancedMeetingMinutes() {
                     key={minute.id}
                     minutes={{
                       id: minute.id,
-                      workbody_name: minute.workbody_name || 'Unknown',
+                      workbody_name: minute.workbody_name,
                       date: minute.date,
                       location: minute.location,
                       agenda_items: minute.agenda_items,
