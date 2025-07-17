@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,19 +9,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { EnhancedMinutesCard } from "@/components/minutes/EnhancedMinutesCard";
 import { EnhancedSummaryDisplay } from "@/components/ai/EnhancedSummaryDisplay";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Filter, Calendar, Upload, Sparkles } from "lucide-react";
+import { Search, Calendar, Upload, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useMinutesSummaries } from "@/hooks/useMinutesSummaries";
 
 interface MeetingMinute {
   id: string;
-  workbody_name: string;
+  workbody_id: string;
   date: string;
   location: string;
   agenda_items: string[];
   actions_agreed: string[];
   file_url: string;
-  has_summary?: boolean;
   ocr_status?: string;
+  ocr_text?: string;
+  workbodies?: {
+    name: string;
+  };
 }
 
 export default function EnhancedMeetingMinutes() {
@@ -33,9 +38,16 @@ export default function EnhancedMeetingMinutes() {
   const [activeTab, setActiveTab] = useState("all");
   const [selectedSummary, setSelectedSummary] = useState<any>(null);
   const { toast } = useToast();
+  const { 
+    summaries, 
+    isGenerating, 
+    generateSummary,
+    fetchSummaries 
+  } = useMinutesSummaries();
 
   useEffect(() => {
     fetchMinutes();
+    fetchSummaries();
   }, []);
 
   useEffect(() => {
@@ -47,16 +59,19 @@ export default function EnhancedMeetingMinutes() {
       setIsLoading(true);
       const { data, error } = await supabase
         .from('meeting_minutes')
-        .select('*')
+        .select(`
+          *,
+          workbodies:workbody_id (
+            name
+          )
+        `)
         .order('date', { ascending: false });
 
       if (error) throw error;
 
       const processedMinutes = data?.map(minute => ({
         ...minute,
-        workbody_name: minute.workbody_id || 'Unknown Workbody',
-        has_summary: Math.random() > 0.5, // Mock data
-        ocr_status: Math.random() > 0.3 ? 'completed' : 'pending'
+        workbody_name: minute.workbodies?.name || 'Unknown Workbody',
       })) || [];
 
       setMinutes(processedMinutes);
@@ -78,7 +93,7 @@ export default function EnhancedMeetingMinutes() {
     // Filter by search term
     if (searchTerm) {
       filtered = filtered.filter(minute => 
-        minute.workbody_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        minute.workbody_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         minute.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
         minute.agenda_items.some(item => 
           item.toLowerCase().includes(searchTerm.toLowerCase())
@@ -93,12 +108,22 @@ export default function EnhancedMeetingMinutes() {
 
     // Filter by status
     if (selectedStatus !== "all") {
+      const minuteSummaries = summaries.filter(s => 
+        filtered.some(m => m.id === s.meeting_minutes_id)
+      );
+      
       if (selectedStatus === "summarized") {
-        filtered = filtered.filter(minute => minute.has_summary);
+        filtered = filtered.filter(minute => 
+          summaries.some(s => s.meeting_minutes_id === minute.id)
+        );
       } else if (selectedStatus === "pending") {
-        filtered = filtered.filter(minute => !minute.has_summary);
+        filtered = filtered.filter(minute => 
+          !summaries.some(s => s.meeting_minutes_id === minute.id)
+        );
       } else if (selectedStatus === "ocr-ready") {
-        filtered = filtered.filter(minute => minute.ocr_status === 'completed');
+        filtered = filtered.filter(minute => 
+          minute.ocr_status === 'completed' || minute.ocr_text
+        );
       }
     }
 
@@ -119,92 +144,72 @@ export default function EnhancedMeetingMinutes() {
   };
 
   const handleViewSummary = async (minuteId: string) => {
-    // Mock summary data - in real implementation, fetch from database
-    const mockSummary = {
-      summaryText: "This meeting focused on reviewing the quarterly progress of ongoing projects and discussing new initiatives for the upcoming period. Key discussions included budget allocations, resource planning, and strategic partnerships.",
-      keyPoints: [
-        "Quarterly performance exceeded targets by 15%",
-        "New partnership agreement with international organizations approved",
-        "Budget reallocation for emerging technology initiatives",
-        "Training program for staff development launched"
-      ],
-      decisions: [
-        {
-          decision: "Approve budget increase for technology initiatives",
-          rationale: "Growing demand for digital transformation",
-          impact: "high" as const
-        },
-        {
-          decision: "Establish quarterly review meetings",
-          rationale: "Improve oversight and accountability",
-          impact: "medium" as const
-        }
-      ],
-      actionItems: [
-        {
-          task: "Prepare detailed budget proposal for next quarter",
-          assignee: "Finance Committee",
-          dueDate: "2024-02-15",
-          priority: "high" as const,
-          status: "pending" as const
-        },
-        {
-          task: "Coordinate with international partners for MOU signing",
-          assignee: "External Relations",
-          dueDate: "2024-02-28",
-          priority: "medium" as const,
-          status: "in-progress" as const
-        }
-      ],
-      followUpItems: [
-        "Schedule follow-up meeting with technology vendors",
-        "Prepare quarterly report for board presentation",
-        "Review staff training feedback and adjust programs"
-      ],
-      attendanceRate: 85,
-      engagementScore: 92,
-      meetingEfficiency: 88
-    };
+    const summary = summaries.find(s => s.meeting_minutes_id === minuteId);
+    if (!summary) {
+      toast({
+        title: "No Summary Found",
+        description: "Please generate a summary first",
+        variant: "destructive",
+      });
+      return;
+    }
 
     const meetingInfo = {
       workbodyName: minutes.find(m => m.id === minuteId)?.workbody_name || "Unknown",
       date: minutes.find(m => m.id === minuteId)?.date || "",
       location: minutes.find(m => m.id === minuteId)?.location || "Unknown",
-      duration: "2h 30m"
+      duration: "Unknown"
     };
 
-    setSelectedSummary({ summary: mockSummary, meetingInfo });
+    // Transform the summary data to match the expected format
+    const transformedSummary = {
+      summaryText: summary.summary_text,
+      keyPoints: [], // Add if you have this data
+      decisions: summary.decisions.map((decision: string) => ({
+        decision,
+        impact: 'medium' as const
+      })),
+      actionItems: summary.action_items.map((item: any) => ({
+        task: item.task || item,
+        assignee: item.owner || item.assignee || "Unassigned",
+        dueDate: item.dueDate || "",
+        priority: 'medium' as const,
+        status: item.status || 'pending' as const
+      })),
+      followUpItems: [],
+      attendanceRate: undefined,
+      engagementScore: undefined,
+      meetingEfficiency: undefined
+    };
+
+    setSelectedSummary({ summary: transformedSummary, meetingInfo });
   };
 
   const handleGenerateSummary = async (minuteId: string) => {
-    try {
-      toast({
-        title: "Generating Summary",
-        description: "AI is analyzing the meeting minutes...",
-      });
-
-      // Call your AI summarization endpoint here
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Mock delay
-
-      toast({
-        title: "Summary Generated",
-        description: "Meeting summary has been created successfully",
-      });
-
-      // Update the minute to show it has a summary
-      setMinutes(prev => 
-        prev.map(minute => 
-          minute.id === minuteId 
-            ? { ...minute, has_summary: true }
-            : minute
-        )
-      );
-    } catch (error) {
+    const minute = minutes.find(m => m.id === minuteId);
+    if (!minute) {
       toast({
         title: "Error",
-        description: "Failed to generate summary",
+        description: "Meeting minute not found",
         variant: "destructive",
       });
+      return;
+    }
+
+    // Check if OCR text is available
+    if (!minute.ocr_text || minute.ocr_text.trim() === '') {
+      toast({
+        title: "OCR Required",
+        description: "Please wait for OCR processing to complete before generating summary",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await generateSummary(minuteId);
+    } catch (error) {
+      console.error('Error generating summary:', error);
     }
   };
 
@@ -212,7 +217,13 @@ export default function EnhancedMeetingMinutes() {
     window.open(url, '_blank');
   };
 
-  const uniqueWorkbodies = [...new Set(minutes.map(m => m.workbody_name))];
+  const uniqueWorkbodies = [...new Set(minutes.map(m => m.workbody_name).filter(Boolean))];
+  const summarizedCount = minutes.filter(m => 
+    summaries.some(s => s.meeting_minutes_id === m.id)
+  ).length;
+  const ocrReadyCount = minutes.filter(m => 
+    m.ocr_status === 'completed' || m.ocr_text
+  ).length;
 
   if (selectedSummary) {
     return (
@@ -225,7 +236,7 @@ export default function EnhancedMeetingMinutes() {
           >
             ← Back to Minutes
           </Button>
-          <h1 className="text-2xl font-bold">Meeting Summary</h1>
+          <h1 className="text-2xl font-bold">AI Meeting Summary</h1>
         </div>
         
         <EnhancedSummaryDisplay 
@@ -246,7 +257,7 @@ export default function EnhancedMeetingMinutes() {
           <h1 className="text-3xl font-bold text-gray-900">Meeting Minutes</h1>
           <p className="text-gray-600 mt-1">Manage and analyze meeting documents with AI-powered insights</p>
         </div>
-        <Button className="flex items-center gap-2">
+        <Button className="flex items-center gap-2" onClick={() => window.location.href = '/upload-minutes'}>
           <Upload className="h-4 w-4" />
           Upload Minutes
         </Button>
@@ -262,24 +273,24 @@ export default function EnhancedMeetingMinutes() {
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold text-green-600">
-              {minutes.filter(m => m.has_summary).length}
-            </div>
+            <div className="text-2xl font-bold text-green-600">{summarizedCount}</div>
             <div className="text-sm text-gray-600">AI Summarized</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold text-orange-600">
-              {minutes.filter(m => m.ocr_status === 'completed').length}
-            </div>
+            <div className="text-2xl font-bold text-orange-600">{ocrReadyCount}</div>
             <div className="text-sm text-gray-600">OCR Processed</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-purple-600">
-              {new Date().getMonth() + 1}
+              {minutes.filter(m => {
+                const monthAgo = new Date();
+                monthAgo.setMonth(monthAgo.getMonth() - 1);
+                return new Date(m.date) >= monthAgo;
+              }).length}
             </div>
             <div className="text-sm text-gray-600">This Month</div>
           </CardContent>
@@ -351,15 +362,30 @@ export default function EnhancedMeetingMinutes() {
             </div>
           ) : (
             <div className="grid gap-6">
-              {filteredMinutes.map((minute) => (
-                <EnhancedMinutesCard
-                  key={minute.id}
-                  minutes={minute}
-                  onViewSummary={handleViewSummary}
-                  onGenerateSummary={handleGenerateSummary}
-                  onViewDocument={handleViewDocument}
-                />
-              ))}
+              {filteredMinutes.map((minute) => {
+                const hasSummary = summaries.some(s => s.meeting_minutes_id === minute.id);
+                const canGenerateSummary = minute.ocr_text && minute.ocr_text.trim() !== '';
+                
+                return (
+                  <EnhancedMinutesCard
+                    key={minute.id}
+                    minutes={{
+                      id: minute.id,
+                      workbody_name: minute.workbody_name || 'Unknown',
+                      date: minute.date,
+                      location: minute.location,
+                      agenda_items: minute.agenda_items,
+                      actions_agreed: minute.actions_agreed,
+                      file_url: minute.file_url,
+                      has_summary: hasSummary,
+                      ocr_status: canGenerateSummary ? 'completed' : 'pending'
+                    }}
+                    onViewSummary={handleViewSummary}
+                    onGenerateSummary={handleGenerateSummary}
+                    onViewDocument={handleViewDocument}
+                  />
+                );
+              })}
             </div>
           )}
         </TabsContent>
