@@ -50,7 +50,9 @@ export const useWorkbodyHistory = (workbodyId: string) => {
         id: item.id,
         workbody_id: item.workbody_id,
         change_type: item.change_type as 'member_added' | 'member_removed' | 'member_role_changed' | 'composition_updated',
-        change_details: typeof item.change_details === 'object' ? item.change_details : {},
+        change_details: (typeof item.change_details === 'object' && item.change_details !== null) 
+          ? item.change_details as any
+          : {},
         changed_by: item.changed_by,
         changed_at: item.changed_at,
         source_document: item.source_document,
@@ -101,7 +103,9 @@ export const useWorkbodyHistory = (workbodyId: string) => {
         id: data.id,
         workbody_id: data.workbody_id,
         change_type: data.change_type as 'member_added' | 'member_removed' | 'member_role_changed' | 'composition_updated',
-        change_details: typeof data.change_details === 'object' ? data.change_details : {},
+        change_details: (typeof data.change_details === 'object' && data.change_details !== null) 
+          ? data.change_details as any
+          : {},
         changed_by: data.changed_by,
         changed_at: data.changed_at,
         source_document: data.source_document,
