@@ -29,23 +29,23 @@ export const useWorkbodyHistory = (workbodyId: string) => {
     
     setIsLoading(true);
     try {
-      // Using direct query since the table exists but isn't in the generated types yet
       const { data, error } = await supabase
-        .rpc('get_workbody_composition_history', { workbody_id: workbodyId });
+        .from('workbody_composition_history')
+        .select('*')
+        .eq('workbody_id', workbodyId)
+        .order('changed_at', { ascending: false });
 
       if (error) {
-        // Fallback to direct query if RPC doesn't exist
-        const { data: fallbackData, error: fallbackError } = await supabase
-          .from('workbody_composition_history' as any)
-          .select('*')
-          .eq('workbody_id', workbodyId)
-          .order('changed_at', { ascending: false });
-
-        if (fallbackError) throw fallbackError;
-        setHistory(fallbackData || []);
-      } else {
-        setHistory(data || []);
+        console.error('Error fetching workbody history:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load workbody history',
+          variant: 'destructive'
+        });
+        return;
       }
+
+      setHistory(data || []);
     } catch (error) {
       console.error('Error fetching workbody history:', error);
       toast({
@@ -61,7 +61,7 @@ export const useWorkbodyHistory = (workbodyId: string) => {
   const logCompositionChange = async (change: Omit<CompositionChange, 'id' | 'changed_at'>) => {
     try {
       const { data, error } = await supabase
-        .from('workbody_composition_history' as any)
+        .from('workbody_composition_history')
         .insert({
           ...change,
           changed_at: new Date().toISOString()
@@ -69,7 +69,15 @@ export const useWorkbodyHistory = (workbodyId: string) => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error logging composition change:', error);
+        toast({
+          title: 'Warning',
+          description: 'Change was made but history logging failed',
+          variant: 'destructive'
+        });
+        return;
+      }
       
       // Add to local state
       setHistory(prev => [data, ...prev]);

@@ -5,19 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MemberHierarchy } from "@/components/workbody/MemberHierarchy";
 import { MemberManagement } from "@/components/workbody/MemberManagement";
 import { CompositionHistory } from "@/components/workbody/CompositionHistory";
-
-interface Member {
-  id: string;
-  name: string;
-  role: string;
-  email?: string;
-  phone?: string;
-  hasCV?: boolean;
-}
+import { WorkbodyMember } from "@/types/workbody";
 
 interface WorkbodyMembersProps {
   workbodyId: string;
-  members: Member[];
+  members: WorkbodyMember[];
   userRole: string;
   onMembersUpdate: () => void;
 }

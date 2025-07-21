@@ -55,12 +55,7 @@ export function Layout({ children }: LayoutProps) {
       />
       
       <div className="flex flex-1 overflow-hidden">
-        {currentUser && (
-          <Sidebar 
-            userRole={currentUser.role}
-            userWorkbodyId={currentUser.workbodyId}
-          />
-        )}
+        {currentUser && <Sidebar />}
         
         <main 
           className="flex-1 overflow-y-auto transition-all duration-300 w-full"

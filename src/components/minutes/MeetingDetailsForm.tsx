@@ -8,29 +8,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AttendanceTracker } from "./AttendanceTracker";
 import { ActionItemsTracker } from "./ActionItemsTracker";
 import { Calendar, MapPin, FileText, Users, CheckSquare, Upload, Plus, X } from "lucide-react";
-
-interface Member {
-  id: string;
-  name: string;
-  role: string;
-  email?: string;
-  phone?: string;
-  hasCV?: boolean;
-}
+import { WorkbodyMember } from "@/types/workbody";
+import { ActionItem } from "@/types/index";
 
 interface AttendanceRecord {
   memberId: string;
   memberName: string;
   attended: boolean;
   role: string;
-}
-
-interface ActionItem {
-  id: string;
-  description: string;
-  assignedTo: string;
-  dueDate: string;
-  status: 'pending' | 'in_progress' | 'completed';
 }
 
 interface MeetingDetailsFormProps {
@@ -48,7 +33,7 @@ interface MeetingDetailsFormProps {
   actionsAgreed: string[];
   setActionsAgreed: (actions: string[]) => void;
   workbodyId: string;
-  workbodyMembers: Member[];
+  workbodyMembers: WorkbodyMember[];
   onAttendanceChange: (memberId: string, attended: boolean) => void;
   onActionItemsChange: (items: ActionItem[]) => void;
   previousActions: ActionItem[];
