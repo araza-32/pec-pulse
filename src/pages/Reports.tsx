@@ -8,7 +8,6 @@ import { useWorkbodies } from "@/hooks/useWorkbodies";
 import { useToast } from "@/hooks/use-toast";
 import { useReportsHistory } from "@/hooks/useReportsHistory";
 import { ReportOptions } from "@/components/reports/ReportOptions";
-import { ReportHistory } from "@/components/reports/ReportHistory";
 import { generateCSV, downloadFile, generateReportData } from "@/utils/reportGenerators";
 
 export default function Reports() {
@@ -19,9 +18,9 @@ export default function Reports() {
   
   const { workbodies = [] } = useWorkbodies();
   const { toast } = useToast();
-  const { history, addToHistory, clearHistory, removeFromHistory } = useReportsHistory();
+  const { history, isLoading, addToHistory, clearHistory, removeFromHistory } = useReportsHistory();
   
-  const handleGenerateReport = () => {
+  const handleGenerateReport = async () => {
     if (!workbodyType || !reportType || !reportFormat) {
       toast({
         title: "Missing Information",
@@ -75,7 +74,7 @@ export default function Reports() {
     }
 
     // Add to report history
-    addToHistory({
+    await addToHistory({
       name: `${reportType}-report-${new Date().toISOString().split('T')[0]}`,
       type: reportType,
       format: reportFormat,
@@ -89,7 +88,8 @@ export default function Reports() {
         selectedWorkbody,
         reportType,
         reportFormat
-      }
+      },
+      generatedBy: 'system' // In a real app, this would be the current user
     });
     
     toast({
@@ -110,7 +110,7 @@ export default function Reports() {
     setReportType(reportItem.parameters.reportType);
     setReportFormat(reportItem.parameters.reportFormat);
     
-    // Switch to generate tab
+    // Switch to generate tab and generate report
     setTimeout(() => {
       handleGenerateReport();
     }, 100);
@@ -186,7 +186,11 @@ export default function Reports() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {history.length === 0 ? (
+              {isLoading ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>Loading report history...</p>
+                </div>
+              ) : history.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <p>No reports generated yet.</p>
                   <p className="text-sm mt-2">Generate your first report to see it here.</p>

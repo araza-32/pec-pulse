@@ -34,53 +34,40 @@ export const useReportsHistory = () => {
   const loadHistory = async () => {
     setIsLoading(true);
     try {
-      // Try to load from database first
       const { data: dbHistory, error } = await supabase
         .from('report_history')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error && error.code !== 'PGRST116') { // PGRST116 is table not found
+      if (error) {
         console.error('Error loading report history from database:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load report history',
+          variant: 'destructive'
+        });
+        return;
       }
 
-      let historyData: ReportHistoryItem[] = [];
-
-      if (dbHistory) {
-        historyData = dbHistory.map(item => ({
-          id: item.id,
-          name: item.name,
-          type: item.type,
-          format: item.format,
-          date: new Date(item.created_at),
-          workbodyType: item.workbody_type,
-          workbodyName: item.workbody_name,
-          downloadUrl: item.download_url,
-          parameters: item.parameters,
-          generatedBy: item.generated_by,
-          fileSize: item.file_size
-        }));
-      } else {
-        // Fallback to localStorage
-        const stored = localStorage.getItem('reportsHistory');
-        if (stored) {
-          try {
-            const parsed = JSON.parse(stored);
-            historyData = parsed.map((item: any) => ({
-              ...item,
-              date: new Date(item.date)
-            }));
-          } catch (error) {
-            console.error('Error parsing localStorage history:', error);
-          }
-        }
-      }
+      const historyData: ReportHistoryItem[] = dbHistory ? dbHistory.map(item => ({
+        id: item.id,
+        name: item.name,
+        type: item.type,
+        format: item.format,
+        date: new Date(item.created_at),
+        workbodyType: item.workbody_type,
+        workbodyName: item.workbody_name,
+        downloadUrl: item.download_url,
+        parameters: item.parameters,
+        generatedBy: item.generated_by,
+        fileSize: item.file_size
+      })) : [];
 
       setHistory(historyData);
     } catch (error) {
       console.error('Error loading reports history:', error);
       toast({
-        title: 'Warning',
+        title: 'Error',
         description: 'Could not load report history',
         variant: 'destructive'
       });
@@ -96,7 +83,6 @@ export const useReportsHistory = () => {
     };
     
     try {
-      // Try to save to database
       const { error } = await supabase
         .from('report_history')
         .insert({
@@ -115,26 +101,33 @@ export const useReportsHistory = () => {
 
       if (error) {
         console.error('Error saving to database:', error);
-        // Fallback to localStorage
-        const updatedHistory = [newReport, ...history];
-        localStorage.setItem('reportsHistory', JSON.stringify(updatedHistory));
-        setHistory(updatedHistory);
-      } else {
-        // Refresh from database
-        await loadHistory();
+        toast({
+          title: 'Error',
+          description: 'Failed to save report to history',
+          variant: 'destructive'
+        });
+        return;
       }
+
+      // Refresh from database
+      await loadHistory();
+      
+      toast({
+        title: 'Success',
+        description: 'Report added to history',
+      });
     } catch (error) {
       console.error('Error adding to history:', error);
-      // Fallback to localStorage
-      const updatedHistory = [newReport, ...history];
-      localStorage.setItem('reportsHistory', JSON.stringify(updatedHistory));
-      setHistory(updatedHistory);
+      toast({
+        title: 'Error',
+        description: 'Failed to add report to history',
+        variant: 'destructive'
+      });
     }
   };
 
   const clearHistory = async () => {
     try {
-      // Clear from database
       const { error } = await supabase
         .from('report_history')
         .delete()
@@ -142,24 +135,32 @@ export const useReportsHistory = () => {
 
       if (error) {
         console.error('Error clearing database history:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to clear report history',
+          variant: 'destructive'
+        });
+        return;
       }
+
+      setHistory([]);
+      
+      toast({
+        title: 'History Cleared',
+        description: 'All report history has been cleared',
+      });
     } catch (error) {
       console.error('Error clearing database history:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to clear report history',
+        variant: 'destructive'
+      });
     }
-    
-    // Clear localStorage
-    setHistory([]);
-    localStorage.removeItem('reportsHistory');
-    
-    toast({
-      title: 'History Cleared',
-      description: 'All report history has been cleared',
-    });
   };
 
   const removeFromHistory = async (id: string) => {
     try {
-      // Remove from database
       const { error } = await supabase
         .from('report_history')
         .delete()
@@ -167,20 +168,29 @@ export const useReportsHistory = () => {
 
       if (error) {
         console.error('Error removing from database:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to remove report from history',
+          variant: 'destructive'
+        });
+        return;
       }
+
+      // Remove from local state
+      setHistory(prevHistory => prevHistory.filter(item => item.id !== id));
+      
+      toast({
+        title: 'Report Removed',
+        description: 'Report has been removed from history',
+      });
     } catch (error) {
       console.error('Error removing from database:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to remove report from history',
+        variant: 'destructive'
+      });
     }
-    
-    // Remove from local state
-    const updatedHistory = history.filter(item => item.id !== id);
-    setHistory(updatedHistory);
-    localStorage.setItem('reportsHistory', JSON.stringify(updatedHistory));
-    
-    toast({
-      title: 'Report Removed',
-      description: 'Report has been removed from history',
-    });
   };
 
   return {

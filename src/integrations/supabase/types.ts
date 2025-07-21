@@ -183,6 +183,51 @@ export type Database = {
         }
         Relationships: []
       }
+      report_history: {
+        Row: {
+          created_at: string
+          download_url: string | null
+          file_size: number | null
+          format: string
+          generated_by: string
+          id: string
+          name: string
+          parameters: Json
+          type: string
+          updated_at: string
+          workbody_name: string | null
+          workbody_type: string
+        }
+        Insert: {
+          created_at?: string
+          download_url?: string | null
+          file_size?: number | null
+          format: string
+          generated_by: string
+          id?: string
+          name: string
+          parameters?: Json
+          type: string
+          updated_at?: string
+          workbody_name?: string | null
+          workbody_type: string
+        }
+        Update: {
+          created_at?: string
+          download_url?: string | null
+          file_size?: number | null
+          format?: string
+          generated_by?: string
+          id?: string
+          name?: string
+          parameters?: Json
+          type?: string
+          updated_at?: string
+          workbody_name?: string | null
+          workbody_type?: string
+        }
+        Relationships: []
+      }
       scheduled_meetings: {
         Row: {
           agenda_file_name: string | null
