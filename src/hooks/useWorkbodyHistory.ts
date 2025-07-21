@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-interface CompositionChange {
+export interface CompositionChange {
   id: string;
   workbody_id: string;
   change_type: 'member_added' | 'member_removed' | 'member_role_changed' | 'composition_updated';
@@ -15,20 +15,39 @@ interface CompositionChange {
   };
   changed_by: string;
   changed_at: string;
-  source_document?: string;
-  notes?: string;
+  source_document: string;
+  notes: string;
 }
 
 export const useWorkbodyHistory = (workbodyId: string) => {
   const [history, setHistory] = useState<CompositionChange[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  const fetchHistory = async () => {
-    if (!workbodyId) return;
+  const convertToCompositionChange = (item: any): CompositionChange => {
+    let changeDetails = {};
     
-    setIsLoading(true);
+    // Handle change_details conversion from Supabase Json type
+    if (item.change_details && typeof item.change_details === 'object') {
+      changeDetails = item.change_details;
+    }
+
+    return {
+      id: item.id,
+      workbody_id: item.workbody_id,
+      change_type: item.change_type as CompositionChange['change_type'],
+      change_details: changeDetails,
+      changed_by: item.changed_by,
+      changed_at: item.changed_at,
+      source_document: item.source_document || '',
+      notes: item.notes || ''
+    };
+  };
+
+  const fetchHistory = async () => {
     try {
+      setLoading(true);
+      
       const { data, error } = await supabase
         .from('workbody_composition_history')
         .select('*')
@@ -39,100 +58,82 @@ export const useWorkbodyHistory = (workbodyId: string) => {
         console.error('Error fetching workbody history:', error);
         toast({
           title: 'Error',
-          description: 'Failed to load workbody history',
+          description: 'Failed to fetch workbody history',
           variant: 'destructive'
         });
         return;
       }
 
-      // Transform the data to match our CompositionChange interface
-      const transformedData: CompositionChange[] = (data || []).map(item => ({
-        id: item.id,
-        workbody_id: item.workbody_id,
-        change_type: item.change_type as 'member_added' | 'member_removed' | 'member_role_changed' | 'composition_updated',
-        change_details: (typeof item.change_details === 'object' && item.change_details !== null) 
-          ? item.change_details as any
-          : {},
-        changed_by: item.changed_by,
-        changed_at: item.changed_at,
-        source_document: item.source_document,
-        notes: item.notes
-      }));
-
-      setHistory(transformedData);
+      if (data) {
+        const convertedHistory = data.map(convertToCompositionChange);
+        setHistory(convertedHistory);
+      }
     } catch (error) {
       console.error('Error fetching workbody history:', error);
       toast({
         title: 'Error',
-        description: 'Failed to load workbody history',
+        description: 'Failed to fetch workbody history',
         variant: 'destructive'
       });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const logCompositionChange = async (change: Omit<CompositionChange, 'id' | 'changed_at'>) => {
+  const addHistoryEntry = async (entry: Omit<CompositionChange, 'id' | 'changed_at'>) => {
     try {
       const { data, error } = await supabase
         .from('workbody_composition_history')
-        .insert({
-          workbody_id: change.workbody_id,
-          change_type: change.change_type,
-          change_details: change.change_details,
-          changed_by: change.changed_by,
-          source_document: change.source_document,
-          notes: change.notes,
-          changed_at: new Date().toISOString()
-        })
+        .insert([{
+          workbody_id: entry.workbody_id,
+          change_type: entry.change_type,
+          change_details: entry.change_details,
+          changed_by: entry.changed_by,
+          source_document: entry.source_document,
+          notes: entry.notes
+        }])
         .select()
         .single();
 
       if (error) {
-        console.error('Error logging composition change:', error);
+        console.error('Error adding history entry:', error);
         toast({
-          title: 'Warning',
-          description: 'Change was made but history logging failed',
+          title: 'Error',
+          description: 'Failed to add history entry',
           variant: 'destructive'
         });
         return;
       }
-      
-      // Transform and add to local state
-      const transformedData: CompositionChange = {
-        id: data.id,
-        workbody_id: data.workbody_id,
-        change_type: data.change_type as 'member_added' | 'member_removed' | 'member_role_changed' | 'composition_updated',
-        change_details: (typeof data.change_details === 'object' && data.change_details !== null) 
-          ? data.change_details as any
-          : {},
-        changed_by: data.changed_by,
-        changed_at: data.changed_at,
-        source_document: data.source_document,
-        notes: data.notes
-      };
-      
-      setHistory(prev => [transformedData, ...prev]);
-      
-      return transformedData;
+
+      if (data) {
+        const convertedEntry = convertToCompositionChange(data);
+        setHistory(prev => [convertedEntry, ...prev]);
+        
+        toast({
+          title: 'Success',
+          description: 'History entry added successfully',
+        });
+      }
     } catch (error) {
-      console.error('Error logging composition change:', error);
+      console.error('Error adding history entry:', error);
       toast({
-        title: 'Warning',
-        description: 'Change was made but history logging failed',
+        title: 'Error',
+        description: 'Failed to add history entry',
         variant: 'destructive'
       });
     }
   };
 
   useEffect(() => {
-    fetchHistory();
+    if (workbodyId) {
+      fetchHistory();
+    }
   }, [workbodyId]);
 
   return {
     history,
-    isLoading,
-    fetchHistory,
-    logCompositionChange
+    loading,
+    addHistoryEntry,
+    refetchHistory: fetchHistory
   };
 };
