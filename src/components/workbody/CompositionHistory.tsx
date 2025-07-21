@@ -13,7 +13,7 @@ interface CompositionHistoryProps {
 
 export function CompositionHistory({ workbodyId }: CompositionHistoryProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const { history, isLoading } = useWorkbodyHistory(workbodyId);
+  const { history, loading } = useWorkbodyHistory(workbodyId);
 
   const getChangeIcon = (changeType: string) => {
     switch (changeType) {
@@ -58,7 +58,7 @@ export function CompositionHistory({ workbodyId }: CompositionHistoryProps) {
     }
   };
 
-  if (isLoading) {
+  if (loading) {
     return (
       <Card>
         <CardHeader>
