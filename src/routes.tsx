@@ -130,6 +130,10 @@ export const router = createBrowserRouter([
         element: <MeetingsList />,
       },
       {
+        path: 'meetings-this-year',
+        element: <MeetingsList />,
+      },
+      {
         path: 'minutes',
         element: <MeetingMinutes />,
       },

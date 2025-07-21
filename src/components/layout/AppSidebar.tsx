@@ -260,24 +260,27 @@ export function AppSidebar({ className }: SidebarProps) {
 
   return (
     <div className={cn(
-      "app-sidebar",
+      "fixed left-0 top-0 z-40 h-screen w-72 transform bg-white border-r border-gray-200 transition-transform duration-300 ease-in-out",
       className
     )}>
-      <ScrollArea className="h-full py-4">
-        <div className="space-y-4">
-          <div className="px-3 py-2">
-            <div className="flex items-center gap-2 px-4 mb-4">
-              <div className="w-2 h-8 bg-green-600 rounded-full"></div>
-              <h2 className="text-lg font-semibold text-green-800">Navigation</h2>
-            </div>
-            <div className="space-y-1">
-              <nav className="grid gap-1">
-                {navigationItems.map(item => renderNavigationItem(item))}
-              </nav>
+      <div className="flex h-full flex-col">
+        <div className="flex items-center gap-2 px-6 py-4 border-b border-gray-200">
+          <div className="w-2 h-8 bg-green-600 rounded-full"></div>
+          <h2 className="text-xl font-bold text-green-800">PEC Portal</h2>
+        </div>
+        
+        <ScrollArea className="flex-1 py-4">
+          <div className="space-y-4">
+            <div className="px-3 py-2">
+              <div className="space-y-1">
+                <nav className="grid gap-1">
+                  {navigationItems.map(item => renderNavigationItem(item))}
+                </nav>
+              </div>
             </div>
           </div>
-        </div>
-      </ScrollArea>
+        </ScrollArea>
+      </div>
     </div>
   );
 }
