@@ -1,326 +1,192 @@
 
-import { useState, useEffect } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { useWorkbodies } from "@/hooks/useWorkbodies";
-import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
-import { AttendanceRecord, ActionItem } from "@/types";
-import { v4 as uuidv4 } from 'uuid';
-import { useAuth } from "@/contexts/AuthContext";
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useWorkbodies } from '@/hooks/useWorkbodies';
+import { useToast } from '@/hooks/use-toast';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 
 export const useMinutesUpload = () => {
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const { user } = useAuth();
   const [isUploading, setIsUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [selectedWorkbodyType, setSelectedWorkbodyType] = useState<string>("");
-  const [selectedWorkbody, setSelectedWorkbody] = useState<string>("");
-  const [meetingDate, setMeetingDate] = useState<string>("");
-  const [meetingLocation, setMeetingLocation] = useState<string>("");
-  const [meetingNumber, setMeetingNumber] = useState<string>("");
-  const [agendaItems, setAgendaItems] = useState<string>("");
-  const [actionsAgreed, setActionsAgreed] = useState<string>("");
-  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
-  const [actionItems, setActionItems] = useState<ActionItem[]>([]);
-  const [previousActions, setPreviousActions] = useState<ActionItem[]>([]);
+  const [selectedWorkbodyType, setSelectedWorkbodyType] = useState('');
+  const [selectedWorkbody, setSelectedWorkbody] = useState('');
+  const [meetingDate, setMeetingDate] = useState('');
+  const [meetingLocation, setMeetingLocation] = useState('');
+  const [meetingNumber, setMeetingNumber] = useState('');
+  const [agendaItems, setAgendaItems] = useState<string[]>(['']);
+  const [actionsAgreed, setActionsAgreed] = useState<string[]>(['']);
+  const [attendance, setAttendance] = useState<Record<string, boolean>>({});
+  const [actionItems, setActionItems] = useState<any[]>([]);
+  const [previousActions, setPreviousActions] = useState<any[]>([]);
+  
+  const { session } = useAuth();
+  const { workbodies, isLoading } = useWorkbodies();
+  const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
 
-  const userRole = user?.role || "member";
-  const userWorkbodyId = user?.workbodyId || null;
+  const userRole = session?.role || 'user';
+  const userWorkbodyId = session?.workbodyId;
 
-  const { workbodies = [], isLoading, refetch } = useWorkbodies();
+  // Set workbody from URL params
+  useEffect(() => {
+    const workbodyParam = searchParams.get('workbody');
+    if (workbodyParam) {
+      setSelectedWorkbody(workbodyParam);
+      const workbody = workbodies.find(wb => wb.id === workbodyParam);
+      if (workbody) {
+        setSelectedWorkbodyType(workbody.type);
+      }
+    }
+  }, [searchParams, workbodies]);
 
-  // Updated access control - admin and coordination can now draft minutes
-  const hasUploadAccess = userRole === 'admin' || 
-                         userRole === 'secretary' || 
-                         userRole === 'coordination' || 
-                         userRole === 'chairman';
-
-  const hasDraftAccess = userRole === 'admin' || 
-                        userRole === 'secretary' || 
-                        userRole === 'coordination';
-
+  // Fetch previous actions for the selected workbody
   useEffect(() => {
     if (selectedWorkbody) {
-      setPreviousActions([]);
-      fetchPreviousActions();
+      fetchPreviousActions(selectedWorkbody);
     }
   }, [selectedWorkbody]);
 
-  const fetchPreviousActions = async () => {
+  const fetchPreviousActions = async (workbodyId: string) => {
     try {
       const { data, error } = await supabase
         .from('meeting_minutes')
-        .select('*')
-        .eq('workbody_id', selectedWorkbody)
+        .select('actions_agreed, date')
+        .eq('workbody_id', workbodyId)
         .order('date', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .limit(5);
 
-      if (error) {
-        console.error("Error fetching previous actions:", error);
-        return;
-      }
+      if (error) throw error;
 
-      if (data && data.actions_agreed && data.actions_agreed.length > 0) {
-        const previousActionItems: ActionItem[] = data.actions_agreed.map((action: string) => ({
-          id: uuidv4(),
-          description: action,
-          action: action,
-          assignedTo: '',
-          dueDate: '',
-          status: 'pending' as const,
-          progress: 0,
-          isPrevious: true
-        }));
-        
-        setPreviousActions(previousActionItems);
-      }
+      const actions = data?.flatMap(minute => 
+        minute.actions_agreed.map((action: string) => ({
+          action,
+          date: minute.date,
+          status: 'pending' // Default status
+        }))
+      ) || [];
+
+      setPreviousActions(actions);
     } catch (error) {
-      console.error("Error fetching previous actions:", error);
+      console.error('Error fetching previous actions:', error);
     }
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+    }
+  };
+
+  const handleAttendanceChange = (memberId: string, attended: boolean) => {
+    setAttendance(prev => ({
+      ...prev,
+      [memberId]: attended
+    }));
+  };
+
+  const handleActionItemsChange = (items: any[]) => {
+    setActionItems(items);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!hasUploadAccess) {
+    if (!selectedFile || !selectedWorkbody || !meetingDate || !meetingLocation) {
       toast({
-        title: "Access Denied",
-        description: "You don't have permission to upload minutes.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    // Validation
-    if (!selectedWorkbodyType) {
-      toast({
-        title: "Select Workbody Type",
-        description: "Please select the type of workbody.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    if (!selectedWorkbody) {
-      toast({
-        title: "Select Workbody",
-        description: "Please select a workbody for the minutes upload.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    if (!meetingNumber.trim()) {
-      toast({
-        title: "Meeting Number Required",
-        description: "Please provide the meeting number.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    if (!meetingDate) {
-      toast({
-        title: "Meeting Date Required",
-        description: "Please provide the date when the meeting was held.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    if (!meetingLocation.trim()) {
-      toast({
-        title: "Meeting Location Required",
-        description: "Please provide the meeting location.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    if (!selectedFile) {
-      toast({
-        title: "Minutes File Required",
-        description: "Please upload the minutes file in PDF format.",
+        title: "Missing Information",
+        description: "Please fill in all required fields and select a file.",
         variant: "destructive"
       });
       return;
     }
 
-    // Validate file size (10MB limit)
-    if (selectedFile.size > 10 * 1024 * 1024) {
-      toast({
-        title: "File Too Large",
-        description: "Please upload a file smaller than 10MB.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    await uploadMinutes();
-  };
-
-  const uploadMinutes = async () => {
     setIsUploading(true);
 
     try {
-      console.log("Starting minutes upload process...");
+      // Upload file to Supabase Storage
+      const fileExt = selectedFile.name.split('.').pop();
+      const fileName = `${selectedWorkbody}-${meetingDate}-${Date.now()}.${fileExt}`;
+      const filePath = `meeting-minutes/${fileName}`;
 
-      // Upload file to storage
-      const fileExt = selectedFile!.name.split('.').pop();
-      const fileName = `${Date.now()}-${selectedWorkbody}-meeting-${meetingNumber}`;
-      const filePath = `minutes/${fileName}.${fileExt}`;
-      
-      console.log("Uploading file:", filePath);
-      
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('workbody-documents')
-        .upload(filePath, selectedFile!, {
-          cacheControl: '3600',
-          upsert: false
-        });
-        
-      if (uploadError) {
-        console.error("File upload error:", uploadError);
-        throw uploadError;
-      }
-      
+        .upload(filePath, selectedFile);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('workbody-documents')
         .getPublicUrl(filePath);
 
-      const agendaItemsArray = agendaItems.split('\n').filter(item => item.trim() !== '');
-      const actionsAgreedArray = actionsAgreed.split('\n').filter(item => item.trim() !== '');
-      
-      // Prepare attendance data
-      const attendanceData = attendanceRecords.map(record => ({
-        member_name: record.memberName,
-        organization: record.organization || '',
-        present: record.present,
-        attendance_status: record.attendanceStatus || 'absent'
-      }));
-
-      const minutesPayload = {
-        workbody_id: selectedWorkbody,
-        meeting_number: meetingNumber,
-        date: meetingDate,
-        location: meetingLocation,
-        agenda_items: agendaItemsArray,
-        actions_agreed: actionsAgreedArray,
-        file_url: publicUrl,
-        uploaded_at: new Date().toISOString(),
-        uploaded_by: user?.id,
-        attendance: attendanceData
-      };
-
-      console.log("Saving meeting minutes with payload:", minutesPayload);
-      
-      // Insert the meeting minutes
-      const { data: minutesData, error: minutesError } = await supabase
+      // Save meeting minutes to database
+      const { error: insertError } = await supabase
         .from('meeting_minutes')
-        .insert(minutesPayload)
-        .select('id')
-        .single();
-      
-      if (minutesError) {
-        console.error("Minutes insertion error:", minutesError);
-        throw minutesError;
-      }
-      
-      console.log("Successfully saved meeting minutes:", minutesData);
+        .insert({
+          workbody_id: selectedWorkbody,
+          date: meetingDate,
+          location: meetingLocation,
+          agenda_items: agendaItems.filter(item => item.trim() !== ''),
+          actions_agreed: actionsAgreed.filter(item => item.trim() !== ''),
+          file_url: publicUrl,
+          uploaded_by: session?.id
+        });
 
-      // Update workbody stats
-      await updateWorkbodyStats();
+      if (insertError) throw insertError;
+
+      // Update workbody statistics
+      const { data: workbodyData, error: workbodyError } = await supabase
+        .from('workbodies')
+        .select('total_meetings, meetings_this_year, actions_agreed')
+        .eq('id', selectedWorkbody)
+        .single();
+
+      if (!workbodyError && workbodyData) {
+        const currentYear = new Date().getFullYear();
+        const meetingYear = new Date(meetingDate).getFullYear();
+        const meetingsThisYearIncrement = meetingYear === currentYear ? 1 : 0;
+
+        await supabase
+          .from('workbodies')
+          .update({
+            total_meetings: workbodyData.total_meetings + 1,
+            meetings_this_year: workbodyData.meetings_this_year + meetingsThisYearIncrement,
+            actions_agreed: workbodyData.actions_agreed + actionsAgreed.filter(item => item.trim() !== '').length
+          })
+          .eq('id', selectedWorkbody);
+      }
 
       toast({
-        title: "Minutes Uploaded Successfully",
-        description: `Meeting #${meetingNumber} minutes have been uploaded and saved.`,
+        title: "Success!",
+        description: "Meeting minutes uploaded successfully.",
       });
 
-      resetForm();
-      refetch();
-      
-    } catch (error: any) {
-      console.error("Upload error:", error);
+      // Reset form
+      setSelectedFile(null);
+      setMeetingDate('');
+      setMeetingLocation('');
+      setMeetingNumber('');
+      setAgendaItems(['']);
+      setActionsAgreed(['']);
+      setAttendance({});
+      setActionItems([]);
+
+      // Navigate to minutes page
+      navigate('/minutes');
+
+    } catch (error) {
+      console.error('Error uploading minutes:', error);
       toast({
-        title: "Upload Failed",
-        description: error.message || "There was a problem uploading the minutes.",
+        title: "Error",
+        description: "Failed to upload meeting minutes. Please try again.",
         variant: "destructive"
       });
     } finally {
       setIsUploading(false);
     }
-  };
-
-  const updateWorkbodyStats = async () => {
-    const workbody = workbodies.find(wb => wb.id === selectedWorkbody);
-    if (workbody) {
-      const now = new Date();
-      const thisYear = now.getFullYear();
-      const meetingDateObj = new Date(meetingDate);
-      const isMeetingThisYear = meetingDateObj.getFullYear() === thisYear;
-      
-      const actionsAgreedArray = actionsAgreed.split('\n').filter(item => item.trim() !== '');
-      
-      const updatePayload = {
-        total_meetings: (workbody.totalMeetings || 0) + 1,
-        meetings_this_year: isMeetingThisYear ? (workbody.meetingsThisYear || 0) + 1 : (workbody.meetingsThisYear || 0),
-        actions_agreed: (workbody.actionsAgreed || 0) + actionsAgreedArray.length
-      };
-
-      console.log("Updating workbody stats:", updatePayload);
-
-      const { error: updateError } = await supabase
-        .from('workbodies')
-        .update(updatePayload)
-        .eq('id', selectedWorkbody);
-
-      if (updateError) {
-        console.error("Error updating workbody stats:", updateError);
-      }
-    }
-  };
-
-  const resetForm = () => {
-    setSelectedWorkbodyType("");
-    setSelectedWorkbody("");
-    setMeetingDate("");
-    setMeetingLocation("");
-    setMeetingNumber("");
-    setAgendaItems("");
-    setActionsAgreed("");
-    setSelectedFile(null);
-    setAttendanceRecords([]);
-    setActionItems([]);
-    setPreviousActions([]);
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      
-      // Validate file type
-      if (file.type !== 'application/pdf') {
-        toast({
-          title: "Invalid File Type",
-          description: "Please upload a PDF file only.",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      setSelectedFile(file);
-    }
-  };
-
-  const handleAttendanceChange = (records: AttendanceRecord[]) => {
-    console.log("Attendance records updated in hook:", records);
-    setAttendanceRecords(records);
-  };
-
-  const handleActionItemsChange = (items: ActionItem[]) => {
-    setActionItems(items);
   };
 
   return {
@@ -338,22 +204,16 @@ export const useMinutesUpload = () => {
     setAgendaItems,
     actionsAgreed,
     setActionsAgreed,
-    attendanceRecords,
-    setAttendanceRecords,
-    actionItems,
-    setActionItems,
-    previousActions,
     userRole,
     workbodies,
     isLoading,
     userWorkbodyId,
-    hasUploadAccess,
-    hasDraftAccess,
     handleSubmit,
     handleFileChange,
     handleAttendanceChange,
     handleActionItemsChange,
     setSelectedWorkbodyType,
-    setSelectedWorkbody
+    setSelectedWorkbody,
+    previousActions
   };
 };

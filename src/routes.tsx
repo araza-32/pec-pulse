@@ -3,6 +3,7 @@ import { createBrowserRouter, redirect } from 'react-router-dom';
 import Index from './pages/Index';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import EnhancedDashboard from './pages/EnhancedDashboard';
 import ChairmanDashboard from './pages/ChairmanDashboard';
 import ChairmanExecutiveDashboard from './pages/ChairmanExecutiveDashboard';
 import WorkbodyManagement from './pages/WorkbodyManagement';
@@ -13,9 +14,11 @@ import WorkbodiesOverview from './pages/WorkbodiesOverview';
 import MeetingCalendar from './pages/MeetingCalendar';
 import MeetingsList from './pages/MeetingsList';
 import MeetingMinutes from './pages/MeetingMinutes';
+import EnhancedMeetingMinutes from './pages/EnhancedMeetingMinutes';
 import MinutesViewer from './pages/MinutesViewer';
 import DraftMinutes from './pages/DraftMinutes';
 import UploadMinutes from './pages/UploadMinutes';
+import Documents from './pages/Documents';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import SetPassword from './pages/SetPassword';
@@ -42,6 +45,10 @@ export const router = createBrowserRouter([
       {
         path: 'dashboard',
         element: <Dashboard />,
+      },
+      {
+        path: 'enhanced-dashboard',
+        element: <EnhancedDashboard />,
       },
       {
         path: 'chairman-dashboard',
@@ -91,6 +98,10 @@ export const router = createBrowserRouter([
         element: <MeetingMinutes />,
       },
       {
+        path: 'enhanced-minutes',
+        element: <EnhancedMeetingMinutes />,
+      },
+      {
         path: 'minutes/:id',
         element: <MinutesViewer />,
       },
@@ -101,6 +112,10 @@ export const router = createBrowserRouter([
       {
         path: 'upload-minutes',
         element: <UploadMinutes />,
+      },
+      {
+        path: 'documents',
+        element: <Documents />,
       },
       {
         path: 'reports',

@@ -1,32 +1,25 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
+import { Download, Trash2, RefreshCw } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
 import { useWorkbodies } from "@/hooks/useWorkbodies";
 import { useToast } from "@/hooks/use-toast";
+import { useReportsHistory } from "@/hooks/useReportsHistory";
 import { ReportOptions } from "@/components/reports/ReportOptions";
 import { ReportHistory } from "@/components/reports/ReportHistory";
 import { generateCSV, downloadFile, generateReportData } from "@/utils/reportGenerators";
 
 export default function Reports() {
   const [workbodyType, setWorkbodyType] = useState("");
-  const [selectedWorkbody, setSelectedWorkbody] = useState(""); // This is fine since we check it later
+  const [selectedWorkbody, setSelectedWorkbody] = useState("");
   const [reportType, setReportType] = useState("");
   const [reportFormat, setReportFormat] = useState("");
-  const [reportHistory, setReportHistory] = useState<Array<{
-    id: string;
-    name: string;
-    type: string;
-    format: string;
-    date: Date;
-    workbodyType: string;
-    workbodyName?: string;
-  }>>([]);
   
   const { workbodies = [] } = useWorkbodies();
   const { toast } = useToast();
+  const { history, addToHistory, clearHistory, removeFromHistory } = useReportsHistory();
   
   const handleGenerateReport = () => {
     if (!workbodyType || !reportType || !reportFormat) {
@@ -82,8 +75,7 @@ export default function Reports() {
     }
 
     // Add to report history
-    const newReport = {
-      id: crypto.randomUUID(),
+    addToHistory({
       name: `${reportType}-report-${new Date().toISOString().split('T')[0]}`,
       type: reportType,
       format: reportFormat,
@@ -91,14 +83,18 @@ export default function Reports() {
       workbodyType,
       workbodyName: selectedWorkbody && selectedWorkbody !== "all-workbodies" 
         ? workbodies.find(wb => wb.id === selectedWorkbody)?.name 
-        : undefined
-    };
-    
-    setReportHistory(prev => [newReport, ...prev]);
+        : undefined,
+      parameters: {
+        workbodyType,
+        selectedWorkbody,
+        reportType,
+        reportFormat
+      }
+    });
     
     toast({
       title: "Report Generated",
-      description: `Report has been downloaded as ${newReport.name}.${reportFormat}`,
+      description: `Report has been downloaded as ${filename}.${reportFormat}`,
     });
   };
 
@@ -106,6 +102,18 @@ export default function Reports() {
     setSelectedWorkbody("");
     setReportType("");
     setReportFormat("");
+  };
+
+  const handleRegenerate = (reportItem: any) => {
+    setWorkbodyType(reportItem.parameters.workbodyType);
+    setSelectedWorkbody(reportItem.parameters.selectedWorkbody);
+    setReportType(reportItem.parameters.reportType);
+    setReportFormat(reportItem.parameters.reportFormat);
+    
+    // Switch to generate tab
+    setTimeout(() => {
+      handleGenerateReport();
+    }, 100);
   };
 
   return (
@@ -120,7 +128,9 @@ export default function Reports() {
       <Tabs defaultValue="generate" className="space-y-4">
         <TabsList>
           <TabsTrigger value="generate">Generate Reports</TabsTrigger>
-          <TabsTrigger value="history">Report History</TabsTrigger>
+          <TabsTrigger value="history">
+            Report History ({history.length})
+          </TabsTrigger>
         </TabsList>
         
         <TabsContent value="generate" className="space-y-4">
@@ -158,10 +168,71 @@ export default function Reports() {
         </TabsContent>
         
         <TabsContent value="history" className="space-y-4">
-          <ReportHistory 
-            reports={reportHistory}
-            onRedownload={handleGenerateReport}
-          />
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>Report History</span>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={clearHistory}
+                    disabled={history.length === 0}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Clear All
+                  </Button>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {history.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>No reports generated yet.</p>
+                  <p className="text-sm mt-2">Generate your first report to see it here.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {history.map((report) => (
+                    <div
+                      key={report.id}
+                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-medium">{report.name}</h3>
+                          <span className="text-sm text-gray-500">
+                            ({report.format.toUpperCase()})
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {report.workbodyName || `All ${report.workbodyType}s`} • 
+                          Generated on {report.date.toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleRegenerate(report)}
+                        >
+                          <RefreshCw className="h-4 w-4 mr-2" />
+                          Regenerate
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => removeFromHistory(report.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

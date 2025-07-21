@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MemberHierarchy } from "@/components/workbody/MemberHierarchy";
 import { MemberManagement } from "@/components/workbody/MemberManagement";
+import { CompositionHistory } from "@/components/workbody/CompositionHistory";
 
 interface Member {
   id: string;
@@ -23,6 +24,7 @@ interface WorkbodyMembersProps {
 
 export function WorkbodyMembers({ workbodyId, members, userRole, onMembersUpdate }: WorkbodyMembersProps) {
   const [showManagement, setShowManagement] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   
   const canManageMembers = userRole === 'admin' || userRole === 'coordination';
 
@@ -37,16 +39,22 @@ export function WorkbodyMembers({ workbodyId, members, userRole, onMembersUpdate
                 {members.length} member{members.length !== 1 ? 's' : ''} • Organized by seniority
               </p>
             </div>
-            {canManageMembers && (
-              <div className="flex gap-2">
+            <div className="flex gap-2">
+              <Button 
+                variant="outline"
+                onClick={() => setShowHistory(!showHistory)}
+              >
+                {showHistory ? 'Hide History' : 'View History'}
+              </Button>
+              {canManageMembers && (
                 <Button 
                   variant="outline"
                   onClick={() => setShowManagement(!showManagement)}
                 >
                   {showManagement ? 'Hide Management' : 'Manage Members'}
                 </Button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -56,6 +64,10 @@ export function WorkbodyMembers({ workbodyId, members, userRole, onMembersUpdate
           />
         </CardContent>
       </Card>
+
+      {showHistory && (
+        <CompositionHistory workbodyId={workbodyId} />
+      )}
 
       {canManageMembers && showManagement && (
         <Card>
