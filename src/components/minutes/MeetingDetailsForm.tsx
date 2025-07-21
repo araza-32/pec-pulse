@@ -1,34 +1,57 @@
 
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { FileUp, Check, Calendar, MapPin, FileText } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AttendanceTracker } from "./AttendanceTracker";
 import { ActionItemsTracker } from "./ActionItemsTracker";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AttendanceRecord, ActionItem, WorkbodyMember } from "@/types";
-import { useState } from "react";
+import { Calendar, MapPin, FileText, Users, CheckSquare, Upload, Plus, X } from "lucide-react";
+
+interface Member {
+  id: string;
+  name: string;
+  role: string;
+  email?: string;
+  phone?: string;
+  hasCV?: boolean;
+}
+
+interface AttendanceRecord {
+  memberId: string;
+  memberName: string;
+  attended: boolean;
+  role: string;
+}
+
+interface ActionItem {
+  id: string;
+  description: string;
+  assignedTo: string;
+  dueDate: string;
+  status: 'pending' | 'in_progress' | 'completed';
+}
 
 interface MeetingDetailsFormProps {
   selectedFile: File | null;
   isUploading: boolean;
-  onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onFileChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   meetingDate: string;
-  setMeetingDate: (value: string) => void;
+  setMeetingDate: (date: string) => void;
   meetingLocation: string;
-  setMeetingLocation: (value: string) => void;
-  agendaItems: string;
-  setAgendaItems: (value: string) => void;
-  actionsAgreed: string;
-  setActionsAgreed: (value: string) => void;
-  workbodyId: string | null;
-  workbodyMembers: WorkbodyMember[];
-  onAttendanceChange?: (attendance: AttendanceRecord[]) => void;
-  onActionItemsChange?: (actionItems: ActionItem[]) => void;
-  previousActions?: ActionItem[];
+  setMeetingLocation: (location: string) => void;
   meetingNumber: string;
-  setMeetingNumber: (value: string) => void;
+  setMeetingNumber: (number: string) => void;
+  agendaItems: string[];
+  setAgendaItems: (items: string[]) => void;
+  actionsAgreed: string[];
+  setActionsAgreed: (actions: string[]) => void;
+  workbodyId: string;
+  workbodyMembers: Member[];
+  onAttendanceChange: (memberId: string, attended: boolean) => void;
+  onActionItemsChange: (items: ActionItem[]) => void;
+  previousActions: ActionItem[];
 }
 
 export function MeetingDetailsForm({
@@ -39,248 +62,245 @@ export function MeetingDetailsForm({
   setMeetingDate,
   meetingLocation,
   setMeetingLocation,
+  meetingNumber,
+  setMeetingNumber,
   agendaItems,
   setAgendaItems,
   actionsAgreed,
   setActionsAgreed,
   workbodyId,
   workbodyMembers,
-  onAttendanceChange = () => {},
-  onActionItemsChange = () => {},
-  previousActions = [],
-  meetingNumber,
-  setMeetingNumber,
+  onAttendanceChange,
+  onActionItemsChange,
+  previousActions
 }: MeetingDetailsFormProps) {
-  
-  const [activeTab, setActiveTab] = useState<string>("basic");
-  const agendaItemsArray = agendaItems.split('\n').filter(item => item.trim() !== '');
-  const actionsAgreedArray = actionsAgreed.split('\n').filter(item => item.trim() !== '');
-  
-  const handleDateChange = (date: string) => {
-    setMeetingDate(date);
-    if (date && meetingLocation && meetingNumber) {
-      setTimeout(() => setActiveTab("attendance"), 500);
-    }
-  };
-  
-  const handleLocationChange = (location: string) => {
-    setMeetingLocation(location);
-    if (meetingDate && location && meetingNumber) {
-      setTimeout(() => setActiveTab("attendance"), 500);
-    }
+  const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
+  const [actionItems, setActionItems] = useState<ActionItem[]>([]);
+
+  const addAgendaItem = () => {
+    setAgendaItems([...agendaItems, ""]);
   };
 
-  const handleMeetingNumberChange = (number: string) => {
-    setMeetingNumber(number);
-    if (meetingDate && meetingLocation && number) {
-      setTimeout(() => setActiveTab("attendance"), 500);
-    }
+  const removeAgendaItem = (index: number) => {
+    setAgendaItems(agendaItems.filter((_, i) => i !== index));
   };
 
-  const handleAttendanceChange = (attendance: AttendanceRecord[]) => {
-    console.log("Attendance change in form:", attendance);
-    onAttendanceChange(attendance);
+  const updateAgendaItem = (index: number, value: string) => {
+    const updated = [...agendaItems];
+    updated[index] = value;
+    setAgendaItems(updated);
   };
-  
+
+  const addActionItem = () => {
+    setActionsAgreed([...actionsAgreed, ""]);
+  };
+
+  const removeActionItem = (index: number) => {
+    setActionsAgreed(actionsAgreed.filter((_, i) => i !== index));
+  };
+
+  const updateActionItem = (index: number, value: string) => {
+    const updated = [...actionsAgreed];
+    updated[index] = value;
+    setActionsAgreed(updated);
+  };
+
+  const handleAttendanceUpdate = (records: AttendanceRecord[]) => {
+    setAttendance(records);
+  };
+
+  const handleActionItemsUpdate = (items: ActionItem[]) => {
+    setActionItems(items);
+    onActionItemsChange(items);
+  };
+
   return (
-    <Tabs value={activeTab} onValueChange={setActiveTab}>
-      <TabsList className="grid grid-cols-3 mb-6">
-        <TabsTrigger value="basic" className="flex items-center gap-2">
-          <FileText className="h-4 w-4" />
-          Basic Details
-        </TabsTrigger>
-        <TabsTrigger value="attendance" className="flex items-center gap-2">
-          <Check className="h-4 w-4" />
-          Attendance
-        </TabsTrigger>
-        <TabsTrigger value="actions" className="flex items-center gap-2">
-          <Calendar className="h-4 w-4" />
-          Action Items
-        </TabsTrigger>
-      </TabsList>
-      
-      <TabsContent value="basic" className="space-y-6">
-        <div className="grid gap-6">
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="space-y-2">
-              <Label htmlFor="meeting-number" className="flex items-center gap-2">
-                <span className="text-red-500">*</span>
-                Meeting Number
-              </Label>
-              <Input 
-                id="meeting-number" 
-                placeholder="e.g., 01/2024, 15th Meeting" 
-                required 
-                value={meetingNumber}
-                onChange={(e) => handleMeetingNumberChange(e.target.value)}
+    <div className="space-y-6">
+      {/* Basic Meeting Details */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
+            Meeting Details
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="meetingDate">Meeting Date *</Label>
+              <Input
+                id="meetingDate"
+                type="date"
+                value={meetingDate}
+                onChange={(e) => setMeetingDate(e.target.value)}
+                required
               />
-              <p className="text-xs text-muted-foreground">
-                Enter the sequential meeting number for this workbody
+            </div>
+            <div>
+              <Label htmlFor="meetingNumber">Meeting Number</Label>
+              <Input
+                id="meetingNumber"
+                type="text"
+                value={meetingNumber}
+                onChange={(e) => setMeetingNumber(e.target.value)}
+                placeholder="e.g., 2024-01"
+              />
+            </div>
+          </div>
+          <div>
+            <Label htmlFor="meetingLocation">Meeting Location *</Label>
+            <Input
+              id="meetingLocation"
+              type="text"
+              value={meetingLocation}
+              onChange={(e) => setMeetingLocation(e.target.value)}
+              placeholder="e.g., PEC Conference Room"
+              required
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Agenda Items */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            Agenda Items
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {agendaItems.map((item, index) => (
+            <div key={index} className="flex gap-2">
+              <Input
+                value={item}
+                onChange={(e) => updateAgendaItem(index, e.target.value)}
+                placeholder={`Agenda item ${index + 1}`}
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => removeAgendaItem(index)}
+                disabled={agendaItems.length <= 1}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+          <Button
+            type="button"
+            variant="outline"
+            onClick={addAgendaItem}
+            className="w-full"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Agenda Item
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Attendance Tracking */}
+      {workbodyMembers.length > 0 && (
+        <AttendanceTracker
+          members={workbodyMembers}
+          onAttendanceChange={handleAttendanceUpdate}
+        />
+      )}
+
+      {/* Action Items */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CheckSquare className="h-5 w-5" />
+            Actions Agreed
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {actionsAgreed.map((action, index) => (
+            <div key={index} className="flex gap-2">
+              <Textarea
+                value={action}
+                onChange={(e) => updateActionItem(index, e.target.value)}
+                placeholder={`Action item ${index + 1}`}
+                className="flex-1"
+                rows={2}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => removeActionItem(index)}
+                disabled={actionsAgreed.length <= 1}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+          <Button
+            type="button"
+            variant="outline"
+            onClick={addActionItem}
+            className="w-full"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Action Item
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Action Items Tracker */}
+      <ActionItemsTracker
+        workbodyId={workbodyId}
+        onActionItemsChange={handleActionItemsUpdate}
+        previousActions={previousActions}
+      />
+
+      {/* File Upload */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Upload className="h-5 w-5" />
+            Upload Minutes Document
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="minutesFile">Minutes File *</Label>
+              <Input
+                id="minutesFile"
+                type="file"
+                onChange={onFileChange}
+                accept=".pdf,.doc,.docx"
+                required
+              />
+              <p className="text-sm text-gray-600 mt-1">
+                Supported formats: PDF, DOC, DOCX
               </p>
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="meeting-date" className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                <span className="text-red-500">*</span>
-                Meeting Date
-              </Label>
-              <Input 
-                id="meeting-date" 
-                type="date" 
-                required 
-                value={meetingDate}
-                onChange={(e) => handleDateChange(e.target.value)}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="meeting-location" className="flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
-                <span className="text-red-500">*</span>
-                Meeting Location
-              </Label>
-              <Input 
-                id="meeting-location" 
-                placeholder="e.g., PEC Headquarters, Islamabad" 
-                required
-                value={meetingLocation}
-                onChange={(e) => handleLocationChange(e.target.value)} 
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="agenda-items">
-              <span className="text-red-500">*</span>
-              Agenda Items (one per line)
-            </Label>
-            <Textarea
-              id="agenda-items"
-              placeholder="List the agenda items discussed in the meeting"
-              rows={4}
-              required
-              value={agendaItems}
-              onChange={(e) => setAgendaItems(e.target.value)}
-            />
-            <p className="text-xs text-muted-foreground">
-              Enter each agenda item on a new line
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="actions-agreed">
-              <span className="text-red-500">*</span>
-              Actions Agreed (one per line)
-            </Label>
-            <Textarea
-              id="actions-agreed"
-              placeholder="List the actions agreed upon in the meeting"
-              rows={4}
-              required
-              value={actionsAgreed}
-              onChange={(e) => setActionsAgreed(e.target.value)}
-            />
-            <p className="text-xs text-muted-foreground">
-              Enter each action item on a new line
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="minutes-file">
-              <span className="text-red-500">*</span>
-              Upload Minutes PDF
-            </Label>
-            <div className="mt-1 flex items-center gap-4">
-              <Input
-                id="minutes-file"
-                type="file"
-                accept=".pdf"
-                onChange={onFileChange}
-                required
-                className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
-              />
-              {selectedFile && (
-                <div className="flex items-center rounded-md bg-green-50 border border-green-200 p-2 text-sm">
-                  <Check className="mr-2 h-4 w-4 text-green-600" />
-                  <span className="text-green-800">{selectedFile.name}</span>
-                </div>
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Upload the official minutes in PDF format (max 10MB)
-            </p>
-          </div>
-          
-          <div className="flex justify-end">
-            <Button
-              type="button"
-              onClick={() => setActiveTab("attendance")}
-              className="bg-green-600 hover:bg-green-700"
-              disabled={!meetingDate || !meetingLocation || !meetingNumber}
-            >
-              Next: Mark Attendance
-            </Button>
-          </div>
-        </div>
-      </TabsContent>
-      
-      <TabsContent value="attendance">
-        <AttendanceTracker
-          workbodyId={workbodyId}
-          members={workbodyMembers}
-          onChange={handleAttendanceChange}
-        />
-        
-        <div className="flex justify-between mt-6">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setActiveTab("basic")}
-          >
-            Back to Basic Details
-          </Button>
-          <Button
-            type="button"
-            onClick={() => setActiveTab("actions")}
-            className="bg-green-600 hover:bg-green-700"
-          >
-            Next: Record Actions
-          </Button>
-        </div>
-      </TabsContent>
-      
-      <TabsContent value="actions">
-        <ActionItemsTracker
-          actionsAgreed={actionsAgreedArray}
-          onChange={onActionItemsChange}
-          previousActions={previousActions}
-        />
-        
-        <div className="flex justify-between mt-6">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setActiveTab("attendance")}
-          >
-            Back to Attendance
-          </Button>
-          <Button
-            type="submit"
-            className="bg-green-600 hover:bg-green-700"
-            disabled={isUploading || !selectedFile}
-          >
-            {isUploading ? (
-              "Uploading..."
-            ) : (
-              <>
-                <FileUp className="mr-2 h-4 w-4" />
-                Upload Minutes
-              </>
+            {selectedFile && (
+              <div className="p-3 bg-green-50 rounded-lg">
+                <p className="text-sm text-green-700">
+                  Selected file: {selectedFile.name}
+                </p>
+              </div>
             )}
-          </Button>
-        </div>
-      </TabsContent>
-    </Tabs>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Submit Button */}
+      <div className="flex justify-end">
+        <Button
+          type="submit"
+          disabled={isUploading || !selectedFile}
+          className="bg-green-600 hover:bg-green-700"
+        >
+          {isUploading ? "Uploading..." : "Upload Minutes"}
+        </Button>
+      </div>
+    </div>
   );
 }

@@ -317,6 +317,50 @@ export type Database = {
         }
         Relationships: []
       }
+      workbody_composition_history: {
+        Row: {
+          change_details: Json
+          change_type: string
+          changed_at: string
+          changed_by: string
+          created_at: string
+          id: string
+          notes: string | null
+          source_document: string | null
+          workbody_id: string | null
+        }
+        Insert: {
+          change_details?: Json
+          change_type: string
+          changed_at?: string
+          changed_by: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          source_document?: string | null
+          workbody_id?: string | null
+        }
+        Update: {
+          change_details?: Json
+          change_type?: string
+          changed_at?: string
+          changed_by?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          source_document?: string | null
+          workbody_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workbody_composition_history_workbody_id_fkey"
+            columns: ["workbody_id"]
+            isOneToOne: false
+            referencedRelation: "workbodies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workbody_documents: {
         Row: {
           document_type: string

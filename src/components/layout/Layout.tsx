@@ -57,8 +57,6 @@ export function Layout({ children }: LayoutProps) {
       <div className="flex flex-1 overflow-hidden">
         {currentUser && (
           <Sidebar 
-            isOpen={sidebarOpen} 
-            onClose={closeSidebar} 
             userRole={currentUser.role}
             userWorkbodyId={currentUser.workbodyId}
           />
