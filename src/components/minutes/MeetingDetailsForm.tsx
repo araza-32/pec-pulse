@@ -9,14 +9,7 @@ import { AttendanceTracker } from "./AttendanceTracker";
 import { ActionItemsTracker } from "./ActionItemsTracker";
 import { Calendar, MapPin, FileText, Users, CheckSquare, Upload, Plus, X } from "lucide-react";
 import { WorkbodyMember } from "@/types/workbody";
-import { ActionItem } from "@/types/index";
-
-interface AttendanceRecord {
-  memberId: string;
-  memberName: string;
-  attended: boolean;
-  role: string;
-}
+import { ActionItem, AttendanceRecord } from "@/types/index";
 
 interface MeetingDetailsFormProps {
   selectedFile: File | null;
@@ -59,7 +52,6 @@ export function MeetingDetailsForm({
   onActionItemsChange,
   previousActions
 }: MeetingDetailsFormProps) {
-  const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
   const [actionItems, setActionItems] = useState<ActionItem[]>([]);
 
   const addAgendaItem = () => {
@@ -91,7 +83,12 @@ export function MeetingDetailsForm({
   };
 
   const handleAttendanceUpdate = (records: AttendanceRecord[]) => {
-    setAttendance(records);
+    // Convert AttendanceRecord[] to the expected format for onAttendanceChange
+    records.forEach(record => {
+      if (record.memberId) {
+        onAttendanceChange(record.memberId, record.present);
+      }
+    });
   };
 
   const handleActionItemsUpdate = (items: ActionItem[]) => {
@@ -189,8 +186,9 @@ export function MeetingDetailsForm({
       {/* Attendance Tracking */}
       {workbodyMembers.length > 0 && (
         <AttendanceTracker
+          workbodyId={workbodyId}
           members={workbodyMembers}
-          onAttendanceChange={handleAttendanceUpdate}
+          onChange={handleAttendanceUpdate}
         />
       )}
 
@@ -237,8 +235,8 @@ export function MeetingDetailsForm({
 
       {/* Action Items Tracker */}
       <ActionItemsTracker
-        workbodyId={workbodyId}
-        onActionItemsChange={handleActionItemsUpdate}
+        actionsAgreed={actionsAgreed}
+        onChange={handleActionItemsUpdate}
         previousActions={previousActions}
       />
 

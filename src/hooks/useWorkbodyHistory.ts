@@ -45,7 +45,19 @@ export const useWorkbodyHistory = (workbodyId: string) => {
         return;
       }
 
-      setHistory(data || []);
+      // Transform the data to match our CompositionChange interface
+      const transformedData: CompositionChange[] = (data || []).map(item => ({
+        id: item.id,
+        workbody_id: item.workbody_id,
+        change_type: item.change_type as 'member_added' | 'member_removed' | 'member_role_changed' | 'composition_updated',
+        change_details: typeof item.change_details === 'object' ? item.change_details : {},
+        changed_by: item.changed_by,
+        changed_at: item.changed_at,
+        source_document: item.source_document,
+        notes: item.notes
+      }));
+
+      setHistory(transformedData);
     } catch (error) {
       console.error('Error fetching workbody history:', error);
       toast({
@@ -63,7 +75,12 @@ export const useWorkbodyHistory = (workbodyId: string) => {
       const { data, error } = await supabase
         .from('workbody_composition_history')
         .insert({
-          ...change,
+          workbody_id: change.workbody_id,
+          change_type: change.change_type,
+          change_details: change.change_details,
+          changed_by: change.changed_by,
+          source_document: change.source_document,
+          notes: change.notes,
           changed_at: new Date().toISOString()
         })
         .select()
@@ -79,10 +96,21 @@ export const useWorkbodyHistory = (workbodyId: string) => {
         return;
       }
       
-      // Add to local state
-      setHistory(prev => [data, ...prev]);
+      // Transform and add to local state
+      const transformedData: CompositionChange = {
+        id: data.id,
+        workbody_id: data.workbody_id,
+        change_type: data.change_type as 'member_added' | 'member_removed' | 'member_role_changed' | 'composition_updated',
+        change_details: typeof data.change_details === 'object' ? data.change_details : {},
+        changed_by: data.changed_by,
+        changed_at: data.changed_at,
+        source_document: data.source_document,
+        notes: data.notes
+      };
       
-      return data;
+      setHistory(prev => [transformedData, ...prev]);
+      
+      return transformedData;
     } catch (error) {
       console.error('Error logging composition change:', error);
       toast({
