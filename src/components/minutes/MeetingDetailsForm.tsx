@@ -83,7 +83,7 @@ export function MeetingDetailsForm({
   };
 
   const handleAttendanceUpdate = (records: AttendanceRecord[]) => {
-    // Convert AttendanceRecord[] to the expected format for onAttendanceChange
+    // Convert AttendanceRecord[] to individual calls to onAttendanceChange
     records.forEach(record => {
       if (record.memberId) {
         onAttendanceChange(record.memberId, record.present);

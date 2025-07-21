@@ -12,12 +12,7 @@ interface ReportHistoryItem {
   workbodyType: string;
   workbodyName?: string;
   downloadUrl?: string;
-  parameters: {
-    workbodyType: string;
-    selectedWorkbody: string;
-    reportType: string;
-    reportFormat: string;
-  };
+  parameters: any; // Changed from specific object to any to handle Json type
   generatedBy: string;
   fileSize?: number;
 }
@@ -56,11 +51,11 @@ export const useReportsHistory = () => {
         format: item.format,
         date: new Date(item.created_at),
         workbodyType: item.workbody_type,
-        workbodyName: item.workbody_name,
-        downloadUrl: item.download_url,
-        parameters: item.parameters,
+        workbodyName: item.workbody_name || undefined,
+        downloadUrl: item.download_url || undefined,
+        parameters: item.parameters || {}, // Handle Json type properly
         generatedBy: item.generated_by,
-        fileSize: item.file_size
+        fileSize: item.file_size || undefined
       })) : [];
 
       setHistory(historyData);

@@ -52,12 +52,24 @@ export const useMinutesUpload = () => {
     }
   };
 
-  const handleFileChange = (file: File | null) => {
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] || null;
     setSelectedFile(file);
   };
 
-  const handleAttendanceChange = (attendance: any[]) => {
-    setAttendanceData(attendance);
+  const handleAttendanceChange = (memberId: string, attended: boolean) => {
+    setAttendanceData(prev => {
+      const existing = prev.find(item => item.memberId === memberId);
+      if (existing) {
+        return prev.map(item => 
+          item.memberId === memberId 
+            ? { ...item, attended }
+            : item
+        );
+      } else {
+        return [...prev, { memberId, attended }];
+      }
+    });
   };
 
   const handleActionItemsChange = (items: any[]) => {
