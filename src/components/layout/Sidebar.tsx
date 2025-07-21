@@ -19,13 +19,12 @@ import {
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
-  { name: 'Enhanced Dashboard', href: '/enhanced-dashboard', icon: Brain },
   { 
     name: 'Workbodies', 
     icon: Users, 
     children: [
       { name: 'Overview', href: '/workbodies' },
-      { name: 'Management', href: '/workbodies/management' },
+      { name: 'Management', href: '/workbodies/manage' },
       { name: 'List View', href: '/workbodies/list' }
     ]
   },
@@ -35,17 +34,17 @@ const navigation = [
     icon: FileText, 
     children: [
       { name: 'View Minutes', href: '/minutes' },
-      { name: 'Enhanced Minutes', href: '/enhanced-minutes' },
       { name: 'Upload Minutes', href: '/upload-minutes' }
     ]
   },
+  { name: 'Documents', href: '/documents', icon: Brain },
   { name: 'Reports', href: '/reports', icon: BarChart3 },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
 const adminNavigation = [
-  { name: 'Chairman Dashboard', href: '/chairman-dashboard', icon: Crown },
-  { name: 'Chairman Executive', href: '/chairman-executive', icon: Crown },
+  { name: 'Chairman Dashboard', href: '/chairman', icon: Crown },
+  { name: 'Chairman Executive', href: '/chairman/executive', icon: Crown },
 ];
 
 export function Sidebar() {

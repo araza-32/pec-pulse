@@ -1,7 +1,7 @@
 
 import { Workbody, MeetingMinutes, User, ScheduledMeeting } from '../types';
 
-// Empty arrays - all data now comes from Supabase
+// All data now comes from Supabase - no mock data
 export const users: User[] = [];
 export const workbodies: Workbody[] = [];
 export const meetingMinutes: MeetingMinutes[] = [];

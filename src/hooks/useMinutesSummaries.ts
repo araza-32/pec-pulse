@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -70,24 +71,8 @@ export const useMinutesSummaries = () => {
   const generateSummary = async (minutesId: string) => {
     setIsGenerating(true);
     try {
-      // First, get the file content using our new edge function
-      const { data: contentData, error: contentError } = await supabase.functions.invoke('get-minutes-content', {
-        body: { meetingId: minutesId },
-      });
-
-      if (contentError) {
-        console.error('Error fetching minutes content:', contentError);
-        throw new Error('Failed to retrieve minutes content');
-      }
-
-      // Then generate summary with the content
       const { data, error } = await supabase.functions.invoke('summarize-minutes', {
-        body: { 
-          minutesId,
-          content: contentData.content,
-          agendaItems: contentData.agendaItems,
-          actionsAgreed: contentData.actionsAgreed
-        },
+        body: { minutesId },
       });
 
       if (error) throw error;
@@ -187,7 +172,7 @@ export const useMinutesSummaries = () => {
   };
 
   const getTopicTrends = () => {
-    const topicCounts: Record<string, number> = {};
+    const topicCounts: { [key: string]: number } = {};
     
     summaries.forEach(summary => {
       summary.topics.forEach(topic => {
@@ -196,9 +181,8 @@ export const useMinutesSummaries = () => {
     });
 
     return Object.entries(topicCounts)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 10)
-      .map(([topic, count]) => ({ topic, count }));
+      .map(([topic, count]) => ({ topic, count }))
+      .sort((a, b) => b.count - a.count);
   };
 
   useEffect(() => {
@@ -210,11 +194,11 @@ export const useMinutesSummaries = () => {
     isLoading,
     isGenerating,
     isAnalyzing,
-    fetchSummaries,
     generateSummary,
     analyzePerformance,
     getOverdueActions,
     getUpcomingDeadlines,
     getTopicTrends,
+    fetchSummaries,
   };
 };

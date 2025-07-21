@@ -1,90 +1,63 @@
 
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { useWorkbodies } from '@/hooks/useWorkbodies';
-import { useToast } from '@/hooks/use-toast';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useWorkbodies } from "@/hooks/useWorkbodies";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 export const useMinutesUpload = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [selectedWorkbodyType, setSelectedWorkbodyType] = useState('');
-  const [selectedWorkbody, setSelectedWorkbody] = useState('');
-  const [meetingDate, setMeetingDate] = useState('');
-  const [meetingLocation, setMeetingLocation] = useState('');
-  const [meetingNumber, setMeetingNumber] = useState('');
-  const [agendaItems, setAgendaItems] = useState<string[]>(['']);
-  const [actionsAgreed, setActionsAgreed] = useState<string[]>(['']);
-  const [attendance, setAttendance] = useState<Record<string, boolean>>({});
-  const [actionItems, setActionItems] = useState<any[]>([]);
+  const [selectedWorkbodyType, setSelectedWorkbodyType] = useState("");
+  const [selectedWorkbody, setSelectedWorkbody] = useState("");
+  const [meetingDate, setMeetingDate] = useState("");
+  const [meetingLocation, setMeetingLocation] = useState("");
+  const [meetingNumber, setMeetingNumber] = useState("");
+  const [agendaItems, setAgendaItems] = useState<string[]>([]);
+  const [actionsAgreed, setActionsAgreed] = useState<string[]>([]);
   const [previousActions, setPreviousActions] = useState<any[]>([]);
+  const [attendanceData, setAttendanceData] = useState<any[]>([]);
+  const [actionItems, setActionItems] = useState<any[]>([]);
   
-  const { session } = useAuth();
-  const { workbodies, isLoading } = useWorkbodies();
   const { toast } = useToast();
-  const [searchParams] = useSearchParams();
+  const { workbodies, isLoading } = useWorkbodies();
+  const { session } = useAuth();
   const navigate = useNavigate();
-
+  
   const userRole = session?.role || 'user';
   const userWorkbodyId = session?.workbodyId;
 
-  // Set workbody from URL params
-  useEffect(() => {
-    const workbodyParam = searchParams.get('workbody');
-    if (workbodyParam) {
-      setSelectedWorkbody(workbodyParam);
-      const workbody = workbodies.find(wb => wb.id === workbodyParam);
-      if (workbody) {
-        setSelectedWorkbodyType(workbody.type);
-      }
-    }
-  }, [searchParams, workbodies]);
-
-  // Fetch previous actions for the selected workbody
   useEffect(() => {
     if (selectedWorkbody) {
-      fetchPreviousActions(selectedWorkbody);
+      fetchPreviousActions();
     }
   }, [selectedWorkbody]);
 
-  const fetchPreviousActions = async (workbodyId: string) => {
+  const fetchPreviousActions = async () => {
     try {
       const { data, error } = await supabase
         .from('meeting_minutes')
-        .select('actions_agreed, date')
-        .eq('workbody_id', workbodyId)
+        .select('actions_agreed')
+        .eq('workbody_id', selectedWorkbody)
         .order('date', { ascending: false })
         .limit(5);
 
       if (error) throw error;
-
-      const actions = data?.flatMap(minute => 
-        minute.actions_agreed.map((action: string) => ({
-          action,
-          date: minute.date,
-          status: 'pending' // Default status
-        }))
-      ) || [];
-
+      
+      const actions = data?.flatMap(item => item.actions_agreed || []) || [];
       setPreviousActions(actions);
     } catch (error) {
       console.error('Error fetching previous actions:', error);
     }
   };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-    }
+  const handleFileChange = (file: File | null) => {
+    setSelectedFile(file);
   };
 
-  const handleAttendanceChange = (memberId: string, attended: boolean) => {
-    setAttendance(prev => ({
-      ...prev,
-      [memberId]: attended
-    }));
+  const handleAttendanceChange = (attendance: any[]) => {
+    setAttendanceData(attendance);
   };
 
   const handleActionItemsChange = (items: any[]) => {
@@ -96,46 +69,67 @@ export const useMinutesUpload = () => {
     
     if (!selectedFile || !selectedWorkbody || !meetingDate || !meetingLocation) {
       toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields and select a file.",
+        title: "Error",
+        description: "Please fill in all required fields and select a file",
         variant: "destructive"
       });
       return;
     }
 
     setIsUploading(true);
-
+    
     try {
+      console.log('Starting file upload process...');
+      
+      // Generate unique filename
+      const timestamp = new Date().getTime();
+      const fileExtension = selectedFile.name.split('.').pop();
+      const fileName = `minutes_${selectedWorkbody}_${timestamp}.${fileExtension}`;
+      
       // Upload file to Supabase Storage
-      const fileExt = selectedFile.name.split('.').pop();
-      const fileName = `${selectedWorkbody}-${meetingDate}-${Date.now()}.${fileExt}`;
-      const filePath = `meeting-minutes/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from('workbody-documents')
-        .upload(filePath, selectedFile);
+        .upload(fileName, selectedFile, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw uploadError;
+      }
+
+      console.log('File uploaded successfully:', uploadData);
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('workbody-documents')
-        .getPublicUrl(filePath);
+        .getPublicUrl(fileName);
 
-      // Save meeting minutes to database
-      const { error: insertError } = await supabase
+      console.log('Public URL:', publicUrl);
+
+      // Save to database
+      const { data: minutesData, error: dbError } = await supabase
         .from('meeting_minutes')
         .insert({
           workbody_id: selectedWorkbody,
           date: meetingDate,
           location: meetingLocation,
-          agenda_items: agendaItems.filter(item => item.trim() !== ''),
-          actions_agreed: actionsAgreed.filter(item => item.trim() !== ''),
           file_url: publicUrl,
-          uploaded_by: session?.id
-        });
+          agenda_items: agendaItems,
+          actions_agreed: actionsAgreed,
+          uploaded_by: session?.id,
+          ocr_status: 'pending'
+        })
+        .select()
+        .single();
 
-      if (insertError) throw insertError;
+      if (dbError) {
+        console.error('Database error:', dbError);
+        throw dbError;
+      }
+
+      console.log('Minutes saved to database:', minutesData);
 
       // Update workbody statistics
       const { data: workbodyData, error: workbodyError } = await supabase
@@ -145,40 +139,60 @@ export const useMinutesUpload = () => {
         .single();
 
       if (!workbodyError && workbodyData) {
-        const currentYear = new Date().getFullYear();
-        const meetingYear = new Date(meetingDate).getFullYear();
-        const meetingsThisYearIncrement = meetingYear === currentYear ? 1 : 0;
-
         await supabase
           .from('workbodies')
           .update({
             total_meetings: workbodyData.total_meetings + 1,
-            meetings_this_year: workbodyData.meetings_this_year + meetingsThisYearIncrement,
-            actions_agreed: workbodyData.actions_agreed + actionsAgreed.filter(item => item.trim() !== '').length
+            meetings_this_year: workbodyData.meetings_this_year + 1,
+            actions_agreed: workbodyData.actions_agreed + actionsAgreed.length
           })
           .eq('id', selectedWorkbody);
       }
 
+      // Log composition history if attendance data indicates changes
+      if (attendanceData.length > 0) {
+        const changes = attendanceData.filter(member => member.isNewMember || member.roleChanged);
+        
+        for (const change of changes) {
+          await supabase
+            .from('workbody_composition_history')
+            .insert({
+              workbody_id: selectedWorkbody,
+              change_type: change.isNewMember ? 'member_added' : 'member_role_changed',
+              change_details: {
+                member_name: change.name,
+                member_role: change.role,
+                previous_role: change.previousRole || null
+              },
+              changed_by: session?.email || 'System',
+              source_document: fileName,
+              notes: `Updated during minutes upload for meeting on ${meetingDate}`
+            });
+        }
+      }
+
       toast({
-        title: "Success!",
-        description: "Meeting minutes uploaded successfully.",
+        title: "Success",
+        description: "Meeting minutes uploaded successfully"
       });
 
       // Reset form
       setSelectedFile(null);
-      setMeetingDate('');
-      setMeetingLocation('');
-      setMeetingNumber('');
-      setAgendaItems(['']);
-      setActionsAgreed(['']);
-      setAttendance({});
+      setSelectedWorkbody("");
+      setSelectedWorkbodyType("");
+      setMeetingDate("");
+      setMeetingLocation("");
+      setMeetingNumber("");
+      setAgendaItems([]);
+      setActionsAgreed([]);
+      setAttendanceData([]);
       setActionItems([]);
 
-      // Navigate to minutes page
+      // Navigate to minutes list
       navigate('/minutes');
 
     } catch (error) {
-      console.error('Error uploading minutes:', error);
+      console.error('Upload error:', error);
       toast({
         title: "Error",
         description: "Failed to upload meeting minutes. Please try again.",

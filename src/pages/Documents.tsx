@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Brain, FileText, Upload, TrendingUp, AlertCircle, Clock } from 'lucide-react';
+import { Brain, FileText, Upload, TrendingUp, AlertCircle, Clock, RefreshCw } from 'lucide-react';
 import { useMinutesSummaries } from '@/hooks/useMinutesSummaries';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -30,6 +30,7 @@ export default function Documents() {
     summaries, 
     isGenerating, 
     generateSummary, 
+    fetchSummaries,
     getOverdueActions, 
     getUpcomingDeadlines, 
     getTopicTrends 
@@ -37,6 +38,7 @@ export default function Documents() {
 
   useEffect(() => {
     fetchDocuments();
+    fetchSummaries();
   }, []);
 
   const fetchDocuments = async () => {
@@ -49,7 +51,8 @@ export default function Documents() {
           date,
           file_url,
           workbody_id,
-          workbodies(name)
+          location,
+          workbodies!inner(name)
         `)
         .order('date', { ascending: false });
 
@@ -102,18 +105,24 @@ export default function Documents() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">AI Document Overview</h1>
           <p className="text-muted-foreground">
-            AI-powered document analysis and insights
+            AI-powered document analysis and insights from meeting minutes
           </p>
         </div>
-        <Button onClick={() => window.location.href = '/upload-minutes'}>
-          <Upload className="mr-2 h-4 w-4" />
-          Upload Document
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={fetchSummaries}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Refresh
+          </Button>
+          <Button onClick={() => window.location.href = '/upload-minutes'}>
+            <Upload className="mr-2 h-4 w-4" />
+            Upload Minutes
+          </Button>
+        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="overview">AI Overview</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
           <TabsTrigger value="insights">AI Insights</TabsTrigger>
           <TabsTrigger value="actions">Action Items</TabsTrigger>
@@ -176,12 +185,17 @@ export default function Documents() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {topicTrends.slice(0, 10).map((trend) => (
-                  <div key={trend.topic} className="flex items-center justify-between">
+                {topicTrends.slice(0, 10).map((trend, index) => (
+                  <div key={index} className="flex items-center justify-between">
                     <span className="text-sm">{trend.topic}</span>
                     <Badge variant="secondary">{trend.count}</Badge>
                   </div>
                 ))}
+                {topicTrends.length === 0 && (
+                  <p className="text-sm text-gray-500 text-center py-4">
+                    No topic trends available. Generate some summaries to see insights.
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -276,6 +290,11 @@ export default function Documents() {
                       </p>
                     </div>
                   ))}
+                  {summaries.length === 0 && (
+                    <p className="text-sm text-gray-500 text-center py-4">
+                      No summaries available. Generate some to see insights.
+                    </p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -294,6 +313,11 @@ export default function Documents() {
                       </Badge>
                     </div>
                   ))}
+                  {summaries.length === 0 && (
+                    <p className="text-sm text-gray-500 text-center py-4">
+                      No sentiment data available.
+                    </p>
+                  )}
                 </div>
               </CardContent>
             </Card>
