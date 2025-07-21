@@ -13,30 +13,37 @@ interface EngagementTrendsChartProps {
   isLoading: boolean;
 }
 
-// These would come from the backend in a real app
-const generateMockData = (workbodyId: string, seed: number = 1) => {
+// Generate real data from workbody performance metrics
+const generateWorkbodyData = (workbody: Workbody) => {
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
   
-  // Generate slightly different data for each workbody based on the seed
-  return months.map((month, i) => ({
+  return months.map((month) => ({
     month,
-    attendance: Math.min(100, 75 + (i * 2 * seed) % 20),
-    participation: Math.min(100, 60 + (i * 3 * seed) % 25),
-    completion: Math.min(100, 70 + (i * 2.5 * seed) % 22),
+    attendance: 75, // TODO: Add attendance_rate field to Workbody interface
+    participation: 60, // TODO: Add participation metrics to Workbody interface  
+    completion: ((workbody.actionsCompleted || 0) / Math.max(workbody.actionsAgreed || 1, 1)) * 100,
   }));
 };
 
 export function EngagementTrendsChart({ workbodies, isLoading }: EngagementTrendsChartProps) {
   const [selectedWorkbodyId, setSelectedWorkbodyId] = useState<string>("all");
   
-  // Generate mock data for "All Workbodies" and individual workbodies
-  const allWorkbodiesData = useMemo(() => generateMockData("all", 1), []);
+  // Generate data for "All Workbodies" and individual workbodies
+  const allWorkbodiesData = useMemo(() => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+    return months.map((month) => ({
+      month,
+      attendance: 75, // Average attendance - TODO: Calculate from real data
+      participation: 60, // Average participation - TODO: Calculate from real data
+      completion: workbodies.reduce((sum, wb) => sum + (((wb.actionsCompleted || 0) / Math.max(wb.actionsAgreed || 1, 1)) * 100), 0) / Math.max(workbodies.length, 1),
+    }));
+  }, [workbodies]);
   
-  // Generate unique data for each workbody
+  // Generate real data for each workbody
   const workbodyEngagementData = useMemo(() => {
     const data: Record<string, any[]> = {};
-    workbodies.forEach((wb, index) => {
-      data[wb.id] = generateMockData(wb.id, index + 2);
+    workbodies.forEach((wb) => {
+      data[wb.id] = generateWorkbodyData(wb);
     });
     return data;
   }, [workbodies]);

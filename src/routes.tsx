@@ -67,6 +67,42 @@ export const router = createBrowserRouter([
         element: <WorkbodyManagement />,
       },
       {
+        path: 'workbodies/governing-body',
+        element: <WorkbodiesOverview />,
+      },
+      {
+        path: 'workbodies/management-committee', 
+        element: <WorkbodiesOverview />,
+      },
+      {
+        path: 'workbodies/ec',
+        element: <WorkbodiesOverview />,
+      },
+      {
+        path: 'workbodies/esc',
+        element: <WorkbodiesOverview />,
+      },
+      {
+        path: 'workbodies/eab',
+        element: <WorkbodiesOverview />,
+      },
+      {
+        path: 'workbodies/epdc',
+        element: <WorkbodiesOverview />,
+      },
+      {
+        path: 'workbodies/tf-cpd-policy',
+        element: <WorkbodiesOverview />,
+      },
+      {
+        path: 'workbodies/abc',
+        element: <WorkbodiesOverview />,
+      },
+      {
+        path: 'workbodies/qec',
+        element: <WorkbodiesOverview />,
+      },
+      {
         path: 'workbodies/list',
         element: <WorkbodyList />,
       },
@@ -95,6 +131,10 @@ export const router = createBrowserRouter([
       },
       {
         path: 'minutes',
+        element: <MeetingMinutes />,
+      },
+      {
+        path: 'meetings',
         element: <MeetingMinutes />,
       },
       {

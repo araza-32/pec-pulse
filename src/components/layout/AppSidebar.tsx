@@ -126,12 +126,12 @@ const navigationItems: NavigationItem[] = [
   },
   {
     title: "Meeting Minutes",
-    href: "/meetings/list",
+    href: "/minutes",
     icon: FileText,
     children: [
       {
         title: "View Minutes",
-        href: "/meetings/list",
+        href: "/minutes",
         icon: FileText
       },
       {

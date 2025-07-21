@@ -1,11 +1,7 @@
 
 import { Workbody, MeetingMinutes, User, ScheduledMeeting } from '../types';
 
-// All data now comes from Supabase - no mock data
-export const users: User[] = [];
-export const workbodies: Workbody[] = [];
-export const meetingMinutes: MeetingMinutes[] = [];
-export const initialMeetings: ScheduledMeeting[] = [];
+// All data now comes from Supabase - no mock data needed
 
 // Helper function to get workbody statistics from real data
 export const getWorkbodyStats = (workbodies: Workbody[]) => {
