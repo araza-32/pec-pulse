@@ -43,19 +43,28 @@ export default function MeetingCalendar() {
       });
 
       if (error) {
+        console.error('Supabase function error:', error);
         throw error;
       }
 
+      console.log('Google Calendar API response:', data);
       setGoogleEvents(data.events || []);
       toast({
         title: "Success",
         description: `Loaded ${data.events?.length || 0} events from Google Calendar`,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch Google Calendar events:', error);
+      
+      // More detailed error handling
+      let errorMessage = "Failed to fetch Google Calendar events";
+      if (error?.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Error",
-        description: "Failed to fetch Google Calendar events",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
