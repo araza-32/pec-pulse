@@ -12,8 +12,9 @@ import { useWorkbodies } from '@/hooks/useWorkbodies';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { ScheduledMeeting } from '@/types';
-import { Plus, Calendar, ExternalLink, RefreshCw } from 'lucide-react';
+import { Plus, Calendar, ExternalLink, RefreshCw, LogIn } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { gapi } from 'gapi-script';
 
 export default function MeetingCalendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -22,6 +23,8 @@ export default function MeetingCalendar() {
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [googleEvents, setGoogleEvents] = useState<any[]>([]);
   const [isLoadingGoogleEvents, setIsLoadingGoogleEvents] = useState(false);
+  const [isGoogleSignedIn, setIsGoogleSignedIn] = useState(false);
+  const [googleAccessToken, setGoogleAccessToken] = useState<string | null>(null);
   
   const { meetings, isLoading: meetingsLoading, addMeeting, updateMeeting, deleteMeeting } = useScheduledMeetings();
   const { workbodies, isLoading: workbodiesLoading } = useWorkbodies();
@@ -30,15 +33,103 @@ export default function MeetingCalendar() {
 
   const canAddMeeting = user?.role === 'admin' || user?.role === 'coordination' || user?.role === 'secretary';
 
-  // Fetch Google Calendar events
-  const fetchGoogleCalendarEvents = async () => {
+  // Initialize Google API
+  useEffect(() => {
+    const initializeGapi = async () => {
+      try {
+        await gapi.load('auth2', async () => {
+          // You need to replace this with your actual OAuth Client ID from Google Cloud Console
+          const CLIENT_ID = 'YOUR_OAUTH_CLIENT_ID_HERE'; // Replace with your real OAuth Client ID
+          
+          await gapi.auth2.init({
+            client_id: CLIENT_ID,
+            scope: 'https://www.googleapis.com/auth/calendar.readonly',
+          });
+
+          const authInstance = gapi.auth2.getAuthInstance();
+          setIsGoogleSignedIn(authInstance.isSignedIn.get());
+          
+          if (authInstance.isSignedIn.get()) {
+            const user = authInstance.currentUser.get();
+            const accessToken = user.getAuthResponse().access_token;
+            setGoogleAccessToken(accessToken);
+          }
+        });
+      } catch (error) {
+        console.error('Error initializing Google API:', error);
+      }
+    };
+
+    initializeGapi();
+  }, []);
+
+  // Google Sign In
+  const handleGoogleSignIn = async () => {
+    try {
+      const authInstance = gapi.auth2.getAuthInstance();
+      const user = await authInstance.signIn();
+      const accessToken = user.getAuthResponse().access_token;
+      
+      setIsGoogleSignedIn(true);
+      setGoogleAccessToken(accessToken);
+      
+      toast({
+        title: "Success",
+        description: "Successfully signed in to Google Calendar",
+      });
+      
+      // Auto-fetch events after signing in
+      fetchGoogleCalendarEvents(accessToken);
+    } catch (error) {
+      console.error('Google Sign In error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to sign in to Google Calendar",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Google Sign Out
+  const handleGoogleSignOut = async () => {
+    try {
+      const authInstance = gapi.auth2.getAuthInstance();
+      await authInstance.signOut();
+      
+      setIsGoogleSignedIn(false);
+      setGoogleAccessToken(null);
+      setGoogleEvents([]);
+      
+      toast({
+        title: "Success",
+        description: "Successfully signed out from Google Calendar",
+      });
+    } catch (error) {
+      console.error('Google Sign Out error:', error);
+    }
+  };
+
+  // Fetch Google Calendar events with OAuth
+  const fetchGoogleCalendarEvents = async (accessToken?: string) => {
+    const token = accessToken || googleAccessToken;
+    
+    if (!token) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to Google Calendar first",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoadingGoogleEvents(true);
     try {
       const { data, error } = await supabase.functions.invoke('fetch-google-calendar', {
         body: {
           calendarId: 'c_811e0f51fc4619f9685f4ebd0d487e9ae57f4e7d35e77e5ed8e68c44bb76b11a@group.calendar.google.com',
           timeMin: new Date().toISOString(),
-          timeMax: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() // 1 year from now
+          timeMax: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), // 1 year from now
+          accessToken: token
         }
       });
 
@@ -56,7 +147,6 @@ export default function MeetingCalendar() {
     } catch (error: any) {
       console.error('Failed to fetch Google Calendar events:', error);
       
-      // More detailed error handling
       let errorMessage = "Failed to fetch Google Calendar events";
       if (error?.message) {
         errorMessage = error.message;
@@ -72,10 +162,12 @@ export default function MeetingCalendar() {
     }
   };
 
-  // Load Google Calendar events on component mount
+  // Load Google Calendar events on component mount if already signed in
   useEffect(() => {
-    fetchGoogleCalendarEvents();
-  }, []);
+    if (isGoogleSignedIn && googleAccessToken) {
+      fetchGoogleCalendarEvents();
+    }
+  }, [isGoogleSignedIn, googleAccessToken]);
 
   const handleDateClick = (date: Date) => {
     console.log('Date clicked:', date);
@@ -159,15 +251,35 @@ export default function MeetingCalendar() {
             <p className="text-muted-foreground">View your complete Google Calendar with all scheduled meetings</p>
           </div>
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={fetchGoogleCalendarEvents}
-              disabled={isLoadingGoogleEvents}
-              className="flex items-center gap-2"
-            >
-              <RefreshCw className={`h-4 w-4 ${isLoadingGoogleEvents ? 'animate-spin' : ''}`} />
-              Refresh Events
-            </Button>
+            {!isGoogleSignedIn ? (
+              <Button
+                variant="outline"
+                onClick={handleGoogleSignIn}
+                className="flex items-center gap-2"
+              >
+                <LogIn className="h-4 w-4" />
+                Sign in to Google Calendar
+              </Button>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => fetchGoogleCalendarEvents()}
+                  disabled={isLoadingGoogleEvents}
+                  className="flex items-center gap-2"
+                >
+                  <RefreshCw className={`h-4 w-4 ${isLoadingGoogleEvents ? 'animate-spin' : ''}`} />
+                  Refresh Events
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleGoogleSignOut}
+                  className="flex items-center gap-2"
+                >
+                  Sign Out
+                </Button>
+              </>
+            )}
             <Button
               variant="outline"
               onClick={() => window.open("https://calendar.google.com/calendar/u/0/r/month/2025/7/1", "_blank")}

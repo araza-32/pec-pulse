@@ -31,12 +31,13 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { calendarId, timeMin, timeMax } = await req.json();
+    const { calendarId, timeMin, timeMax, accessToken } = await req.json();
     
-    console.log('Request received with:', { calendarId, timeMin, timeMax });
+    console.log('Request received with:', { calendarId, timeMin, timeMax, hasAccessToken: !!accessToken });
     
-    // Use the provided API key - in production, this should be stored as a secret
-    const API_KEY = "AIzaSyCGc51JFpQ5yXnVaT4xGMbNUfG9lPtyNJY";
+    if (!accessToken) {
+      throw new Error('Access token is required for OAuth authentication');
+    }
     
     // Set default time range if not provided
     const defaultTimeMin = timeMin || new Date().toISOString();
@@ -45,7 +46,6 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('Using time range:', { defaultTimeMin, defaultTimeMax });
     
     const url = new URL('https://www.googleapis.com/calendar/v3/calendars/' + encodeURIComponent(calendarId) + '/events');
-    url.searchParams.set('key', API_KEY);
     url.searchParams.set('timeMin', defaultTimeMin);
     url.searchParams.set('timeMax', defaultTimeMax);
     url.searchParams.set('singleEvents', 'true');
@@ -54,22 +54,15 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Fetching calendar events from:', url.toString());
 
-    // First, let's try to get calendar metadata to check if the calendar exists
-    const calendarMetadataUrl = new URL('https://www.googleapis.com/calendar/v3/calendars/' + encodeURIComponent(calendarId));
-    calendarMetadataUrl.searchParams.set('key', API_KEY);
-    
-    console.log('First checking calendar metadata:', calendarMetadataUrl.toString());
-    
-    const metadataResponse = await fetch(calendarMetadataUrl.toString());
-    console.log('Calendar metadata response status:', metadataResponse.status);
-    
-    if (!metadataResponse.ok) {
-      const metadataError = await metadataResponse.text();
-      console.error('Calendar metadata error:', metadataResponse.status, metadataError);
-      throw new Error(`Calendar not accessible: ${metadataResponse.status} - Calendar may be private or doesn't exist. Error: ${metadataError}`);
-    }
+    // Use OAuth Bearer token instead of API key
+    const headers = {
+      'Authorization': `Bearer ${accessToken}`,
+      'Accept': 'application/json',
+    };
 
-    const response = await fetch(url.toString());
+    console.log('Using OAuth Bearer token authentication');
+
+    const response = await fetch(url.toString(), { headers });
     
     console.log('Response status:', response.status);
     console.log('Response headers:', Object.fromEntries(response.headers.entries()));
