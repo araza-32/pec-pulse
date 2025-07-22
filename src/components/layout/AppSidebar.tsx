@@ -112,7 +112,7 @@ const navigationItems: NavigationItem[] = [
     title: "Chairman Dashboard",
     href: "/chairman-dashboard",
     icon: Crown,
-    roles: ["chairman", "admin"]
+    roles: ["chairman", "admin", "coordination"]
   },
   {
     title: "Workbodies",
