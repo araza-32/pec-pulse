@@ -226,9 +226,47 @@ export default function ChairmanDashboard() {
         </TabsContent>
 
         <TabsContent value="analysis" className="space-y-6">
-          <div className="text-center py-12 text-muted-foreground">
-            <h3 className="text-lg font-semibold mb-2">Advanced Analysis</h3>
-            <p>Detailed analysis and reporting tools will be available here.</p>
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold">Meeting Calendar</h2>
+                <p className="text-muted-foreground">View your Google Calendar with all scheduled meetings</p>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => window.open("https://calendar.google.com/calendar/u/0/r/month/2025/7/1", "_blank")}
+              >
+                Open in New Tab
+              </Button>
+            </div>
+            
+            <Card>
+              <CardContent className="p-0">
+                <div className="relative w-full h-[600px]">
+                  <iframe
+                    src="https://calendar.google.com/calendar/embed?src=YOUR_CALENDAR_ID&ctz=YOUR_TIMEZONE"
+                    className="w-full h-full border-0 rounded-lg"
+                    title="Google Calendar"
+                    style={{ minHeight: '600px' }}
+                  />
+                  
+                  {/* Fallback content if iframe is blocked */}
+                  <div className="absolute inset-0 flex items-center justify-center bg-muted/50 rounded-lg backdrop-blur-sm opacity-0 hover:opacity-100 transition-opacity">
+                    <div className="text-center p-6 bg-background/90 rounded-lg border shadow-lg">
+                      <h3 className="font-semibold mb-2">Calendar View</h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        If the calendar doesn't load, it may be due to browser security restrictions.
+                      </p>
+                      <Button
+                        onClick={() => window.open("https://calendar.google.com/calendar/u/0/r/month/2025/7/1", "_blank")}
+                      >
+                        View Full Calendar
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
       </Tabs>
