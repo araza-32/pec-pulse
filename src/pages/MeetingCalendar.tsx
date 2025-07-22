@@ -195,7 +195,7 @@ export default function MeetingCalendar() {
             <CardContent className="p-0">
               <div className="relative w-full h-[700px]">
                 <iframe
-                  src="https://calendar.google.com/calendar/embed?height=700&wkst=1&bgcolor=%23ffffff&ctz=UTC&showTitle=0&showNav=1&showDate=1&showPrint=0&showTabs=1&showCalendars=0&mode=MONTH"
+                  src="https://calendar.google.com/calendar/embed?src=c_811e0f51fc4619f9685f4ebd0d487e9ae57f4e7d35e77e5ed8e68c44bb76b11a%40group.calendar.google.com&ctz=Asia%2FKarachi"
                   className="w-full h-full border-0 rounded-lg"
                   title="Google Calendar"
                   style={{ minHeight: '700px' }}
