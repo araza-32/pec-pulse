@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CalendarHeader } from '@/components/calendar/CalendarHeader';
 import { CalendarGrid } from '@/components/calendar/CalendarGrid';
 import { AddMeetingDialog } from '@/components/calendar/AddMeetingDialog';
@@ -10,7 +11,7 @@ import { useScheduledMeetings } from '@/hooks/useScheduledMeetings';
 import { useWorkbodies } from '@/hooks/useWorkbodies';
 import { useAuth } from '@/contexts/AuthContext';
 import { ScheduledMeeting } from '@/types';
-import { Plus } from 'lucide-react';
+import { Plus, Calendar, ExternalLink } from 'lucide-react';
 
 export default function MeetingCalendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -99,66 +100,129 @@ export default function MeetingCalendar() {
         )}
       </div>
 
-      <Card>
-        <CardHeader className="pb-4">
-          <CardTitle className="text-left">
-            <CalendarHeader 
-              currentDate={currentDate} 
-              onDateChange={setCurrentDate} 
-            />
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <CalendarGrid
-            currentDate={currentDate}
-            meetings={meetings}
-            onDateClick={handleDateClick}
-            onMeetingClick={handleMeetingClick}
-          />
-        </CardContent>
-      </Card>
+      <Tabs defaultValue="local" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="local" className="flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            PEC Calendar
+          </TabsTrigger>
+          <TabsTrigger value="google" className="flex items-center gap-2">
+            <ExternalLink className="h-4 w-4" />
+            Google Calendar
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Summary Cards */}
-      <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-pec-green">
-                {meetings.length}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                Total Meetings
-              </div>
+        <TabsContent value="local" className="space-y-6">
+          <Card>
+            <CardHeader className="pb-4">
+              <CardTitle className="text-left">
+                <CalendarHeader 
+                  currentDate={currentDate} 
+                  onDateChange={setCurrentDate} 
+                />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <CalendarGrid
+                currentDate={currentDate}
+                meetings={meetings}
+                onDateClick={handleDateClick}
+                onMeetingClick={handleMeetingClick}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-pec-green">
+                    {meetings.length}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    Total Meetings
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-600">
+                    {meetings.filter(m => new Date(m.date) >= new Date()).length}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    Upcoming Meetings
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-orange-600">
+                    {new Set(meetings.map(m => m.workbodyId)).size}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    Active Workbodies
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="google" className="space-y-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="text-xl font-semibold">Google Calendar Integration</h2>
+              <p className="text-muted-foreground">View your complete Google Calendar with all scheduled meetings</p>
             </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">
-                {meetings.filter(m => new Date(m.date) >= new Date()).length}
+            <Button
+              variant="outline"
+              onClick={() => window.open("https://calendar.google.com/calendar/u/0/r/month/2025/7/1", "_blank")}
+              className="flex items-center gap-2"
+            >
+              <ExternalLink className="h-4 w-4" />
+              Open in New Tab
+            </Button>
+          </div>
+          
+          <Card>
+            <CardContent className="p-0">
+              <div className="relative w-full h-[700px]">
+                <iframe
+                  src="https://calendar.google.com/calendar/embed?height=700&wkst=1&bgcolor=%23ffffff&ctz=UTC&showTitle=0&showNav=1&showDate=1&showPrint=0&showTabs=1&showCalendars=0&mode=MONTH"
+                  className="w-full h-full border-0 rounded-lg"
+                  title="Google Calendar"
+                  style={{ minHeight: '700px' }}
+                />
+                
+                {/* Fallback content if iframe is blocked */}
+                <div className="absolute inset-4 flex items-center justify-center bg-muted/80 rounded-lg backdrop-blur-sm opacity-0 hover:opacity-100 transition-opacity pointer-events-none">
+                  <div className="text-center p-6 bg-background/95 rounded-lg border shadow-lg pointer-events-auto">
+                    <Calendar className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                    <h3 className="font-semibold mb-2">Calendar Integration</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      If the calendar doesn't load, it may be due to browser security restrictions.
+                    </p>
+                    <Button
+                      onClick={() => window.open("https://calendar.google.com/calendar/u/0/r/month/2025/7/1", "_blank")}
+                      className="flex items-center gap-2"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                      View Full Calendar
+                    </Button>
+                  </div>
+                </div>
               </div>
-              <div className="text-sm text-muted-foreground">
-                Upcoming Meetings
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600">
-                {new Set(meetings.map(m => m.workbodyId)).size}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                Active Workbodies
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* Dialogs */}
       <AddMeetingDialog
