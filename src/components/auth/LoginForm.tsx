@@ -48,8 +48,8 @@ export function LoginForm({ onLogin }: LoginFormProps) {
           <CardHeader className="space-y-4 text-center pb-6">
             <div className="flex justify-center">
               <img 
-                src="/lovable-uploads/26062e6e-e7ef-45d9-895b-79ac41a220c7.png" 
-                alt="PEC Logo"
+                src="/lovable-uploads/519b599a-cf05-4e27-9f31-3621cb09ed31.png" 
+                alt="PEC PULSE Logo"
                 className="h-24 w-auto mb-2" 
               />
             </div>
