@@ -2,8 +2,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import App from './App.tsx';
+import { RouterProvider } from 'react-router-dom';
+import { router } from './routes.tsx';
 import { AuthProvider } from './contexts/AuthContext';
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
 import './index.css';
 
 // Create a new QueryClient
@@ -17,7 +21,11 @@ if (root) {
     <React.StrictMode>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <App />
+          <TooltipProvider>
+            <RouterProvider router={router} />
+            <Toaster />
+            <Sonner />
+          </TooltipProvider>
         </AuthProvider>
       </QueryClientProvider>
     </React.StrictMode>,
