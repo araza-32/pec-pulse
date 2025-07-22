@@ -64,8 +64,10 @@ export default function MeetingCalendar() {
         
         const authInstance = await gapi.auth2.init({
           client_id: CLIENT_ID,
-          scope: 'https://www.googleapis.com/auth/calendar.readonly',
-          plugin_name: 'meetings_calendar'
+          scope: 'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
+          plugin_name: 'meetings_calendar',
+          hosted_domain: '', // Allow any domain
+          ux_mode: 'popup' // Force popup mode
         });
 
         console.log('Google Auth2 initialized successfully');
