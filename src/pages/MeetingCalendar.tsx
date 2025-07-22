@@ -16,6 +16,13 @@ import { Plus, Calendar, ExternalLink, RefreshCw, LogIn } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { gapi } from 'gapi-script';
 
+// Extend the Window interface to include gapi
+declare global {
+  interface Window {
+    gapi: any;
+  }
+}
+
 export default function MeetingCalendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -37,38 +44,83 @@ export default function MeetingCalendar() {
   useEffect(() => {
     const initializeGapi = async () => {
       try {
-        await gapi.load('auth2', async () => {
-          // Your actual OAuth Client ID from Google Cloud Console
-          const CLIENT_ID = '692956619147-a5ucnj572a81cgau9fhdn8hm8sj7bu9p.apps.googleusercontent.com';
-          
-          await gapi.auth2.init({
-            client_id: CLIENT_ID,
-            scope: 'https://www.googleapis.com/auth/calendar.readonly',
+        console.log('Starting Google API initialization...');
+        
+        // Load the auth2 library
+        await new Promise<void>((resolve, reject) => {
+          gapi.load('auth2', () => {
+            console.log('Google Auth2 library loaded');
+            resolve();
+          }, (error: any) => {
+            console.error('Failed to load Google Auth2 library:', error);
+            reject(error);
           });
-
-          const authInstance = gapi.auth2.getAuthInstance();
-          setIsGoogleSignedIn(authInstance.isSignedIn.get());
-          
-          if (authInstance.isSignedIn.get()) {
-            const user = authInstance.currentUser.get();
-            const accessToken = user.getAuthResponse().access_token;
-            setGoogleAccessToken(accessToken);
-          }
         });
+
+        // Your actual OAuth Client ID from Google Cloud Console
+        const CLIENT_ID = '692956619147-a5ucnj572a81cgau9fhdn8hm8sj7bu9p.apps.googleusercontent.com';
+        
+        console.log('Initializing Google Auth2 with client ID:', CLIENT_ID);
+        
+        const authInstance = await gapi.auth2.init({
+          client_id: CLIENT_ID,
+          scope: 'https://www.googleapis.com/auth/calendar.readonly',
+          plugin_name: 'meetings_calendar'
+        });
+
+        console.log('Google Auth2 initialized successfully');
+        
+        const isSignedIn = authInstance.isSignedIn.get();
+        console.log('Current sign-in status:', isSignedIn);
+        
+        setIsGoogleSignedIn(isSignedIn);
+        
+        if (isSignedIn) {
+          const user = authInstance.currentUser.get();
+          const accessToken = user.getAuthResponse().access_token;
+          console.log('Found existing access token');
+          setGoogleAccessToken(accessToken);
+        }
       } catch (error) {
         console.error('Error initializing Google API:', error);
+        toast({
+          title: "Google Calendar Error",
+          description: "Failed to initialize Google Calendar. Please check your internet connection.",
+          variant: "destructive",
+        });
       }
     };
 
-    initializeGapi();
-  }, []);
+    // Wait for gapi to be loaded
+    if (window.gapi) {
+      initializeGapi();
+    } else {
+      console.log('Waiting for Google API to load...');
+      window.addEventListener('load', initializeGapi);
+      return () => window.removeEventListener('load', initializeGapi);
+    }
+  }, [toast]);
 
   // Google Sign In
   const handleGoogleSignIn = async () => {
     try {
+      console.log('Starting Google sign-in process...');
+      
       const authInstance = gapi.auth2.getAuthInstance();
-      const user = await authInstance.signIn();
-      const accessToken = user.getAuthResponse().access_token;
+      if (!authInstance) {
+        throw new Error('Google Auth2 instance not initialized');
+      }
+      
+      console.log('Auth instance found, attempting sign-in...');
+      const user = await authInstance.signIn({
+        prompt: 'select_account'
+      });
+      
+      console.log('Sign-in successful, getting access token...');
+      const authResponse = user.getAuthResponse();
+      const accessToken = authResponse.access_token;
+      
+      console.log('Access token obtained:', accessToken ? 'Yes' : 'No');
       
       setIsGoogleSignedIn(true);
       setGoogleAccessToken(accessToken);
@@ -80,11 +132,24 @@ export default function MeetingCalendar() {
       
       // Auto-fetch events after signing in
       fetchGoogleCalendarEvents(accessToken);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Google Sign In error:', error);
+      
+      let errorMessage = "Failed to sign in to Google Calendar";
+      
+      if (error?.error === 'popup_closed_by_user') {
+        errorMessage = "Sign-in cancelled by user";
+      } else if (error?.error === 'access_denied') {
+        errorMessage = "Access denied. Please grant calendar permissions.";
+      } else if (error?.error === 'invalid_client') {
+        errorMessage = "Invalid client configuration. Please check OAuth setup.";
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
-        title: "Error",
-        description: "Failed to sign in to Google Calendar",
+        title: "Sign-in Error",
+        description: errorMessage,
         variant: "destructive",
       });
     }
