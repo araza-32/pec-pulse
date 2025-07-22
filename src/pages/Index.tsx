@@ -35,8 +35,8 @@ const Index = () => {
         <div className="container mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img 
-              src="/lovable-uploads/26062e6e-e7ef-45d9-895b-79ac41a220c7.png" 
-              alt="PEC Logo" 
+              src="/lovable-uploads/519b599a-cf05-4e27-9f31-3621cb09ed31.png" 
+              alt="PEC PULSE Logo"
               className="h-10 w-auto" 
             />
             <h1 className="text-xl font-bold text-pec-green">PEC Pulse</h1>
@@ -111,7 +111,7 @@ const Index = () => {
               <div className="lg:w-1/2 relative">
                 <div className="relative z-10 rounded-2xl overflow-hidden shadow-2xl">
                   <img 
-                    src="/lovable-uploads/26062e6e-e7ef-45d9-895b-79ac41a220c7.png" 
+                    src="/lovable-uploads/519b599a-cf05-4e27-9f31-3621cb09ed31.png"
                     alt="PEC Pulse Dashboard Preview" 
                     className="w-full h-auto bg-white p-12"
                   />
@@ -361,8 +361,8 @@ const Index = () => {
             <div>
               <div className="flex items-center gap-3 mb-6">
                 <img 
-                  src="/lovable-uploads/26062e6e-e7ef-45d9-895b-79ac41a220c7.png" 
-                  alt="PEC Logo" 
+                  src="/lovable-uploads/519b599a-cf05-4e27-9f31-3621cb09ed31.png" 
+                  alt="PEC PULSE Logo"
                   className="h-10 w-auto filter brightness-0 invert" 
                 />
                 <h2 className="text-xl font-bold">PEC Pulse</h2>

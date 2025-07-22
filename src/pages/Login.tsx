@@ -43,8 +43,8 @@ export default function Login() {
             <div>
               <Link to="/" className="flex items-center gap-2">
                 <img
-                  src="/lovable-uploads/26062e6e-e7ef-45d9-895b-79ac41a220c7.png"
-                  alt="PEC Logo"
+                  src="/lovable-uploads/519b599a-cf05-4e27-9f31-3621cb09ed31.png"
+                  alt="PEC PULSE Logo"
                   className="h-10 w-auto"
                 />
                 <h2 className="text-2xl font-bold text-pec-green">PEC Pulse</h2>
@@ -114,8 +114,8 @@ export default function Login() {
             <div className="max-w-md px-12">
               <img
                 className="w-full h-auto"
-                src="/lovable-uploads/26062e6e-e7ef-45d9-895b-79ac41a220c7.png"
-                alt="PEC Logo"
+                src="/lovable-uploads/519b599a-cf05-4e27-9f31-3621cb09ed31.png"
+                alt="PEC PULSE Logo"
               />
               <div className="mt-6 text-center">
                 <h3 className="text-xl font-semibold text-gray-900 dark:text-white">

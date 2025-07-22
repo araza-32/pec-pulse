@@ -63,8 +63,8 @@ export function NewHeader({ onMenuClick }: NewHeaderProps) {
           
           <div className="flex items-center gap-2">
             <img
-              src="/lovable-uploads/26062e6e-e7ef-45d9-895b-79ac41a220c7.png"
-              alt="PEC Logo"
+              src="/lovable-uploads/519b599a-cf05-4e27-9f31-3621cb09ed31.png"
+              alt="PEC PULSE Logo"
               className="h-8 w-8"
             />
             <div className="hidden md:flex flex-col">
