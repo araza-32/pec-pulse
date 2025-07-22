@@ -39,7 +39,7 @@ export default function MeetingCalendar() {
       try {
         await gapi.load('auth2', async () => {
           // Your actual OAuth Client ID from Google Cloud Console
-          const CLIENT_ID = '692956619147-j6g5fqeshjgahl96cij9lqou8u91b5nc.apps.googleusercontent.com';
+          const CLIENT_ID = '692956619147-a5ucnj572a81cgau9fhdn8hm8sj7bu9p.apps.googleusercontent.com';
           
           await gapi.auth2.init({
             client_id: CLIENT_ID,
