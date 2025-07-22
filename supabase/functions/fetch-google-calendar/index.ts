@@ -54,6 +54,21 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Fetching calendar events from:', url.toString());
 
+    // First, let's try to get calendar metadata to check if the calendar exists
+    const calendarMetadataUrl = new URL('https://www.googleapis.com/calendar/v3/calendars/' + encodeURIComponent(calendarId));
+    calendarMetadataUrl.searchParams.set('key', API_KEY);
+    
+    console.log('First checking calendar metadata:', calendarMetadataUrl.toString());
+    
+    const metadataResponse = await fetch(calendarMetadataUrl.toString());
+    console.log('Calendar metadata response status:', metadataResponse.status);
+    
+    if (!metadataResponse.ok) {
+      const metadataError = await metadataResponse.text();
+      console.error('Calendar metadata error:', metadataResponse.status, metadataError);
+      throw new Error(`Calendar not accessible: ${metadataResponse.status} - Calendar may be private or doesn't exist. Error: ${metadataError}`);
+    }
+
     const response = await fetch(url.toString());
     
     console.log('Response status:', response.status);
