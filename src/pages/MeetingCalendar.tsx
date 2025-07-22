@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,20 +10,63 @@ import { ViewMeetingDialog } from '@/components/calendar/ViewMeetingDialog';
 import { useScheduledMeetings } from '@/hooks/useScheduledMeetings';
 import { useWorkbodies } from '@/hooks/useWorkbodies';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { ScheduledMeeting } from '@/types';
-import { Plus, Calendar, ExternalLink } from 'lucide-react';
+import { Plus, Calendar, ExternalLink, RefreshCw } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 export default function MeetingCalendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedMeeting, setSelectedMeeting] = useState<ScheduledMeeting | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [googleEvents, setGoogleEvents] = useState<any[]>([]);
+  const [isLoadingGoogleEvents, setIsLoadingGoogleEvents] = useState(false);
   
   const { meetings, isLoading: meetingsLoading, addMeeting, updateMeeting, deleteMeeting } = useScheduledMeetings();
   const { workbodies, isLoading: workbodiesLoading } = useWorkbodies();
   const { user } = useAuth();
+  const { toast } = useToast();
 
   const canAddMeeting = user?.role === 'admin' || user?.role === 'coordination' || user?.role === 'secretary';
+
+  // Fetch Google Calendar events
+  const fetchGoogleCalendarEvents = async () => {
+    setIsLoadingGoogleEvents(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-google-calendar', {
+        body: {
+          calendarId: 'c_811e0f51fc4619f9685f4ebd0d487e9ae57f4e7d35e77e5ed8e68c44bb76b11a@group.calendar.google.com',
+          timeMin: new Date().toISOString(),
+          timeMax: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() // 1 year from now
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      setGoogleEvents(data.events || []);
+      toast({
+        title: "Success",
+        description: `Loaded ${data.events?.length || 0} events from Google Calendar`,
+      });
+    } catch (error) {
+      console.error('Failed to fetch Google Calendar events:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch Google Calendar events",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingGoogleEvents(false);
+    }
+  };
+
+  // Load Google Calendar events on component mount
+  useEffect(() => {
+    fetchGoogleCalendarEvents();
+  }, []);
 
   const handleDateClick = (date: Date) => {
     console.log('Date clicked:', date);
@@ -106,15 +149,70 @@ export default function MeetingCalendar() {
             <h2 className="text-xl font-semibold">Google Calendar</h2>
             <p className="text-muted-foreground">View your complete Google Calendar with all scheduled meetings</p>
           </div>
-          <Button
-            variant="outline"
-            onClick={() => window.open("https://calendar.google.com/calendar/u/0/r/month/2025/7/1", "_blank")}
-            className="flex items-center gap-2"
-          >
-            <ExternalLink className="h-4 w-4" />
-            Open in New Tab
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={fetchGoogleCalendarEvents}
+              disabled={isLoadingGoogleEvents}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${isLoadingGoogleEvents ? 'animate-spin' : ''}`} />
+              Refresh Events
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => window.open("https://calendar.google.com/calendar/u/0/r/month/2025/7/1", "_blank")}
+              className="flex items-center gap-2"
+            >
+              <ExternalLink className="h-4 w-4" />
+              Open in New Tab
+            </Button>
+          </div>
         </div>
+
+        {/* Google Calendar Events List */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              Calendar Events ({googleEvents.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoadingGoogleEvents ? (
+              <div className="text-center py-4">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pec-green mx-auto mb-2"></div>
+                <p className="text-muted-foreground">Loading events...</p>
+              </div>
+            ) : googleEvents.length > 0 ? (
+              <div className="space-y-3 max-h-64 overflow-y-auto">
+                {googleEvents.map((event, index) => (
+                  <div key={event.id || index} className="p-3 border rounded-lg">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-medium">{event.title}</h4>
+                        <p className="text-sm text-muted-foreground">
+                          {new Date(event.start).toLocaleDateString()} at {new Date(event.start).toLocaleTimeString()}
+                        </p>
+                        {event.location && (
+                          <p className="text-sm text-muted-foreground">📍 {event.location}</p>
+                        )}
+                        {event.description && (
+                          <p className="text-sm mt-1">{event.description}</p>
+                        )}
+                      </div>
+                      {event.isAllDay && (
+                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">All Day</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-center py-4">No events found in your calendar</p>
+            )}
+          </CardContent>
+        </Card>
         
         <Card>
           <CardContent className="p-0">
