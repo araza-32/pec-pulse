@@ -70,39 +70,6 @@ export const SummaryGenerator = () => {
     setGeneratedSummary('');
 
     try {
-      const selectedMinute = meetingMinutes?.find(m => m.id === selectedDocument);
-      if (!selectedMinute) {
-        throw new Error('Selected document not found');
-      }
-
-      console.log('Selected minute:', selectedMinute);
-
-      // Check if OCR text is available
-      if (!selectedMinute.ocr_text && selectedMinute.ocr_status !== 'completed') {
-        console.log('Triggering OCR for document:', selectedMinute.id);
-        
-        // Trigger OCR process
-        const { data: ocrData, error: ocrError } = await supabase.functions.invoke('extract-text-ocr', {
-          body: { 
-            minuteId: selectedMinute.id,
-            filePath: selectedMinute.file_url
-          }
-        });
-
-        if (ocrError) {
-          console.error('OCR error:', ocrError);
-          throw new Error('Failed to process document with OCR');
-        }
-
-        console.log('OCR triggered, waiting for processing...');
-        
-        // Wait for OCR to process
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        
-        // Refetch to get updated content
-        await refetch();
-      }
-
       // Generate summary using the summarize function
       const { data: summaryData, error: summaryError } = await supabase.functions.invoke('summarize-minutes', {
         body: { 
