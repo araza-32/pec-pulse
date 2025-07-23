@@ -68,12 +68,23 @@ export function PECHeader({ onToggleSidebar, sidebarCollapsed, user }: PECHeader
           
           {!sidebarCollapsed && (
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
+              <img 
+                src="/lovable-uploads/d4de5e78-8184-4eee-8353-5838044f5ef8.png" 
+                alt="PEC Pulse Logo" 
+                className="w-10 h-10 object-contain"
+                onError={(e) => {
+                  // Fallback to styled logo if image fails
+                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                }}
+              />
+              <div className="w-10 h-10 bg-primary rounded-md flex items-center justify-center relative overflow-hidden hidden">
                 <span className="text-primary-foreground font-bold text-sm">PEC</span>
+                <div className="absolute top-1 right-1 w-2 h-2 bg-accent rounded-full"></div>
               </div>
               <div>
-                <h1 className="font-semibold text-lg">PEC Pulse</h1>
-                <p className="text-xs text-muted-foreground">Dashboard</p>
+                <h1 className="font-semibold text-lg text-foreground">PEC Pulse</h1>
+                <p className="text-xs text-muted-foreground">Management Portal</p>
               </div>
             </div>
           )}

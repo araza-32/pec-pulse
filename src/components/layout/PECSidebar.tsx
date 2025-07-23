@@ -167,16 +167,38 @@ export function PECSidebar({ collapsed }: PECSidebarProps) {
         {/* Logo Area */}
         <div className="flex h-16 items-center border-b px-4">
           {collapsed ? (
-            <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center mx-auto">
-              <span className="text-primary-foreground font-bold text-sm">P</span>
+            <div className="mx-auto">
+              <img 
+                src="/lovable-uploads/d4de5e78-8184-4eee-8353-5838044f5ef8.png" 
+                alt="PEC Pulse Logo" 
+                className="w-8 h-8 object-contain"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                }}
+              />
+              <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center relative overflow-hidden hidden">
+                <span className="text-primary-foreground font-bold text-xs">P</span>
+                <div className="absolute top-0 right-0 w-1.5 h-1.5 bg-accent rounded-full"></div>
+              </div>
             </div>
           ) : (
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
+              <img 
+                src="/lovable-uploads/d4de5e78-8184-4eee-8353-5838044f5ef8.png" 
+                alt="PEC Pulse Logo" 
+                className="w-10 h-10 object-contain"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                }}
+              />
+              <div className="w-10 h-10 bg-primary rounded-md flex items-center justify-center relative overflow-hidden hidden">
                 <span className="text-primary-foreground font-bold text-sm">PEC</span>
+                <div className="absolute top-1 right-1 w-2 h-2 bg-accent rounded-full"></div>
               </div>
               <div>
-                <h2 className="font-bold text-lg">PEC Pulse</h2>
+                <h2 className="font-bold text-lg text-foreground">PEC Pulse</h2>
                 <p className="text-xs text-muted-foreground">Management Portal</p>
               </div>
             </div>

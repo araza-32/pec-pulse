@@ -4,33 +4,33 @@
 @tailwind components;
 @tailwind utilities;
 
-/* PEC Pulse Global Theme Variables */
+/* PEC Pulse Global Theme Variables - Classic Dark */
 :root {
   /* Primary Colors - PEC Green */
-  --color-primary: 135 99 51; /* #875A33 - PEC Brown */
-  --color-primary-light: 144 116 85; /* Lighter variant */
-  --color-primary-dark: 115 82 42; /* Darker variant */
+  --color-primary: 41 68 44; /* #294428 - Dark Forest Green */
+  --color-primary-light: 76 134 67; /* #4C8643 - PEC Green */
+  --color-primary-dark: 23 43 25; /* #172B19 - Deeper Green */
   
   /* Accent Colors */
-  --color-accent: 0 123 255; /* #007BFF - Blue accent */
-  --color-accent-light: 64 149 255;
-  --color-accent-dark: 0 86 179;
+  --color-accent: 76 134 67; /* #4C8643 - PEC Green accent */
+  --color-accent-light: 139 195 74; /* #8BC34A - Light Green */
+  --color-accent-dark: 46 85 41; /* #2E5529 - Dark accent */
   
-  /* Background & Surface */
-  --color-bg: 255 255 255; /* #FFFFFF */
-  --color-bg-alt: 248 250 252; /* #F8FAFC */
-  --color-surface: 255 255 255;
-  --color-surface-hover: 248 250 252;
+  /* Background & Surface - Dark Theme */
+  --color-bg: 16 20 17; /* #101411 - Very Dark Green */
+  --color-bg-alt: 24 29 25; /* #181D19 - Dark Green Alt */
+  --color-surface: 32 39 33; /* #202721 - Dark Surface */
+  --color-surface-hover: 40 48 41; /* #283029 - Surface Hover */
   
-  /* Text Colors */
-  --color-text: 30 41 59; /* #1E293B */
-  --color-text-light: 100 116 139; /* #64748B */
-  --color-text-muted: 148 163 184; /* #94A3B8 */
+  /* Text Colors - Dark Theme */
+  --color-text: 229 231 235; /* #E5E7EB - Light text */
+  --color-text-light: 156 163 175; /* #9CA3AF - Muted light */
+  --color-text-muted: 107 114 128; /* #6B7280 - Dark muted */
   
-  /* Border & Input */
-  --color-border: 226 232 240; /* #E2E8F0 */
-  --color-border-light: 241 245 249; /* #F1F5F9 */
-  --color-input: 248 250 252; /* #F8FAFC */
+  /* Border & Input - Dark Theme */
+  --color-border: 55 65 81; /* #374151 - Dark border */
+  --color-border-light: 75 85 99; /* #4B5563 - Light border */
+  --color-input: 31 41 55; /* #1F2937 - Dark input bg */
   
   /* Status Colors */
   --color-success: 34 197 94; /* #22C55E */
