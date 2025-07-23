@@ -1,11 +1,9 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { NewLayout } from "@/components/layout/NewLayout";
 import { MinimalLayout } from "@/components/layout/MinimalLayout";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -22,15 +20,12 @@ import DraftMinutes from "./pages/DraftMinutes";
 import MinutesViewer from "./pages/MinutesViewer";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
-import Dashboard from "./pages/Dashboard";
-import CleanDashboard from "./pages/CleanDashboard";
 import EnhancedDashboard from "./pages/EnhancedDashboard";
 import ChairmanDashboard from "./pages/ChairmanDashboard";
 import ChairmanExecutiveDashboard from "./pages/ChairmanExecutiveDashboard";
 import WorkbodiesOverview from "./pages/WorkbodiesOverview";
 import Documents from "./pages/Documents";
 import MeetingsList from "./pages/MeetingsList";
-import MeetingsThisYear from "./pages/MeetingsThisYear";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,34 +39,42 @@ function App() {
         <BrowserRouter>
           <AuthProvider>
             <Routes>
+              {/* Public routes */}
+              <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />
               <Route path="/set-password" element={<SetPassword />} />
               
-              {/* Main application routes with enhanced layout */}
+              {/* Protected routes with layout */}
               <Route path="/" element={<MinimalLayout />}>
-                <Route index element={<Navigate to="/dashboard" replace />} />
                 <Route path="dashboard" element={<EnhancedDashboard />} />
-                <Route path="dashboard/clean" element={<CleanDashboard />} />
-                <Route path="dashboard/original" element={<Dashboard />} />
                 <Route path="chairman" element={<ChairmanDashboard />} />
                 <Route path="chairman/executive" element={<ChairmanExecutiveDashboard />} />
+                
+                {/* Workbodies routes */}
                 <Route path="workbodies" element={<WorkbodyList />} />
                 <Route path="workbodies/overview" element={<WorkbodiesOverview />} />
-                <Route path="workbodies/manage" element={<WorkbodyManagement />} />
+                <Route path="workbodies/management" element={<WorkbodyManagement />} />
                 <Route path="workbodies/:id" element={<WorkbodyDetail />} />
                 <Route path="workbodies/:id/edit" element={<WorkbodyEdit />} />
+                
+                {/* Calendar and meetings */}
                 <Route path="calendar" element={<MeetingCalendar />} />
                 <Route path="meetings" element={<MeetingsList />} />
-                <Route path="meetings/this-year" element={<MeetingsThisYear />} />
-                <Route path="upload-minutes" element={<UploadMinutes />} />
+                
+                {/* Minutes routes */}
                 <Route path="minutes" element={<MeetingMinutes />} />
                 <Route path="minutes/enhanced" element={<EnhancedMeetingMinutes />} />
                 <Route path="minutes/draft" element={<DraftMinutes />} />
+                <Route path="minutes/upload" element={<UploadMinutes />} />
                 <Route path="minutes/:id" element={<MinutesViewer />} />
+                
+                {/* Other routes */}
                 <Route path="documents" element={<Documents />} />
                 <Route path="reports" element={<Reports />} />
                 <Route path="settings" element={<Settings />} />
-                <Route path="*" element={<NotFound />} />
+                
+                {/* Catch all - redirect to dashboard */}
+                <Route path="*" element={<Navigate to="/dashboard" replace />} />
               </Route>
             </Routes>
           </AuthProvider>

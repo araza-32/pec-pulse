@@ -32,11 +32,10 @@ const navigationItems: NavigationItem[] = [
     title: "Dashboard",
     href: "/dashboard",
     icon: Home,
-    roles: ["admin", "coordination", "registrar", "member", "chairman", "secretary"]
   },
   {
     title: "Chairman Dashboard",
-    href: "/chairman-dashboard",
+    href: "/chairman",
     icon: Crown,
     roles: ["chairman", "admin"]
   },
@@ -51,13 +50,13 @@ const navigationItems: NavigationItem[] = [
     icon: Calendar
   },
   {
-    title: "Meeting Minutes",
-    href: "/meetings/list",
+    title: "Minutes",
+    href: "/minutes",
     icon: FileText
   },
   {
     title: "Upload Minutes",
-    href: "/upload-minutes",
+    href: "/minutes/upload",
     icon: Upload,
     roles: ["admin", "secretary", "chairman", "coordination"]
   },
@@ -108,7 +107,10 @@ export function CleanSidebar({ className }: SidebarProps) {
       <ScrollArea className="flex-1 px-4 py-6">
         <nav className="space-y-2">
           {filteredItems.map((item) => {
-            const isActive = location.pathname === item.href;
+            const isActive = location.pathname === item.href || 
+                           (item.href === "/minutes" && location.pathname.startsWith("/minutes")) ||
+                           (item.href === "/workbodies" && location.pathname.startsWith("/workbodies")) ||
+                           (item.href === "/chairman" && location.pathname.startsWith("/chairman"));
             
             return (
               <Button

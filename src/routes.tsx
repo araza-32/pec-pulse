@@ -2,7 +2,6 @@
 import { createBrowserRouter, redirect } from 'react-router-dom';
 import Index from './pages/Index';
 import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
 import EnhancedDashboard from './pages/EnhancedDashboard';
 import ChairmanDashboard from './pages/ChairmanDashboard';
 import ChairmanExecutiveDashboard from './pages/ChairmanExecutiveDashboard';
@@ -39,72 +38,32 @@ export const router = createBrowserRouter([
         element: <Login />,
       },
       {
-        path: 'auth/set-password',
+        path: 'set-password',
         element: <SetPassword />,
       },
       {
         path: 'dashboard',
-        element: <Dashboard />,
-      },
-      {
-        path: 'enhanced-dashboard',
         element: <EnhancedDashboard />,
       },
       {
-        path: 'chairman-dashboard',
+        path: 'chairman',
         element: <ChairmanDashboard />,
       },
       {
-        path: 'chairman-executive',
+        path: 'chairman/executive',
         element: <ChairmanExecutiveDashboard />,
       },
       {
         path: 'workbodies',
+        element: <WorkbodyList />,
+      },
+      {
+        path: 'workbodies/overview',
         element: <WorkbodiesOverview />,
       },
       {
         path: 'workbodies/management',
         element: <WorkbodyManagement />,
-      },
-      {
-        path: 'workbodies/governing-body',
-        element: <WorkbodiesOverview />,
-      },
-      {
-        path: 'workbodies/management-committee', 
-        element: <WorkbodiesOverview />,
-      },
-      {
-        path: 'workbodies/ec',
-        element: <WorkbodiesOverview />,
-      },
-      {
-        path: 'workbodies/esc',
-        element: <WorkbodiesOverview />,
-      },
-      {
-        path: 'workbodies/eab',
-        element: <WorkbodiesOverview />,
-      },
-      {
-        path: 'workbodies/epdc',
-        element: <WorkbodiesOverview />,
-      },
-      {
-        path: 'workbodies/tf-cpd-policy',
-        element: <WorkbodiesOverview />,
-      },
-      {
-        path: 'workbodies/abc',
-        element: <WorkbodiesOverview />,
-      },
-      {
-        path: 'workbodies/qec',
-        element: <WorkbodiesOverview />,
-      },
-      {
-        path: 'workbodies/list',
-        element: <WorkbodyList />,
       },
       {
         path: 'workbodies/:id',
@@ -114,23 +73,12 @@ export const router = createBrowserRouter([
         path: 'workbodies/:id/edit',
         element: <WorkbodyEdit />,
       },
-      // Legacy redirect for old workbody routes
-      {
-        path: 'workbody/:id',
-        loader: ({ params }) => {
-          return redirect(`/workbodies/${params.id}`);
-        },
-      },
       {
         path: 'calendar',
         element: <MeetingCalendar />,
       },
       {
-        path: 'meetings/list',
-        element: <MeetingsList />,
-      },
-      {
-        path: 'meetings-this-year',
+        path: 'meetings',
         element: <MeetingsList />,
       },
       {
@@ -138,24 +86,20 @@ export const router = createBrowserRouter([
         element: <MeetingMinutes />,
       },
       {
-        path: 'meetings',
-        element: <MeetingMinutes />,
+        path: 'minutes/enhanced',
+        element: <EnhancedMeetingMinutes />,
       },
       {
-        path: 'enhanced-minutes',
-        element: <EnhancedMeetingMinutes />,
+        path: 'minutes/draft',
+        element: <DraftMinutes />,
+      },
+      {
+        path: 'minutes/upload',
+        element: <UploadMinutes />,
       },
       {
         path: 'minutes/:id',
         element: <MinutesViewer />,
-      },
-      {
-        path: 'draft-minutes',
-        element: <DraftMinutes />,
-      },
-      {
-        path: 'upload-minutes',
-        element: <UploadMinutes />,
       },
       {
         path: 'documents',

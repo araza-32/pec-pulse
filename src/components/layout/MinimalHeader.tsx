@@ -37,15 +37,32 @@ function getPageTitle() {
   const path = window.location.pathname;
   const titles: Record<string, string> = {
     '/dashboard': 'Dashboard',
-    '/chairman-dashboard': 'Chairman Dashboard',
+    '/chairman': 'Chairman Dashboard',
+    '/chairman/executive': 'Chairman Executive Dashboard',
     '/workbodies': 'Workbodies',
+    '/workbodies/overview': 'Workbodies Overview',
+    '/workbodies/management': 'Workbody Management',
     '/calendar': 'Calendar',
-    '/meetings/list': 'Minutes',
-    '/upload-minutes': 'Upload Minutes',
+    '/meetings': 'Meetings',
+    '/minutes': 'Meeting Minutes',
+    '/minutes/enhanced': 'Enhanced Minutes',
+    '/minutes/draft': 'Draft Minutes',
+    '/minutes/upload': 'Upload Minutes',
     '/documents': 'Documents',
     '/reports': 'Reports',
     '/settings': 'Settings'
   };
+  
+  // Handle dynamic routes
+  if (path.startsWith('/workbodies/') && path.includes('/edit')) {
+    return 'Edit Workbody';
+  }
+  if (path.startsWith('/workbodies/') && !path.includes('/overview') && !path.includes('/management')) {
+    return 'Workbody Details';
+  }
+  if (path.startsWith('/minutes/') && path !== '/minutes/enhanced' && path !== '/minutes/draft' && path !== '/minutes/upload') {
+    return 'Minutes Viewer';
+  }
   
   return titles[path] || 'PEC Dashboard';
 }
