@@ -7,234 +7,37 @@ import { CalendarHeader } from '@/components/calendar/CalendarHeader';
 import { CalendarGrid } from '@/components/calendar/CalendarGrid';
 import { AddMeetingDialog } from '@/components/calendar/AddMeetingDialog';
 import { ViewMeetingDialog } from '@/components/calendar/ViewMeetingDialog';
+import { MeetingImport } from '@/components/calendar/MeetingImport';
+import { MeetingNotifications } from '@/components/calendar/MeetingNotifications';
 import { useScheduledMeetings } from '@/hooks/useScheduledMeetings';
 import { useWorkbodies } from '@/hooks/useWorkbodies';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { useNotifications } from '@/hooks/useNotifications';
 import { ScheduledMeeting } from '@/types';
-import { Plus, Calendar, ExternalLink, RefreshCw, LogIn } from 'lucide-react';
+import { Plus, Calendar, Import, Bell, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { gapi } from 'gapi-script';
-
-// Extend the Window interface to include gapi
-declare global {
-  interface Window {
-    gapi: any;
-  }
-}
 
 export default function MeetingCalendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedMeeting, setSelectedMeeting] = useState<ScheduledMeeting | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-  const [googleEvents, setGoogleEvents] = useState<any[]>([]);
-  const [isLoadingGoogleEvents, setIsLoadingGoogleEvents] = useState(false);
-  const [isGoogleSignedIn, setIsGoogleSignedIn] = useState(false);
-  const [googleAccessToken, setGoogleAccessToken] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('calendar');
   
   const { meetings, isLoading: meetingsLoading, addMeeting, updateMeeting, deleteMeeting } = useScheduledMeetings();
   const { workbodies, isLoading: workbodiesLoading } = useWorkbodies();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { checkWeeklyMeetings } = useNotifications();
 
   const canAddMeeting = user?.role === 'admin' || user?.role === 'coordination' || user?.role === 'secretary';
 
-  // Initialize Google API
+  // Check for weekly meetings and notifications
   useEffect(() => {
-    const initializeGapi = async () => {
-      try {
-        console.log('Starting Google API initialization...');
-        
-        // Load the auth2 library
-        await new Promise<void>((resolve, reject) => {
-          gapi.load('auth2', () => {
-            console.log('Google Auth2 library loaded');
-            resolve();
-          }, (error: any) => {
-            console.error('Failed to load Google Auth2 library:', error);
-            reject(error);
-          });
-        });
-
-        // Your actual OAuth Client ID from Google Cloud Console
-        const CLIENT_ID = '692956619147-a5ucnj572a81cgau9fhdn8hm8sj7bu9p.apps.googleusercontent.com';
-        
-        console.log('Initializing Google Auth2 with client ID:', CLIENT_ID);
-        
-        const authInstance = await gapi.auth2.init({
-          client_id: CLIENT_ID,
-          scope: 'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
-          plugin_name: 'meetings_calendar',
-          hosted_domain: '', // Allow any domain
-          ux_mode: 'popup' // Force popup mode
-        });
-
-        console.log('Google Auth2 initialized successfully');
-        
-        const isSignedIn = authInstance.isSignedIn.get();
-        console.log('Current sign-in status:', isSignedIn);
-        
-        setIsGoogleSignedIn(isSignedIn);
-        
-        if (isSignedIn) {
-          const user = authInstance.currentUser.get();
-          const accessToken = user.getAuthResponse().access_token;
-          console.log('Found existing access token');
-          setGoogleAccessToken(accessToken);
-        }
-      } catch (error) {
-        console.error('Error initializing Google API:', error);
-        toast({
-          title: "Google Calendar Error",
-          description: "Failed to initialize Google Calendar. Please check your internet connection.",
-          variant: "destructive",
-        });
-      }
-    };
-
-    // Wait for gapi to be loaded
-    if (window.gapi) {
-      initializeGapi();
-    } else {
-      console.log('Waiting for Google API to load...');
-      window.addEventListener('load', initializeGapi);
-      return () => window.removeEventListener('load', initializeGapi);
+    if (meetings.length > 0) {
+      checkWeeklyMeetings(meetings);
     }
-  }, [toast]);
-
-  // Google Sign In
-  const handleGoogleSignIn = async () => {
-    try {
-      console.log('Starting Google sign-in process...');
-      
-      const authInstance = gapi.auth2.getAuthInstance();
-      if (!authInstance) {
-        throw new Error('Google Auth2 instance not initialized');
-      }
-      
-      console.log('Auth instance found, attempting sign-in...');
-      const user = await authInstance.signIn({
-        prompt: 'select_account'
-      });
-      
-      console.log('Sign-in successful, getting access token...');
-      const authResponse = user.getAuthResponse();
-      const accessToken = authResponse.access_token;
-      
-      console.log('Access token obtained:', accessToken ? 'Yes' : 'No');
-      
-      setIsGoogleSignedIn(true);
-      setGoogleAccessToken(accessToken);
-      
-      toast({
-        title: "Success",
-        description: "Successfully signed in to Google Calendar",
-      });
-      
-      // Auto-fetch events after signing in
-      fetchGoogleCalendarEvents(accessToken);
-    } catch (error: any) {
-      console.error('Google Sign In error:', error);
-      
-      let errorMessage = "Failed to sign in to Google Calendar";
-      
-      if (error?.error === 'popup_closed_by_user') {
-        errorMessage = "Sign-in cancelled by user";
-      } else if (error?.error === 'access_denied') {
-        errorMessage = "Access denied. Please grant calendar permissions.";
-      } else if (error?.error === 'invalid_client') {
-        errorMessage = "Invalid client configuration. Please check OAuth setup.";
-      } else if (error?.message) {
-        errorMessage = error.message;
-      }
-      
-      toast({
-        title: "Sign-in Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Google Sign Out
-  const handleGoogleSignOut = async () => {
-    try {
-      const authInstance = gapi.auth2.getAuthInstance();
-      await authInstance.signOut();
-      
-      setIsGoogleSignedIn(false);
-      setGoogleAccessToken(null);
-      setGoogleEvents([]);
-      
-      toast({
-        title: "Success",
-        description: "Successfully signed out from Google Calendar",
-      });
-    } catch (error) {
-      console.error('Google Sign Out error:', error);
-    }
-  };
-
-  // Fetch Google Calendar events with OAuth
-  const fetchGoogleCalendarEvents = async (accessToken?: string) => {
-    const token = accessToken || googleAccessToken;
-    
-    if (!token) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to Google Calendar first",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsLoadingGoogleEvents(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('fetch-google-calendar', {
-        body: {
-          calendarId: 'c_811e0f51fc4619f9685f4ebd0d487e9ae57f4e7d35e77e5ed8e68c44bb76b11a@group.calendar.google.com',
-          timeMin: new Date().toISOString(),
-          timeMax: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), // 1 year from now
-          accessToken: token
-        }
-      });
-
-      if (error) {
-        console.error('Supabase function error:', error);
-        throw error;
-      }
-
-      console.log('Google Calendar API response:', data);
-      setGoogleEvents(data.events || []);
-      toast({
-        title: "Success",
-        description: `Loaded ${data.events?.length || 0} events from Google Calendar`,
-      });
-    } catch (error: any) {
-      console.error('Failed to fetch Google Calendar events:', error);
-      
-      let errorMessage = "Failed to fetch Google Calendar events";
-      if (error?.message) {
-        errorMessage = error.message;
-      }
-      
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoadingGoogleEvents(false);
-    }
-  };
-
-  // Load Google Calendar events on component mount if already signed in
-  useEffect(() => {
-    if (isGoogleSignedIn && googleAccessToken) {
-      fetchGoogleCalendarEvents();
-    }
-  }, [isGoogleSignedIn, googleAccessToken]);
+  }, [meetings, checkWeeklyMeetings]);
 
   const handleDateClick = (date: Date) => {
     console.log('Date clicked:', date);
@@ -250,9 +53,30 @@ export default function MeetingCalendar() {
     try {
       await addMeeting(meetingData);
       setIsAddDialogOpen(false);
+      toast({
+        title: "Meeting Added",
+        description: "Meeting has been successfully scheduled",
+      });
     } catch (error) {
       console.error('Failed to add meeting:', error);
       throw error;
+    }
+  };
+
+  const handleImportMeeting = async (meetingData: any) => {
+    try {
+      await addMeeting(meetingData);
+      toast({
+        title: "Meeting Imported",
+        description: "Meeting has been successfully imported to your calendar",
+      });
+    } catch (error) {
+      console.error('Failed to import meeting:', error);
+      toast({
+        title: "Import Failed",
+        description: "Failed to import meeting. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -263,6 +87,10 @@ export default function MeetingCalendar() {
       await updateMeeting(selectedMeeting.id, updates);
       setSelectedMeeting(null);
       setIsViewDialogOpen(false);
+      toast({
+        title: "Meeting Updated",
+        description: "Meeting has been successfully updated",
+      });
     } catch (error) {
       console.error('Failed to update meeting:', error);
       throw error;
@@ -274,6 +102,10 @@ export default function MeetingCalendar() {
       await deleteMeeting(id);
       setSelectedMeeting(null);
       setIsViewDialogOpen(false);
+      toast({
+        title: "Meeting Deleted",
+        description: "Meeting has been successfully deleted",
+      });
     } catch (error) {
       console.error('Failed to delete meeting:', error);
       throw error;
@@ -311,128 +143,97 @@ export default function MeetingCalendar() {
         )}
       </div>
 
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h2 className="text-xl font-semibold">Google Calendar</h2>
-            <p className="text-muted-foreground">View your complete Google Calendar with all scheduled meetings</p>
-          </div>
-          <div className="flex gap-2">
-            {!isGoogleSignedIn ? (
-              <Button
-                variant="outline"
-                onClick={handleGoogleSignIn}
-                className="flex items-center gap-2"
-              >
-                <LogIn className="h-4 w-4" />
-                Sign in to Google Calendar
-              </Button>
-            ) : (
-              <>
-                <Button
-                  variant="outline"
-                  onClick={() => fetchGoogleCalendarEvents()}
-                  disabled={isLoadingGoogleEvents}
-                  className="flex items-center gap-2"
-                >
-                  <RefreshCw className={`h-4 w-4 ${isLoadingGoogleEvents ? 'animate-spin' : ''}`} />
-                  Refresh Events
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={handleGoogleSignOut}
-                  className="flex items-center gap-2"
-                >
-                  Sign Out
-                </Button>
-              </>
-            )}
-            <Button
-              variant="outline"
-              onClick={() => window.open("https://calendar.google.com/calendar/u/0/r/month/2025/7/1", "_blank")}
-              className="flex items-center gap-2"
-            >
-              <ExternalLink className="h-4 w-4" />
-              Open in New Tab
-            </Button>
-          </div>
-        </div>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="calendar" className="flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            Calendar
+          </TabsTrigger>
+          <TabsTrigger value="notifications" className="flex items-center gap-2">
+            <Bell className="h-4 w-4" />
+            Notifications
+          </TabsTrigger>
+          <TabsTrigger value="import" className="flex items-center gap-2">
+            <Import className="h-4 w-4" />
+            Import
+          </TabsTrigger>
+          <TabsTrigger value="external" className="flex items-center gap-2">
+            <ExternalLink className="h-4 w-4" />
+            External
+          </TabsTrigger>
+        </TabsList>
 
-        {/* Google Calendar Events List */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              Calendar Events ({googleEvents.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoadingGoogleEvents ? (
-              <div className="text-center py-4">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pec-green mx-auto mb-2"></div>
-                <p className="text-muted-foreground">Loading events...</p>
-              </div>
-            ) : googleEvents.length > 0 ? (
-              <div className="space-y-3 max-h-64 overflow-y-auto">
-                {googleEvents.map((event, index) => (
-                  <div key={event.id || index} className="p-3 border rounded-lg">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h4 className="font-medium">{event.title}</h4>
-                        <p className="text-sm text-muted-foreground">
-                          {new Date(event.start).toLocaleDateString()} at {new Date(event.start).toLocaleTimeString()}
-                        </p>
-                        {event.location && (
-                          <p className="text-sm text-muted-foreground">📍 {event.location}</p>
-                        )}
-                        {event.description && (
-                          <p className="text-sm mt-1">{event.description}</p>
-                        )}
-                      </div>
-                      {event.isAllDay && (
-                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">All Day</span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-muted-foreground text-center py-4">No events found in your calendar</p>
-            )}
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-0">
-            <div className="relative w-full h-[700px]">
-              <iframe
-                src="https://calendar.google.com/calendar/embed?src=c_811e0f51fc4619f9685f4ebd0d487e9ae57f4e7d35e77e5ed8e68c44bb76b11a%40group.calendar.google.com&ctz=Asia%2FKarachi"
-                className="w-full h-full border-0 rounded-lg"
-                title="Google Calendar"
-                style={{ minHeight: '700px' }}
+        <TabsContent value="calendar" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CalendarHeader
+                currentDate={currentDate}
+                onDateChange={setCurrentDate}
               />
+            </CardHeader>
+            <CardContent>
+              <CalendarGrid
+                currentDate={currentDate}
+                meetings={meetings}
+                onDateClick={handleDateClick}
+                onMeetingClick={handleMeetingClick}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="notifications" className="space-y-6">
+          <MeetingNotifications meetings={meetings} />
+        </TabsContent>
+
+        <TabsContent value="import" className="space-y-6">
+          <div className="max-w-2xl mx-auto">
+            <MeetingImport onImportMeeting={handleImportMeeting} />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="external" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ExternalLink className="h-5 w-5" />
+                External Calendar Access
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-muted-foreground">
+                Access your external calendar without OAuth authentication
+              </p>
               
-              {/* Fallback content if iframe is blocked */}
-              <div className="absolute inset-4 flex items-center justify-center bg-muted/80 rounded-lg backdrop-blur-sm opacity-0 hover:opacity-100 transition-opacity pointer-events-none">
-                <div className="text-center p-6 bg-background/95 rounded-lg border shadow-lg pointer-events-auto">
-                  <Calendar className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="font-semibold mb-2">Calendar Integration</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    If the calendar doesn't load, it may be due to browser security restrictions.
+              <div className="space-y-4">
+                <div className="p-4 border rounded-lg">
+                  <h3 className="font-medium mb-2">Google Calendar (Public View)</h3>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    View the public PEC calendar without signing in
                   </p>
                   <Button
-                    onClick={() => window.open("https://calendar.google.com/calendar/u/0/r/month/2025/7/1", "_blank")}
-                    className="flex items-center gap-2"
+                    variant="outline"
+                    onClick={() => window.open("https://calendar.google.com/calendar/embed?src=c_811e0f51fc4619f9685f4ebd0d487e9ae57f4e7d35e77e5ed8e68c44bb76b11a%40group.calendar.google.com&ctz=Asia%2FKarachi", "_blank")}
+                    className="w-full"
                   >
-                    <ExternalLink className="h-4 w-4" />
-                    View Full Calendar
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Open Public Calendar
                   </Button>
                 </div>
+                
+                <div className="p-4 border rounded-lg">
+                  <h3 className="font-medium mb-2">Manual Sync Instructions</h3>
+                  <div className="text-sm text-muted-foreground space-y-2">
+                    <p>1. Export your calendar as .ics file from your calendar app</p>
+                    <p>2. Use the Import tab to upload the .ics file</p>
+                    <p>3. Or manually add meetings using the Import → Manual Entry option</p>
+                  </div>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* Dialogs */}
       <AddMeetingDialog
