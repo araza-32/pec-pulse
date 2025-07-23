@@ -1,146 +1,76 @@
-
-import { Link, useLocation } from "react-router-dom";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Home,
   Users,
-  Calendar,
   FileText,
+  Calendar,
   BarChart3,
   Settings,
-  Crown,
+  FolderOpen,
+  Edit,
   Upload,
-  FolderOpen
-} from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+} from 'lucide-react';
+import { NavLink, useLocation } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
-interface SidebarProps {
-  className?: string;
-}
-
-interface NavigationItem {
-  title: string;
+interface NavItemProps {
+  name: string;
   href: string;
-  icon: React.ComponentType<{ className?: string }>;
-  roles?: string[];
+  icon: any;
 }
 
-const navigationItems: NavigationItem[] = [
-  {
-    title: "Dashboard",
-    href: "/dashboard",
-    icon: Home,
-  },
-  {
-    title: "Chairman Dashboard",
-    href: "/chairman",
-    icon: Crown,
-    roles: ["chairman", "admin"]
-  },
-  {
-    title: "Workbodies",
-    href: "/workbodies",
-    icon: Users
-  },
-  {
-    title: "Calendar",
-    href: "/calendar",
-    icon: Calendar
-  },
-  {
-    title: "Minutes",
-    href: "/minutes",
-    icon: FileText
-  },
-  {
-    title: "Upload Minutes",
-    href: "/minutes/upload",
-    icon: Upload,
-    roles: ["admin", "secretary", "chairman", "coordination"]
-  },
-  {
-    title: "Documents",
-    href: "/documents",
-    icon: FolderOpen
-  },
-  {
-    title: "Reports",
-    href: "/reports",
-    icon: BarChart3,
-    roles: ["admin", "chairman", "coordination", "registrar"]
-  },
-  {
-    title: "Settings",
-    href: "/settings",
-    icon: Settings
-  }
-];
-
-export function CleanSidebar({ className }: SidebarProps) {
+export function CleanSidebar() {
   const location = useLocation();
-  const { user } = useAuth();
+  const { session } = useAuth();
 
-  const hasAccess = (roles?: string[]) => {
-    if (!roles) return true;
-    return user?.role && roles.includes(user.role);
+  const isActive = (href: string) => {
+    return location.pathname === href;
   };
 
-  const filteredItems = navigationItems.filter(item => hasAccess(item.roles));
+  const navigation = [
+    { name: 'Dashboard', href: '/dashboard', icon: Home },
+    { name: 'Workbodies', href: '/workbodies', icon: Users },
+    { name: 'Minutes', href: '/minutes', icon: FileText },
+    { name: 'Draft Minutes', href: '/draft-minutes', icon: Edit },
+    { name: 'Upload Minutes', href: '/upload-minutes', icon: Upload },
+    { name: 'Documents', href: '/documents', icon: FolderOpen },
+    { name: 'Calendar', href: '/calendar', icon: Calendar },
+    { name: 'Reports', href: '/reports', icon: BarChart3 },
+    { name: 'Settings', href: '/settings', icon: Settings },
+  ];
 
   return (
-    <div className={cn(
-      "fixed left-0 top-0 z-40 h-screen w-64 bg-white border-r border-gray-200 flex flex-col",
-      className
-    )}>
-      {/* Header */}
-      <div className="flex items-center gap-3 px-6 py-6 border-b border-gray-200">
-        <div className="w-3 h-8 bg-green-600 rounded-full"></div>
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900">PEC</h2>
-          <p className="text-sm text-gray-500">Dashboard</p>
-        </div>
+    <div className="flex flex-col h-full bg-gray-50 border-r py-4">
+      <div className="px-6 py-2">
+        <img src="/logo.png" alt="Logo" className="h-8" />
       </div>
-      
-      {/* Navigation */}
-      <ScrollArea className="flex-1 px-4 py-6">
-        <nav className="space-y-2">
-          {filteredItems.map((item) => {
-            const isActive = location.pathname === item.href || 
-                           (item.href === "/minutes" && location.pathname.startsWith("/minutes")) ||
-                           (item.href === "/workbodies" && location.pathname.startsWith("/workbodies")) ||
-                           (item.href === "/chairman" && location.pathname.startsWith("/chairman"));
-            
-            return (
-              <Button
-                key={item.title}
-                variant="ghost"
-                className={cn(
-                  "w-full justify-start gap-3 h-12 px-4 text-left font-normal",
-                  "hover:bg-green-50 hover:text-green-700",
-                  isActive && "bg-green-100 text-green-800 font-medium"
-                )}
-                asChild
+      <nav className="flex-1">
+        <ul className="space-y-1">
+          {navigation.map((item: NavItemProps) => (
+            <li key={item.name}>
+              <NavLink
+                to={item.href}
+                className={({ isActive }) =>
+                  `flex items-center space-x-3 px-6 py-2 rounded-md transition-colors duration-200
+                  ${isActive
+                      ? 'bg-blue-100 text-blue-700 font-medium'
+                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  }`
+                }
               >
-                <Link to={item.href}>
-                  <item.icon className="h-5 w-5 flex-shrink-0" />
-                  <span>{item.title}</span>
-                </Link>
-              </Button>
-            );
-          })}
-        </nav>
-      </ScrollArea>
-      
-      {/* Footer */}
-      <div className="px-6 py-4 border-t border-gray-200">
-        <div className="text-xs text-gray-500">
-          {user?.name && (
-            <p>Logged in as <span className="font-medium">{user.name}</span></p>
-          )}
+                <item.icon className="h-4 w-4" />
+                <span>{item.name}</span>
+              </NavLink>
+            </li>
+          ))}
+        </ul>
+      </nav>
+      {session && (
+        <div className="border-t p-4">
+          <p className="text-sm text-gray-500">
+            Logged in as {session.email}
+          </p>
         </div>
-      </div>
+      )}
     </div>
   );
 }

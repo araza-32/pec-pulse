@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -7,8 +7,16 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Brain, FileText, Download, AlertCircle, CheckCircle, Clock } from 'lucide-react';
 import { useWorkbodies } from '@/hooks/useWorkbodies';
+import { usePdfMemberExtraction } from '@/hooks/usePdfMemberExtraction';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+
+interface WorkbodyDocument {
+  id: string;
+  document_type: string;
+  file_url: string;
+  uploaded_at: string;
+}
 
 interface ExtractionJob {
   id: string;
@@ -23,10 +31,49 @@ interface ExtractionJob {
 
 export function AIExtractionInterface() {
   const [selectedWorkbodyId, setSelectedWorkbodyId] = useState<string>('');
+  const [documents, setDocuments] = useState<WorkbodyDocument[]>([]);
   const [extractionJobs, setExtractionJobs] = useState<ExtractionJob[]>([]);
   const [isExtracting, setIsExtracting] = useState(false);
+  const [isLoadingDocuments, setIsLoadingDocuments] = useState(false);
   const { workbodies, isLoading, error } = useWorkbodies();
+  const { extractMembersFromDocument } = usePdfMemberExtraction();
   const { toast } = useToast();
+
+  // Fetch documents when workbody is selected
+  useEffect(() => {
+    if (selectedWorkbodyId) {
+      fetchDocuments();
+    }
+  }, [selectedWorkbodyId]);
+
+  const fetchDocuments = async () => {
+    if (!selectedWorkbodyId) return;
+    
+    setIsLoadingDocuments(true);
+    try {
+      const { data, error } = await supabase
+        .from('workbody_documents')
+        .select('*')
+        .eq('workbody_id', selectedWorkbodyId)
+        .order('uploaded_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching documents:', error);
+        throw error;
+      }
+
+      setDocuments(data || []);
+    } catch (error) {
+      console.error('Error fetching documents:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch documents",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingDocuments(false);
+    }
+  };
 
   const handleStartExtraction = async () => {
     if (!selectedWorkbodyId) {
@@ -37,89 +84,79 @@ export function AIExtractionInterface() {
       });
       return;
     }
+
+    if (documents.length === 0) {
+      toast({
+        title: "No Documents Found",
+        description: "Please upload some documents first before running extraction",
+        variant: "destructive",
+      });
+      return;
+    }
     
     setIsExtracting(true);
+    
+    const workbody = workbodies.find(w => w.id === selectedWorkbodyId);
+    
+    // Create extraction job
+    const newJob: ExtractionJob = {
+      id: crypto.randomUUID(),
+      workbodyId: selectedWorkbodyId,
+      workbodyName: workbody?.name || 'Unknown',
+      status: 'processing',
+      progress: 0,
+      documentsProcessed: 0,
+      totalDocuments: documents.length,
+      createdAt: new Date().toISOString()
+    };
+
+    setExtractionJobs(prev => [newJob, ...prev]);
+
     try {
-      console.log('Starting extraction for workbody:', selectedWorkbodyId);
+      let processedCount = 0;
       
-      // Fetch documents for the selected workbody
-      const { data: documents, error } = await supabase
-        .from('workbody_documents')
-        .select('*')
-        .eq('workbody_id', selectedWorkbodyId);
-
-      if (error) {
-        console.error('Error fetching documents:', error);
-        throw error;
-      }
-
-      console.log('Documents found:', documents?.length || 0);
-
-      const workbody = workbodies.find(w => w.id === selectedWorkbodyId);
-      
-      // Create extraction job
-      const newJob: ExtractionJob = {
-        id: crypto.randomUUID(),
-        workbodyId: selectedWorkbodyId,
-        workbodyName: workbody?.name || 'Unknown',
-        status: 'processing',
-        progress: 0,
-        documentsProcessed: 0,
-        totalDocuments: documents?.length || 0,
-        createdAt: new Date().toISOString()
-      };
-
-      setExtractionJobs(prev => [newJob, ...prev]);
-
-      // Simulate extraction progress if no documents exist
-      if (!documents || documents.length === 0) {
-        toast({
-          title: "No Documents Found",
-          description: `No documents found for ${workbody?.name}. Upload some documents first.`,
-          variant: "destructive",
-        });
-        setExtractionJobs(prev => prev.map(job => 
-          job.id === newJob.id 
-            ? { ...job, status: 'error' as const }
-            : job
-        ));
-        return;
-      }
-
-      // Simulate extraction progress
-      let progress = 0;
-      const interval = setInterval(() => {
-        progress += 20;
-        setExtractionJobs(prev => prev.map(job => 
-          job.id === newJob.id 
-            ? { ...job, progress, documentsProcessed: Math.floor(progress / 20) }
-            : job
-        ));
-
-        if (progress >= 100) {
-          clearInterval(interval);
+      // Process each document
+      for (const document of documents) {
+        try {
+          console.log(`Processing document ${document.id} for workbody ${selectedWorkbodyId}`);
+          await extractMembersFromDocument(document.id, selectedWorkbodyId);
+          processedCount++;
+          
+          // Update progress
+          const progress = Math.round((processedCount / documents.length) * 100);
           setExtractionJobs(prev => prev.map(job => 
             job.id === newJob.id 
-              ? { ...job, status: 'completed', progress: 100 }
+              ? { ...job, progress, documentsProcessed: processedCount }
               : job
           ));
-          toast({
-            title: "Extraction Complete",
-            description: `Successfully processed ${documents.length} documents`,
-          });
+        } catch (error) {
+          console.error(`Error processing document ${document.id}:`, error);
+          // Continue with other documents even if one fails
         }
-      }, 1000);
+      }
+
+      // Mark as completed
+      setExtractionJobs(prev => prev.map(job => 
+        job.id === newJob.id 
+          ? { ...job, status: 'completed' as const, progress: 100 }
+          : job
+      ));
 
       toast({
-        title: "Extraction Started",
-        description: `Processing ${documents.length} documents for ${workbody?.name}`,
+        title: "Extraction Complete",
+        description: `Successfully processed ${processedCount} documents`,
       });
 
     } catch (error) {
-      console.error('Error starting extraction:', error);
+      console.error('Error during extraction:', error);
+      setExtractionJobs(prev => prev.map(job => 
+        job.id === newJob.id 
+          ? { ...job, status: 'error' as const }
+          : job
+      ));
       toast({
         title: "Error",
-        description: "Failed to start extraction process",
+        description: "Failed to complete extraction process",
         variant: "destructive",
       });
     } finally {
@@ -213,13 +250,13 @@ export function AIExtractionInterface() {
           </div>
           <Button 
             onClick={handleStartExtraction}
-            disabled={!selectedWorkbodyId || isExtracting}
+            disabled={!selectedWorkbodyId || isExtracting || documents.length === 0}
             className="flex items-center gap-2"
           >
             {isExtracting ? (
               <>
                 <Clock className="h-4 w-4 animate-spin" />
-                Starting...
+                Processing...
               </>
             ) : (
               <>
@@ -229,6 +266,23 @@ export function AIExtractionInterface() {
             )}
           </Button>
         </div>
+
+        {/* Document Status */}
+        {selectedWorkbodyId && (
+          <div className="p-3 bg-blue-50 rounded-lg">
+            <div className="flex items-center gap-2 text-blue-700">
+              <FileText className="h-4 w-4" />
+              <span className="text-sm font-medium">
+                {isLoadingDocuments ? 'Loading documents...' : `${documents.length} documents found`}
+              </span>
+            </div>
+            {documents.length === 0 && !isLoadingDocuments && (
+              <p className="text-xs text-blue-600 mt-1">
+                Upload some documents first to enable extraction.
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Extraction Jobs */}
         <div className="space-y-3">
