@@ -11,14 +11,20 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface MeetingMinute {
   id: string;
-  meeting_title: string;
-  meeting_date: string;
-  workbody_name: string;
-  file_path?: string;
-  file_url?: string;
-  content?: string;
+  workbody_id: string;
+  date: string;
+  location: string;
+  agenda_items: string[];
+  actions_agreed: string[];
+  file_url: string;
+  agenda_document_url?: string;
+  ocr_text?: string;
   ocr_status?: string;
-  ocr_progress?: number;
+  uploaded_at: string;
+  uploaded_by?: string;
+  workbodies?: {
+    name: string;
+  };
 }
 
 export const SummaryGenerator = () => {
@@ -27,14 +33,19 @@ export const SummaryGenerator = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
 
-  // Fetch meeting minutes
+  // Fetch meeting minutes with workbody names
   const { data: meetingMinutes, isLoading, refetch } = useQuery({
     queryKey: ['meeting-minutes-for-summary'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('meeting_minutes')
-        .select('*')
-        .order('meeting_date', { ascending: false });
+        .select(`
+          *,
+          workbodies:workbody_id (
+            name
+          )
+        `)
+        .order('date', { ascending: false });
       
       if (error) {
         console.error('Error fetching meeting minutes:', error);
@@ -64,15 +75,17 @@ export const SummaryGenerator = () => {
         throw new Error('Selected document not found');
       }
 
-      // Check if OCR is needed
-      if (!selectedMinute.content && selectedMinute.ocr_status !== 'completed') {
+      console.log('Selected minute:', selectedMinute);
+
+      // Check if OCR text is available
+      if (!selectedMinute.ocr_text && selectedMinute.ocr_status !== 'completed') {
         console.log('Triggering OCR for document:', selectedMinute.id);
         
         // Trigger OCR process
         const { data: ocrData, error: ocrError } = await supabase.functions.invoke('extract-text-ocr', {
           body: { 
             minuteId: selectedMinute.id,
-            filePath: selectedMinute.file_path || selectedMinute.file_url
+            filePath: selectedMinute.file_url
           }
         });
 
@@ -81,8 +94,10 @@ export const SummaryGenerator = () => {
           throw new Error('Failed to process document with OCR');
         }
 
-        // Wait a bit for OCR to process
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        console.log('OCR triggered, waiting for processing...');
+        
+        // Wait for OCR to process
+        await new Promise(resolve => setTimeout(resolve, 3000));
         
         // Refetch to get updated content
         await refetch();
@@ -91,8 +106,7 @@ export const SummaryGenerator = () => {
       // Generate summary using the summarize function
       const { data: summaryData, error: summaryError } = await supabase.functions.invoke('summarize-minutes', {
         body: { 
-          minuteId: selectedDocument,
-          content: selectedMinute.content || ''
+          minutesId: selectedDocument
         }
       });
 
@@ -101,12 +115,13 @@ export const SummaryGenerator = () => {
         throw summaryError;
       }
 
-      if (summaryData?.summary) {
-        setGeneratedSummary(summaryData.summary);
+      console.log('Summary response:', summaryData);
+
+      if (summaryData?.summary_text) {
+        setGeneratedSummary(summaryData.summary_text);
         toast({
           title: "Summary generated successfully",
           description: "The AI has generated a comprehensive summary of the meeting minutes.",
-          variant: "success",
         });
       } else {
         throw new Error('No summary generated');
@@ -179,7 +194,7 @@ export const SummaryGenerator = () => {
                 <option value="">Choose a document...</option>
                 {meetingMinutes.map((minute) => (
                   <option key={minute.id} value={minute.id}>
-                    {minute.meeting_title} - {minute.workbody_name} ({new Date(minute.meeting_date).toLocaleDateString()})
+                    {minute.workbodies?.name || 'Unknown Workbody'} - {new Date(minute.date).toLocaleDateString()} ({minute.location})
                   </option>
                 ))}
               </select>
