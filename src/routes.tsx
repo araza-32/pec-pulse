@@ -2,7 +2,7 @@
 import { createBrowserRouter } from 'react-router-dom';
 import Index from './pages/Index';
 import Login from './pages/Login';
-import EnhancedDashboard from './pages/EnhancedDashboard';
+import ModernDashboard from './pages/ModernDashboard';
 import ChairmanDashboard from './pages/ChairmanDashboard';
 import ChairmanExecutiveDashboard from './pages/ChairmanExecutiveDashboard';
 import WorkbodyManagement from './pages/WorkbodyManagement';
@@ -26,32 +26,24 @@ import { AppLayout } from './components/layout/AppLayout';
 
 export const router = createBrowserRouter([
   {
+    path: '/login',
+    element: <Login />,
+  },
+  {
+    path: '/set-password',
+    element: <SetPassword />,
+  },
+  {
     path: '/',
     element: <AppLayout />,
     children: [
       {
         index: true,
-        element: <Index />,
-      },
-      {
-        path: 'login',
-        element: <Login />,
-      },
-      {
-        path: 'set-password',
-        element: <SetPassword />,
+        element: <ModernDashboard />,
       },
       {
         path: 'dashboard',
-        element: <EnhancedDashboard />,
-      },
-      {
-        path: 'chairman',
-        element: <ChairmanDashboard />,
-      },
-      {
-        path: 'chairman/executive',
-        element: <ChairmanExecutiveDashboard />,
+        element: <ModernDashboard />,
       },
       {
         path: 'workbodies',
@@ -78,20 +70,12 @@ export const router = createBrowserRouter([
         element: <MeetingCalendar />,
       },
       {
-        path: 'meetings',
-        element: <MeetingsList />,
-      },
-      {
-        path: 'minutes',
-        element: <MeetingMinutes />,
+        path: 'minutes/draft',
+        element: <DraftMinutes />,
       },
       {
         path: 'minutes/enhanced',
         element: <EnhancedMeetingMinutes />,
-      },
-      {
-        path: 'minutes/draft',
-        element: <DraftMinutes />,
       },
       {
         path: 'minutes/upload',
@@ -100,6 +84,14 @@ export const router = createBrowserRouter([
       {
         path: 'minutes/:id',
         element: <MinutesViewer />,
+      },
+      {
+        path: 'admin/users',
+        element: <Settings />,
+      },
+      {
+        path: 'admin/audit',
+        element: <Reports />,
       },
       {
         path: 'documents',
