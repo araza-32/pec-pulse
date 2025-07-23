@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ScheduledMeeting } from '@/types';
 import { addDays, isWithinInterval, startOfWeek, endOfWeek } from 'date-fns';
@@ -38,29 +37,55 @@ export const useNotifications = () => {
     return { thisWeekMeetings, meetingsNeedingMinutes };
   };
 
-  // Create notification for secretary
+  // Create notification for secretary (now using local state and toast)
   const createSecretaryAlert = async (meeting: ScheduledMeeting) => {
-    try {
-      const { error } = await supabase
-        .from('notifications')
-        .insert({
-          type: 'minutes_reminder',
-          title: `Minutes needed for ${meeting.workbodyName}`,
-          message: `Please upload minutes for the ${meeting.workbodyName} meeting held on ${meeting.date}`,
-          meeting_id: meeting.id,
-          workbody_id: meeting.workbodyId,
-          created_at: new Date().toISOString()
-        });
+    const alertMessage = `Minutes needed for ${meeting.workbodyName} meeting held on ${meeting.date}`;
+    
+    // Add to local notifications state
+    const newNotification = {
+      id: Date.now().toString(),
+      type: 'minutes_reminder',
+      title: `Minutes needed for ${meeting.workbodyName}`,
+      message: alertMessage,
+      meeting_id: meeting.id,
+      workbody_id: meeting.workbodyId,
+      created_at: new Date().toISOString(),
+      read: false
+    };
 
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error creating secretary alert:', error);
-    }
+    setNotifications(prev => [newNotification, ...prev]);
+
+    // Show toast notification
+    toast({
+      title: "Secretary Alert",
+      description: alertMessage,
+      variant: "default",
+    });
+
+    console.log('Secretary alert created:', newNotification);
+  };
+
+  // Mark notification as read
+  const markAsRead = (notificationId: string) => {
+    setNotifications(prev => 
+      prev.map(notification => 
+        notification.id === notificationId 
+          ? { ...notification, read: true }
+          : notification
+      )
+    );
+  };
+
+  // Clear all notifications
+  const clearNotifications = () => {
+    setNotifications([]);
   };
 
   return {
     notifications,
     checkWeeklyMeetings,
-    createSecretaryAlert
+    createSecretaryAlert,
+    markAsRead,
+    clearNotifications
   };
 };
