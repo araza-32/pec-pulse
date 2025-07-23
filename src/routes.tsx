@@ -1,5 +1,5 @@
 
-import { createBrowserRouter, redirect } from 'react-router-dom';
+import { createBrowserRouter } from 'react-router-dom';
 import Index from './pages/Index';
 import Login from './pages/Login';
 import EnhancedDashboard from './pages/EnhancedDashboard';

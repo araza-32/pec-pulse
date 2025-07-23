@@ -1,336 +1,225 @@
 
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Brain, Loader2, RefreshCw, CheckCircle, AlertCircle, Clock } from 'lucide-react';
-import { useMinutesSummaries } from '@/hooks/useMinutesSummaries';
-import { useWorkbodies } from '@/hooks/useWorkbodies';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2, FileText, Sparkles, AlertCircle } from "lucide-react";
+import { useQuery } from '@tanstack/react-query';
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface MeetingMinute {
   id: string;
-  workbody_id: string;
-  date: string;
-  location: string;
-  ocr_status: string;
-  ocr_text: string | null;
-  workbodies: {
-    name: string;
-  };
+  meeting_title: string;
+  meeting_date: string;
+  workbody_name: string;
+  file_path?: string;
+  file_url?: string;
+  content?: string;
+  ocr_status?: string;
+  ocr_progress?: number;
 }
 
-export function SummaryGenerator() {
-  const [selectedWorkbodyId, setSelectedWorkbodyId] = useState<string>('');
-  const [selectedMeetingId, setSelectedMeetingId] = useState<string>('');
-  const [meetings, setMeetings] = useState<MeetingMinute[]>([]);
-  const [isLoadingMeetings, setIsLoadingMeetings] = useState(false);
-  const [isProcessingOCR, setIsProcessingOCR] = useState(false);
-  const { workbodies } = useWorkbodies();
-  const { summaries, isGenerating, generateSummary, fetchSummaries } = useMinutesSummaries();
+export const SummaryGenerator = () => {
+  const [selectedDocument, setSelectedDocument] = useState<string>('');
+  const [generatedSummary, setGeneratedSummary] = useState<string>('');
+  const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
 
-  // Fetch meetings when workbody is selected
-  useEffect(() => {
-    if (selectedWorkbodyId) {
-      fetchMeetings();
-    }
-  }, [selectedWorkbodyId]);
-
-  const fetchMeetings = async () => {
-    if (!selectedWorkbodyId) return;
-    
-    setIsLoadingMeetings(true);
-    try {
+  // Fetch meeting minutes
+  const { data: meetingMinutes, isLoading, refetch } = useQuery({
+    queryKey: ['meeting-minutes-for-summary'],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('meeting_minutes')
-        .select(`
-          *,
-          workbodies:workbody_id (
-            name
-          )
-        `)
-        .eq('workbody_id', selectedWorkbodyId)
-        .order('date', { ascending: false });
-
+        .select('*')
+        .order('meeting_date', { ascending: false });
+      
       if (error) {
-        console.error('Error fetching meetings:', error);
+        console.error('Error fetching meeting minutes:', error);
         throw error;
       }
-
-      setMeetings(data || []);
-    } catch (error) {
-      console.error('Error fetching meetings:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch meetings",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoadingMeetings(false);
-    }
-  };
-
-  const processOCR = async (meetingId: string) => {
-    setIsProcessingOCR(true);
-    try {
-      const meeting = meetings.find(m => m.id === meetingId);
-      if (!meeting) return;
-
-      // Call OCR processing function
-      const { data, error } = await supabase.functions.invoke('extract-text-ocr', {
-        body: { 
-          fileUrl: meeting.file_url || '', 
-          minutesId: meetingId 
-        },
-      });
-
-      if (error) {
-        console.error('OCR processing error:', error);
-        throw error;
-      }
-
-      toast({
-        title: "OCR Processing Complete",
-        description: "Text extraction completed successfully",
-      });
-
-      // Refresh meetings to get updated OCR status
-      await fetchMeetings();
-    } catch (error) {
-      console.error('Error processing OCR:', error);
-      toast({
-        title: "Error",
-        description: "Failed to process OCR for this meeting",
-        variant: "destructive",
-      });
-    } finally {
-      setIsProcessingOCR(false);
-    }
-  };
+      
+      return data as MeetingMinute[];
+    },
+  });
 
   const handleGenerateSummary = async () => {
-    if (!selectedMeetingId) return;
-    
-    const meeting = meetings.find(m => m.id === selectedMeetingId);
-    if (!meeting) return;
-
-    // Check if OCR processing is needed
-    if (!meeting.ocr_text || meeting.ocr_status === 'pending') {
+    if (!selectedDocument) {
       toast({
-        title: "OCR Processing Required",
-        description: "Processing document text first...",
+        title: "No document selected",
+        description: "Please select a document to generate summary from.",
+        variant: "destructive",
       });
-      await processOCR(selectedMeetingId);
       return;
     }
-    
+
+    setIsGenerating(true);
+    setGeneratedSummary('');
+
     try {
-      await generateSummary(selectedMeetingId);
-      setSelectedMeetingId('');
-      setSelectedWorkbodyId('');
+      const selectedMinute = meetingMinutes?.find(m => m.id === selectedDocument);
+      if (!selectedMinute) {
+        throw new Error('Selected document not found');
+      }
+
+      // Check if OCR is needed
+      if (!selectedMinute.content && selectedMinute.ocr_status !== 'completed') {
+        console.log('Triggering OCR for document:', selectedMinute.id);
+        
+        // Trigger OCR process
+        const { data: ocrData, error: ocrError } = await supabase.functions.invoke('extract-text-ocr', {
+          body: { 
+            minuteId: selectedMinute.id,
+            filePath: selectedMinute.file_path || selectedMinute.file_url
+          }
+        });
+
+        if (ocrError) {
+          console.error('OCR error:', ocrError);
+          throw new Error('Failed to process document with OCR');
+        }
+
+        // Wait a bit for OCR to process
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Refetch to get updated content
+        await refetch();
+      }
+
+      // Generate summary using the summarize function
+      const { data: summaryData, error: summaryError } = await supabase.functions.invoke('summarize-minutes', {
+        body: { 
+          minuteId: selectedDocument,
+          content: selectedMinute.content || ''
+        }
+      });
+
+      if (summaryError) {
+        console.error('Summary generation error:', summaryError);
+        throw summaryError;
+      }
+
+      if (summaryData?.summary) {
+        setGeneratedSummary(summaryData.summary);
+        toast({
+          title: "Summary generated successfully",
+          description: "The AI has generated a comprehensive summary of the meeting minutes.",
+          variant: "success",
+        });
+      } else {
+        throw new Error('No summary generated');
+      }
+
     } catch (error) {
-      console.error('Failed to generate summary:', error);
+      console.error('Error generating summary:', error);
+      toast({
+        title: "Error generating summary",
+        description: error instanceof Error ? error.message : "Failed to generate summary. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
     }
   };
 
-  const getExistingSummary = (meetingId: string) => {
-    return summaries.find(s => s.meeting_minutes_id === meetingId);
-  };
-
-  const getOCRStatusIcon = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'processing':
-        return <Clock className="h-4 w-4 text-blue-500" />;
-      case 'failed':
-        return <AlertCircle className="h-4 w-4 text-red-500" />;
-      default:
-        return <Clock className="h-4 w-4 text-gray-500" />;
-    }
-  };
-
-  const getOCRStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      case 'processing':
-        return 'bg-blue-100 text-blue-800';
-      case 'failed':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5" />
+            Meeting Summaries
+          </CardTitle>
+          <CardDescription>
+            AI-powered summarization of meeting minutes
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Brain className="h-5 w-5 text-blue-500" />
-          AI Summary Generator
+          <Sparkles className="h-5 w-5" />
+          Meeting Summaries
         </CardTitle>
+        <CardDescription>
+          AI-powered summarization of meeting minutes
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Select Workbody</label>
-          <Select value={selectedWorkbodyId} onValueChange={(value) => {
-            setSelectedWorkbodyId(value);
-            setSelectedMeetingId(''); // Reset meeting selection
-          }}>
-            <SelectTrigger>
-              <SelectValue placeholder="Choose a workbody" />
-            </SelectTrigger>
-            <SelectContent>
-              {workbodies.map((workbody) => (
-                <SelectItem key={workbody.id} value={workbody.id}>
-                  <div className="flex items-center justify-between w-full">
-                    <span>{workbody.name}</span>
-                    <Badge variant="outline" className="text-xs ml-2">
-                      {workbody.type}
-                    </Badge>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        {!meetingMinutes || meetingMinutes.length === 0 ? (
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              No meeting minutes found. Please upload some documents first to generate summaries.
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <>
+            <div className="space-y-2">
+              <label htmlFor="document-select" className="text-sm font-medium">
+                Select Document for Summary
+              </label>
+              <select
+                id="document-select"
+                className="w-full p-2 border rounded-md"
+                value={selectedDocument}
+                onChange={(e) => setSelectedDocument(e.target.value)}
+              >
+                <option value="">Choose a document...</option>
+                {meetingMinutes.map((minute) => (
+                  <option key={minute.id} value={minute.id}>
+                    {minute.meeting_title} - {minute.workbody_name} ({new Date(minute.meeting_date).toLocaleDateString()})
+                  </option>
+                ))}
+              </select>
+            </div>
 
-        {selectedWorkbodyId && (
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Select Meeting</label>
-            <Select value={selectedMeetingId} onValueChange={setSelectedMeetingId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Choose a meeting" />
-              </SelectTrigger>
-              <SelectContent>
-                {isLoadingMeetings ? (
-                  <SelectItem value="loading" disabled>Loading meetings...</SelectItem>
-                ) : meetings.length === 0 ? (
-                  <SelectItem value="no-meetings" disabled>No meetings found</SelectItem>
-                ) : (
-                  meetings.map((meeting) => {
-                    const existingSummary = getExistingSummary(meeting.id);
-                    return (
-                      <SelectItem key={meeting.id} value={meeting.id}>
-                        <div className="flex items-center justify-between w-full">
-                          <span>{meeting.date} - {meeting.location}</span>
-                          <div className="flex items-center gap-1 ml-2">
-                            {getOCRStatusIcon(meeting.ocr_status)}
-                            <Badge variant="outline" className={`text-xs ${getOCRStatusColor(meeting.ocr_status)}`}>
-                              {meeting.ocr_status}
-                            </Badge>
-                            {existingSummary && (
-                              <Badge variant="outline" className="text-xs">
-                                <CheckCircle className="h-3 w-3 mr-1" />
-                                Summarized
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      </SelectItem>
-                    );
-                  })
-                )}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
+            <Button 
+              onClick={handleGenerateSummary}
+              disabled={isGenerating || !selectedDocument}
+              className="w-full"
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Generating Summary...
+                </>
+              ) : (
+                <>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Generate AI Summary
+                </>
+              )}
+            </Button>
 
-        <div className="flex items-center gap-2">
-          <Button 
-            onClick={handleGenerateSummary}
-            disabled={!selectedMeetingId || isGenerating || isProcessingOCR}
-            className="flex items-center gap-2"
-          >
-            {isGenerating || isProcessingOCR ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                {isProcessingOCR ? 'Processing OCR...' : 'Generating...'}
-              </>
-            ) : (
-              <>
-                <Brain className="h-4 w-4" />
-                Summarize Minutes
-              </>
+            {generatedSummary && (
+              <div className="space-y-2">
+                <label htmlFor="summary-output" className="text-sm font-medium">
+                  Generated Summary
+                </label>
+                <Textarea
+                  id="summary-output"
+                  value={generatedSummary}
+                  readOnly
+                  className="min-h-[200px] resize-none"
+                  placeholder="Generated summary will appear here..."
+                />
+              </div>
             )}
-          </Button>
-
-          <Button 
-            variant="outline" 
-            onClick={fetchSummaries}
-            size="sm"
-          >
-            <RefreshCw className="h-4 w-4" />
-          </Button>
-        </div>
-
-        {selectedMeetingId && (
-          <div className="space-y-2">
-            {(() => {
-              const meeting = meetings.find(m => m.id === selectedMeetingId);
-              const existingSummary = getExistingSummary(selectedMeetingId);
-              
-              if (!meeting) return null;
-              
-              if (meeting.ocr_status === 'pending' || !meeting.ocr_text) {
-                return (
-                  <div className="p-3 bg-yellow-50 rounded-lg border">
-                    <div className="flex items-center gap-2 text-yellow-700">
-                      <Clock className="h-4 w-4" />
-                      <span className="text-sm font-medium">OCR Processing Required</span>
-                    </div>
-                    <p className="text-xs text-yellow-600 mt-1">
-                      Document text needs to be extracted before summarization can proceed.
-                    </p>
-                  </div>
-                );
-              }
-              
-              if (existingSummary) {
-                return (
-                  <div className="p-3 bg-blue-50 rounded-lg border">
-                    <div className="flex items-center gap-2 text-blue-700">
-                      <CheckCircle className="h-4 w-4" />
-                      <span className="text-sm font-medium">Summary already exists</span>
-                    </div>
-                    <p className="text-xs text-blue-600 mt-1">
-                      This will update the existing summary with fresh AI insights.
-                    </p>
-                  </div>
-                );
-              }
-              
-              return (
-                <div className="p-3 bg-green-50 rounded-lg border">
-                  <div className="flex items-center gap-2 text-green-700">
-                    <CheckCircle className="h-4 w-4" />
-                    <span className="text-sm font-medium">Ready for summarization</span>
-                  </div>
-                  <p className="text-xs text-green-600 mt-1">
-                    Document text is available and ready for AI processing.
-                  </p>
-                </div>
-              );
-            })()}
-          </div>
+          </>
         )}
-
-        <div className="text-xs text-gray-500 space-y-1">
-          <div>• AI will extract key decisions and action items</div>
-          <div>• Performance insights will be analyzed</div>
-          <div>• Sentiment analysis will be performed</div>
-          <div className="flex items-center gap-1 pt-2">
-            <span>Last refresh:</span>
-            <Badge variant="outline" className="text-xs">
-              {new Date().toLocaleTimeString()}
-            </Badge>
-          </div>
-        </div>
       </CardContent>
     </Card>
   );
-}
+};
