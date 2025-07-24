@@ -22,11 +22,12 @@ serve(async (req) => {
       );
     }
 
-    console.log('Starting OCR extraction for:', fileUrl);
+    console.log('Starting enhanced OCR extraction for:', fileUrl);
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Fetch the PDF file
@@ -35,47 +36,109 @@ serve(async (req) => {
       throw new Error(`Failed to fetch file: ${fileResponse.status}`);
     }
 
-    const fileBuffer = await fileResponse.arrayBuffer();
-    const uint8Array = new Uint8Array(fileBuffer);
-
-    // For now, we'll use a simple text extraction approach
-    // In production, you might want to use a more sophisticated OCR service
     let extractedText = '';
     
     try {
-      // Convert PDF to text using a simple approach
-      // This is a placeholder - in production you'd use a proper PDF parser
-      const textDecoder = new TextDecoder('utf-8', { ignoreBOM: true, fatal: false });
-      const textContent = textDecoder.decode(uint8Array);
-      
-      // Basic text extraction from PDF (very simplified)
-      // Extract readable text patterns
-      const textMatches = textContent.match(/[A-Za-z0-9\s\.,;:!?\-\(\)]+/g);
-      if (textMatches) {
-        extractedText = textMatches
-          .filter(text => text.length > 10) // Filter out very short fragments
-          .join(' ')
-          .replace(/\s+/g, ' ') // Normalize whitespace
-          .trim();
-      }
+      if (openAIApiKey) {
+        console.log('Using OpenAI vision for enhanced OCR...');
+        
+        // Convert PDF to base64 for OpenAI vision API
+        const fileBuffer = await fileResponse.arrayBuffer();
+        const base64File = btoa(String.fromCharCode(...new Uint8Array(fileBuffer)));
+        const mimeType = fileResponse.headers.get('content-type') || 'application/pdf';
+        
+        // Use OpenAI Vision API for text extraction
+        const visionResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${openAIApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'gpt-4o-mini',
+            messages: [
+              {
+                role: 'system',
+                content: `You are an expert OCR system for meeting minutes. Extract all text from this document accurately, maintaining the structure and formatting. Focus on:
+                - Meeting details (date, time, location, attendees)
+                - Agenda items and discussions
+                - Decisions made
+                - Action items and assignments
+                - Any voting results or resolutions
+                
+                Provide the extracted text in a clean, readable format while preserving the document structure.`
+              },
+              {
+                role: 'user',
+                content: [
+                  {
+                    type: 'text',
+                    text: 'Please extract all text from this meeting minutes document:'
+                  },
+                  {
+                    type: 'image_url',
+                    image_url: {
+                      url: `data:${mimeType};base64,${base64File}`,
+                      detail: 'high'
+                    }
+                  }
+                ]
+              }
+            ],
+            max_tokens: 4000,
+            temperature: 0.1
+          }),
+        });
 
-      // If no text extracted, provide a fallback
-      if (!extractedText || extractedText.length < 50) {
-        extractedText = 'OCR extraction completed but text content was not readable. Please ensure the PDF contains text-based content.';
+        if (visionResponse.ok) {
+          const visionData = await visionResponse.json();
+          extractedText = visionData.choices[0].message.content;
+          console.log('OpenAI vision extraction successful, text length:', extractedText.length);
+        } else {
+          console.log('OpenAI vision failed, falling back to basic extraction');
+          throw new Error('Vision API failed');
+        }
+      } else {
+        throw new Error('No OpenAI API key available');
       }
-
     } catch (ocrError) {
-      console.error('OCR processing error:', ocrError);
-      extractedText = 'OCR extraction failed. The document may be image-based or corrupted.';
+      console.log('Enhanced OCR failed, using fallback method:', ocrError.message);
+      
+      // Fallback to basic text extraction
+      const fileBuffer = await fileResponse.arrayBuffer();
+      const uint8Array = new Uint8Array(fileBuffer);
+      
+      try {
+        const textDecoder = new TextDecoder('utf-8', { ignoreBOM: true, fatal: false });
+        const textContent = textDecoder.decode(uint8Array);
+        
+        // Basic text extraction from PDF (simplified)
+        const textMatches = textContent.match(/[A-Za-z0-9\s\.,;:!?\-\(\)]+/g);
+        if (textMatches) {
+          extractedText = textMatches
+            .filter(text => text.length > 10)
+            .join(' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+        }
+
+        if (!extractedText || extractedText.length < 50) {
+          extractedText = 'Basic OCR extraction completed but limited text was readable. For better results, ensure the document is text-based and high quality.';
+        }
+      } catch (fallbackError) {
+        console.error('Fallback OCR failed:', fallbackError);
+        extractedText = 'OCR extraction failed. The document may be image-based, corrupted, or in an unsupported format.';
+      }
     }
 
-    console.log('Extracted text length:', extractedText.length);
+    console.log('Final extracted text length:', extractedText.length);
 
     // Update the meeting minutes with extracted text
     const { error: updateError } = await supabase
       .from('meeting_minutes')
       .update({ 
         ocr_text: extractedText,
+        ocr_status: 'completed',
         updated_at: new Date().toISOString()
       })
       .eq('id', minutesId);
@@ -91,7 +154,8 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         extractedText: extractedText.substring(0, 500) + (extractedText.length > 500 ? '...' : ''),
-        textLength: extractedText.length
+        textLength: extractedText.length,
+        method: openAIApiKey ? 'enhanced_vision' : 'basic_fallback'
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
