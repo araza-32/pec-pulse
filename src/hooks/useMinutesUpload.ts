@@ -120,6 +120,15 @@ export const useMinutesUpload = () => {
 
       console.log('Public URL:', publicUrl);
 
+      // Check if there's a corresponding meeting in the meetings table
+      const { data: existingMeeting } = await supabase
+        .from('meetings')
+        .select('id')
+        .eq('workbody_id', selectedWorkbody)
+        .gte('datetime', `${meetingDate}T00:00:00`)
+        .lt('datetime', `${meetingDate}T23:59:59`)
+        .single();
+
       // Save to database
       const { data: minutesData, error: dbError } = await supabase
         .from('meeting_minutes')
@@ -140,6 +149,15 @@ export const useMinutesUpload = () => {
         console.error('Database error:', dbError);
         throw dbError;
       }
+
+      // Update meeting status if it exists
+      if (existingMeeting) {
+        await supabase
+          .from('meetings')
+          .update({ status: 'completed' })
+          .eq('id', existingMeeting.id);
+      }
+
 
       console.log('Minutes saved to database:', minutesData);
 

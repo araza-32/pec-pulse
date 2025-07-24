@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { WorkbodyHeader } from "@/components/workbody/detail/WorkbodyHeader";
 import { WorkbodyStats } from "@/components/workbody/detail/WorkbodyStats";
 import { WorkbodyMembers } from "@/components/workbody/detail/WorkbodyMembers";
+import { MeetingIntegration } from "@/components/dashboard/MeetingIntegration";
 import { WorkbodyMeetings } from "@/components/workbody/detail/WorkbodyMeetings";
 import { useAuth } from "@/contexts/AuthContext";
 import { ArrowLeft } from "lucide-react";
@@ -163,6 +164,12 @@ export default function WorkbodyDetail() {
             meetingsThisYear={workbody.meetingsThisYear}
             actionsAgreed={workbody.actionsAgreed}
             actionsCompleted={workbody.actionsCompleted}
+          />
+
+          <MeetingIntegration 
+            workbodyId={workbody.id}
+            onScheduleMeeting={() => setActiveTab("meetings")}
+            onUploadMinutes={() => window.open('/upload-minutes', '_blank')}
           />
 
           <Card>

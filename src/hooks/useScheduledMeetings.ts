@@ -19,12 +19,59 @@ export const useScheduledMeetings = () => {
     setIsLoading(true);
     setError(null);
     try {
-      // Get ALL meetings for ALL users - no role-based filtering at database level
-      const { data, error } = await supabase
-        .from('scheduled_meetings')
-        .select('*')
-        .order('date', { ascending: true })
-        .order('time', { ascending: true });
+// Get ALL meetings from both scheduled_meetings and meetings tables
+      const [scheduledResponse, meetingsResponse] = await Promise.all([
+        supabase
+          .from('scheduled_meetings')
+          .select('*')
+          .order('date', { ascending: true })
+          .order('time', { ascending: true }),
+        supabase
+          .from('meetings')
+          .select(`
+            id,
+            workbody_id,
+            title,
+            datetime,
+            location,
+            agenda_items,
+            status,
+            workbodies!inner(name)
+          `)
+          .order('datetime', { ascending: true })
+      ]);
+
+      if (scheduledResponse.error) throw scheduledResponse.error;
+      if (meetingsResponse.error) throw meetingsResponse.error;
+
+      const scheduledData = scheduledResponse.data || [];
+      const meetingsData = meetingsResponse.data || [];
+
+      // Merge both data sources
+      const data = [
+        ...scheduledData,
+        ...meetingsData.map(meeting => ({
+          id: meeting.id,
+          workbody_id: meeting.workbody_id,
+          workbody_name: meeting.workbodies?.name || 'Unknown',
+          date: meeting.datetime.split('T')[0],
+          time: meeting.datetime.split('T')[1]?.substring(0, 5) || '00:00',
+          location: meeting.location || '',
+          agenda_items: meeting.agenda_items || [],
+          notification_file_name: null,
+          notification_file_path: null,
+          agenda_file_name: null,
+          agenda_file_path: null,
+          status: meeting.status
+        }))
+      ];
+
+      // Sort combined data by date and time
+      data.sort((a, b) => {
+        const dateA = new Date(`${a.date}T${a.time}`);
+        const dateB = new Date(`${b.date}T${b.time}`);
+        return dateA.getTime() - dateB.getTime();
+      });
 
       if (error) {
         console.error("Error fetching meetings:", error);
