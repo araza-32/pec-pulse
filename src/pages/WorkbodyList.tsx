@@ -6,7 +6,9 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { Users, ArrowLeft, Search } from "lucide-react";
+import { Users, ArrowLeft, Search, Grid, List } from "lucide-react";
+import { NestedWorkbodyView } from "@/components/workbody/NestedWorkbodyView";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
   TableBody,
@@ -28,6 +30,7 @@ export default function WorkbodyList() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [viewMode, setViewMode] = useState<"nested" | "table">("nested");
   
   // Filter and sort workbodies
   const filteredWorkbodies = workbodies
@@ -144,6 +147,21 @@ export default function WorkbodyList() {
             className="w-[250px]"
           />
           <Search className="h-4 w-4 text-muted-foreground" />
+          
+          <Separator orientation="vertical" className="h-6" />
+          
+          <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "nested" | "table")}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="nested" className="flex items-center gap-2">
+                <Grid className="h-4 w-4" />
+                Nested
+              </TabsTrigger>
+              <TabsTrigger value="table" className="flex items-center gap-2">
+                <List className="h-4 w-4" />
+                Table
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
       </div>
       
@@ -156,6 +174,12 @@ export default function WorkbodyList() {
             <p className="text-muted-foreground">Loading workbodies...</p>
           </div>
         </div>
+      ) : viewMode === "nested" ? (
+        <NestedWorkbodyView
+          workbodies={filteredWorkbodies}
+          onWorkbodyClick={(workbody) => navigate(`/workbody/${workbody.id}`)}
+          onEdit={(workbody) => navigate(`/workbody/edit/${workbody.id}`)}
+        />
       ) : (
         <div className="rounded-md border">
           <Table>
@@ -163,6 +187,7 @@ export default function WorkbodyList() {
               <TableRow>
                 <TableHead>Name</TableHead>
                 <TableHead>Type</TableHead>
+                <TableHead>Parent</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>End of Term</TableHead>
                 <TableHead className="text-right">Action</TableHead>
@@ -176,10 +201,19 @@ export default function WorkbodyList() {
                   return (
                     <TableRow key={workbody.id}>
                       <TableCell className="font-medium">
-                        {workbody.name}
+                        <div className="flex items-center gap-2">
+                          {workbody.parentId && <span className="text-muted-foreground">└─</span>}
+                          {workbody.name}
+                        </div>
                       </TableCell>
                       <TableCell>
                         {getWorkbodyTypeLabel(workbody.type)}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground text-sm">
+                        {workbody.parentId ? 
+                          workbodies.find(w => w.id === workbody.parentId)?.name || "Unknown" : 
+                          "-"
+                        }
                       </TableCell>
                       <TableCell>
                         <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${status.className}`}>
@@ -201,7 +235,7 @@ export default function WorkbodyList() {
                 })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
                     No workbodies found matching the current filters.
                   </TableCell>
                 </TableRow>

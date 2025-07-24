@@ -78,17 +78,28 @@ export function WorkbodyTable({
         <Table>
           <TableHeader>
             <TableRow className="bg-secondary">
-              <TableHead className="font-semibold text-foreground">Name</TableHead>
-              <TableHead className="font-semibold text-foreground">Type</TableHead>
-              <TableHead className="font-semibold text-foreground">Created</TableHead>
-              <TableHead className="font-semibold text-foreground">End of Term</TableHead>
-              <TableHead className="w-[200px] font-semibold text-foreground">Actions</TableHead>
+            <TableHead className="font-semibold text-foreground">Name</TableHead>
+            <TableHead className="font-semibold text-foreground">Type</TableHead>
+            <TableHead className="font-semibold text-foreground">Parent</TableHead>
+            <TableHead className="font-semibold text-foreground">Created</TableHead>
+            <TableHead className="font-semibold text-foreground">End of Term</TableHead>
+            <TableHead className="w-[200px] font-semibold text-foreground">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {currentWorkbodies.map((workbody) => (
               <TableRow key={workbody.id} className="hover:bg-secondary/50">
-                <TableCell className="font-medium">{workbody.name}</TableCell>
+                <TableCell className="font-medium">
+                  <div className="flex items-center gap-2">
+                    {workbody.parentId && <span className="text-muted-foreground">└─</span>}
+                    {workbody.name}
+                    {workbody.childWorkbodies && workbody.childWorkbodies.length > 0 && (
+                      <Badge variant="secondary" className="text-xs">
+                        {workbody.childWorkbodies.length} child{workbody.childWorkbodies.length !== 1 ? 'ren' : ''}
+                      </Badge>
+                    )}
+                  </div>
+                </TableCell>
                 <TableCell>
                   <Badge
                     variant="outline"
@@ -99,6 +110,12 @@ export function WorkbodyTable({
                   >
                     {workbody.type.replace("-", " ")}
                   </Badge>
+                </TableCell>
+                <TableCell className="text-muted-foreground text-sm">
+                  {workbody.parentId ? 
+                    workbodies.find(w => w.id === workbody.parentId)?.name || "Unknown" : 
+                    "-"
+                  }
                 </TableCell>
                 <TableCell>
                   {new Date(workbody.createdDate).toLocaleDateString()}
