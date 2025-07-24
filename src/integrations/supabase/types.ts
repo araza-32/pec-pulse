@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          after_data: Json | null
+          before_data: Json | null
+          changed_at: string
+          changed_by: string | null
+          id: string
+          ip_address: unknown | null
+          operation: string
+          record_id: string
+          table_name: string
+          user_agent: string | null
+        }
+        Insert: {
+          after_data?: Json | null
+          before_data?: Json | null
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          ip_address?: unknown | null
+          operation: string
+          record_id: string
+          table_name: string
+          user_agent?: string | null
+        }
+        Update: {
+          after_data?: Json | null
+          before_data?: Json | null
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          ip_address?: unknown | null
+          operation?: string
+          record_id?: string
+          table_name?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       meeting_minutes: {
         Row: {
           actions_agreed: string[]
@@ -108,6 +147,91 @@ export type Database = {
           {
             foreignKeyName: "meeting_minutes_summaries_meeting_minutes_id_fkey"
             columns: ["meeting_minutes_id"]
+            isOneToOne: false
+            referencedRelation: "meeting_minutes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meetings: {
+        Row: {
+          agenda_items: string[] | null
+          created_at: string
+          created_by: string | null
+          datetime: string
+          id: string
+          location: string | null
+          status: string
+          title: string
+          updated_at: string
+          workbody_id: string | null
+        }
+        Insert: {
+          agenda_items?: string[] | null
+          created_at?: string
+          created_by?: string | null
+          datetime: string
+          id?: string
+          location?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          workbody_id?: string | null
+        }
+        Update: {
+          agenda_items?: string[] | null
+          created_at?: string
+          created_by?: string | null
+          datetime?: string
+          id?: string
+          location?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          workbody_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meetings_workbody_id_fkey"
+            columns: ["workbody_id"]
+            isOneToOne: false
+            referencedRelation: "workbodies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      minute_summaries: {
+        Row: {
+          actions: Json | null
+          ai_model: string | null
+          decisions: Json | null
+          generated_at: string
+          id: string
+          minute_id: string | null
+          summary: string | null
+        }
+        Insert: {
+          actions?: Json | null
+          ai_model?: string | null
+          decisions?: Json | null
+          generated_at?: string
+          id?: string
+          minute_id?: string | null
+          summary?: string | null
+        }
+        Update: {
+          actions?: Json | null
+          ai_model?: string | null
+          decisions?: Json | null
+          generated_at?: string
+          id?: string
+          minute_id?: string | null
+          summary?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "minute_summaries_minute_id_fkey"
+            columns: ["minute_id"]
             isOneToOne: false
             referencedRelation: "meeting_minutes"
             referencedColumns: ["id"]
@@ -304,6 +428,7 @@ export type Database = {
           meetings_this_year: number | null
           member_turnover: number | null
           name: string
+          parent_id: string | null
           recommendations_issued: number | null
           subcategory: string | null
           terms_of_reference: string | null
@@ -329,6 +454,7 @@ export type Database = {
           meetings_this_year?: number | null
           member_turnover?: number | null
           name: string
+          parent_id?: string | null
           recommendations_issued?: number | null
           subcategory?: string | null
           terms_of_reference?: string | null
@@ -354,13 +480,60 @@ export type Database = {
           meetings_this_year?: number | null
           member_turnover?: number | null
           name?: string
+          parent_id?: string | null
           recommendations_issued?: number | null
           subcategory?: string | null
           terms_of_reference?: string | null
           total_meetings?: number | null
           type?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "workbodies_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "workbodies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workbody_composition: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          id: string
+          role: string
+          status: string
+          user_id: string | null
+          workbody_id: string | null
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          id?: string
+          role: string
+          status?: string
+          user_id?: string | null
+          workbody_id?: string | null
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          id?: string
+          role?: string
+          status?: string
+          user_id?: string | null
+          workbody_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workbody_composition_workbody_id_fkey"
+            columns: ["workbody_id"]
+            isOneToOne: false
+            referencedRelation: "workbodies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       workbody_composition_history: {
         Row: {

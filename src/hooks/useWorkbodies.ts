@@ -25,7 +25,9 @@ export const useWorkbodies = () => {
       }
       
       console.log("Workbodies fetched:", data);
-      return (data || []).map(item => ({
+      
+      // Fetch child workbodies separately to handle nested structure
+      const allWorkbodies = (data || []).map(item => ({
         id: item.id,
         code: item.name.split(' ').map(word => word[0]).join('').toUpperCase().substring(0, 3),
         name: item.name,
@@ -34,6 +36,7 @@ export const useWorkbodies = () => {
         createdDate: item.created_date,
         endDate: item.end_date || undefined,
         termsOfReference: item.terms_of_reference || undefined,
+        parentId: item.parent_id || undefined,
         totalMeetings: item.total_meetings || 0,
         meetingsThisYear: item.meetings_this_year || 0,
         actionsAgreed: item.actions_agreed || 0,
@@ -45,8 +48,15 @@ export const useWorkbodies = () => {
           email: member.email || undefined,
           phone: member.phone || undefined,
           hasCV: member.has_cv || false
-        }))
+        })),
+        childWorkbodies: []
       })) as Workbody[];
+
+      // Build nested structure
+      return allWorkbodies.map(workbody => ({
+        ...workbody,
+        childWorkbodies: allWorkbodies.filter(child => child.parentId === workbody.id)
+      }));
     }
   });
 
@@ -67,6 +77,7 @@ export const useWorkbodies = () => {
           created_date: newWorkbody.createdDate.toISOString(),
           end_date: newWorkbody.endDate ? newWorkbody.endDate.toISOString() : null,
           terms_of_reference: newWorkbody.termsOfReference || "",
+          parent_id: newWorkbody.parentId || null,
           total_meetings: 0,
           meetings_this_year: 0,
           actions_agreed: 0,
@@ -102,7 +113,8 @@ export const useWorkbodies = () => {
           description: updatedWorkbody.description || "",
           created_date: updatedWorkbody.createdDate.toISOString(),
           end_date: updatedWorkbody.endDate ? updatedWorkbody.endDate.toISOString() : null,
-          terms_of_reference: updatedWorkbody.termsOfReference || ""
+          terms_of_reference: updatedWorkbody.termsOfReference || "",
+          parent_id: updatedWorkbody.parentId || null
         })
         .eq('id', updatedWorkbody.id)
         .select()

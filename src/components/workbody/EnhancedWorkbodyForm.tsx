@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, User, FileText, Clock } from "lucide-react";
+import { useWorkbodies } from "@/hooks/useWorkbodies";
 
 interface WorkbodyFormData {
   name: string;
@@ -18,6 +19,7 @@ interface WorkbodyFormData {
   created_date: string;
   end_date?: string;
   terms_of_reference: string;
+  parent_id?: string;
 }
 
 interface EnhancedWorkbodyFormProps {
@@ -57,6 +59,7 @@ export function EnhancedWorkbodyForm({
   initialData = {}, 
   isEditing = false 
 }: EnhancedWorkbodyFormProps) {
+  const { workbodies } = useWorkbodies();
   const [formData, setFormData] = useState<WorkbodyFormData>({
     name: initialData.name || '',
     type: initialData.type || '',
@@ -66,7 +69,8 @@ export function EnhancedWorkbodyForm({
     chairman: initialData.chairman || '',
     created_date: initialData.created_date || new Date().toISOString().split('T')[0],
     end_date: initialData.end_date || '',
-    terms_of_reference: initialData.terms_of_reference || ''
+    terms_of_reference: initialData.terms_of_reference || '',
+    parent_id: initialData.parent_id || ''
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -156,6 +160,39 @@ export function EnhancedWorkbodyForm({
                 />
                 {errors.chairman && <p className="text-sm text-red-500">{errors.chairman}</p>}
               </div>
+
+              {/* Parent Workbody Selection for Task Forces */}
+              {formData.type === 'task-force' && (
+                <div>
+                  <Label htmlFor="parent_id">Parent Workbody (Optional)</Label>
+                  <Select 
+                    value={formData.parent_id} 
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, parent_id: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select parent workbody (independent if none)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Independent Task Force</SelectItem>
+                      {workbodies
+                        .filter(wb => wb.type !== 'task-force') // Only committees and working groups can be parents
+                        .map(workbody => (
+                          <SelectItem key={workbody.id} value={workbody.id}>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className="text-xs">
+                                {workbody.type === 'committee' ? 'Committee' : 'Working Group'}
+                              </Badge>
+                              {workbody.name}
+                            </div>
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Task forces can be nested under committees or working groups, or remain independent
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="space-y-4">

@@ -20,6 +20,8 @@ export interface Workbody {
   createdDate?: string;
   termsOfReference?: string;
   members?: WorkbodyMember[];
+  parentId?: string | null; // For task force nesting
+  childWorkbodies?: Workbody[]; // Nested task forces
 }
 
 export interface WorkbodyMember {
@@ -45,6 +47,7 @@ export interface WorkbodyFormData {
   createdDate: Date;
   endDate?: Date;
   termsOfReference?: string;
+  parentId?: string | null; // For task force nesting
 }
 
 export interface DocumentUploadResult {
