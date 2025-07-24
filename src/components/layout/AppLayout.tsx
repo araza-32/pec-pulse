@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Toaster } from "@/components/ui/toaster";
 
 export function AppLayout() {
+  console.log("AppLayout rendering, React useState available?", typeof useState);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { session } = useAuth();
 

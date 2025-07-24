@@ -167,6 +167,7 @@ function toast({ ...props }: Toast) {
 }
 
 function useToast() {
+  console.log("useToast called, useState available?", typeof useState);
   const [state, setState] = useState<State>(memoryState);
 
   useEffect(() => {
