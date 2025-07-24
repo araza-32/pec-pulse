@@ -70,6 +70,18 @@ export const router = createBrowserRouter([
         element: <MeetingCalendar />,
       },
       {
+        path: 'chairman-dashboard',
+        element: <ChairmanDashboard />,
+      },
+      {
+        path: 'meetings',
+        element: <MeetingsList />,
+      },
+      {
+        path: 'minutes',
+        element: <MeetingMinutes />,
+      },
+      {
         path: 'minutes/draft',
         element: <DraftMinutes />,
       },

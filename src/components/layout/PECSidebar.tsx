@@ -10,7 +10,21 @@ import {
   Eye,
   File,
   UserCog,
-  Activity
+  Activity,
+  Crown,
+  Upload,
+  FolderOpen,
+  BarChart3,
+  Edit,
+  Building,
+  Briefcase,
+  Target,
+  Scale,
+  Shield,
+  Cog,
+  UserPlus,
+  ClipboardList,
+  BookOpen
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -35,9 +49,17 @@ interface NavItem {
 export function PECSidebar({ collapsed }: PECSidebarProps) {
   const location = useLocation();
   const { session } = useAuth();
-  const [openSections, setOpenSections] = useState<string[]>(['workbodies', 'meetings']);
+  const [openSections, setOpenSections] = useState<string[]>(['workbodies', 'meetings', 'minutes']);
 
-  const isAdmin = session?.role === 'admin' || session?.role === 'chairman';
+  const isAdmin = session?.role === 'admin';
+  const isChairman = session?.role === 'chairman';
+  const isCoordination = session?.role === 'coordination';
+  const isSecretary = session?.role === 'secretary';
+  const isRegistrar = session?.role === 'registrar';
+  
+  const hasManagementAccess = isAdmin || isCoordination || isChairman;
+  const hasReportsAccess = isAdmin || isChairman || isCoordination || isRegistrar;
+  const hasMinutesUpload = isAdmin || isSecretary || isChairman || isCoordination;
 
   const navigation: NavItem[] = [
     {
@@ -46,11 +68,20 @@ export function PECSidebar({ collapsed }: PECSidebarProps) {
       icon: LayoutDashboard,
     },
     {
+      title: "Chairman Dashboard",
+      href: "/chairman-dashboard",
+      icon: Crown,
+      adminOnly: isChairman || isAdmin || isCoordination,
+    },
+    {
       title: "Workbodies",
       icon: Users,
       children: [
         { title: "View All", href: "/workbodies", icon: Eye },
-        { title: "Add New", href: "/workbodies/management", icon: Plus },
+        { title: "Overview", href: "/workbodies/overview", icon: ClipboardList },
+        ...(hasManagementAccess ? [
+          { title: "Management", href: "/workbodies/management", icon: Plus },
+        ] : []),
       ],
     },
     {
@@ -58,15 +89,34 @@ export function PECSidebar({ collapsed }: PECSidebarProps) {
       icon: Calendar,
       children: [
         { title: "Calendar", href: "/calendar", icon: Calendar },
-        { title: "Minutes Templates", href: "/minutes/draft", icon: File },
+        { title: "Scheduled Meetings", href: "/meetings", icon: ClipboardList },
       ],
     },
     {
-      title: "AI Summaries",
-      href: "/minutes/enhanced",
-      icon: Bot,
+      title: "Minutes",
+      icon: FileText,
+      children: [
+        { title: "View Minutes", href: "/minutes", icon: BookOpen },
+        { title: "AI Enhanced", href: "/minutes/enhanced", icon: Bot },
+        ...(hasMinutesUpload ? [
+          { title: "Upload Minutes", href: "/minutes/upload", icon: Upload },
+        ] : []),
+        ...(isSecretary || isAdmin || isCoordination ? [
+          { title: "Draft Minutes", href: "/minutes/draft", icon: Edit },
+        ] : []),
+      ],
     },
     {
+      title: "Documents",
+      href: "/documents",
+      icon: FolderOpen,
+    },
+    ...(hasReportsAccess ? [{
+      title: "Reports",
+      href: "/reports",
+      icon: BarChart3,
+    }] : []),
+    ...(isAdmin ? [{
       title: "Administration",
       icon: UserCog,
       adminOnly: true,
@@ -74,13 +124,13 @@ export function PECSidebar({ collapsed }: PECSidebarProps) {
         { title: "Users", href: "/admin/users", icon: Users },
         { title: "Audit Logs", href: "/admin/audit", icon: Activity },
       ],
-    },
+    }] : []),
     {
       title: "Settings",
       href: "/settings",
       icon: Settings,
     },
-  ];
+  ].filter(Boolean) as NavItem[];
 
   const toggleSection = (title: string) => {
     setOpenSections(prev => 
@@ -98,7 +148,7 @@ export function PECSidebar({ collapsed }: PECSidebarProps) {
   };
 
   const NavItemComponent = ({ item, level = 0 }: { item: NavItem; level?: number }) => {
-    if (item.adminOnly && !isAdmin) return null;
+    if (item.adminOnly && !hasManagementAccess) return null;
 
     if (item.children) {
       const isOpen = openSections.includes(item.title.toLowerCase());
