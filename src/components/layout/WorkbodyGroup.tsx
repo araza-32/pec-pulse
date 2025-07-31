@@ -44,7 +44,7 @@ export const WorkbodyGroup = ({ title, items, icon }: WorkbodyGroupProps) => {
         {items.map(item => (
           <NavLink
             key={item.id}
-            to={`/workbodies/${item.id}`}
+            to={`/workbody/${item.id}`}
             className={({ isActive }) =>
               cn(
                 "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",

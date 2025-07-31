@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -38,10 +39,12 @@ import { WorkbodyFormData } from "@/types/workbody";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
+// Modify the formSchema to explicitly use the correct type
 const formSchema = z.object({
   name: z.string().min(3, {
     message: "Name must be at least 3 characters.",
   }),
+  // Update the type to only allow committee or working-group
   type: z.enum(["committee", "working-group"]),
   createdDate: z.date(),
   endDate: z.date().optional(),
@@ -59,11 +62,14 @@ export function CreateWorkbodyForm({
   onSubmit,
   onCancel,
 }: CreateWorkbodyFormProps) {
-  const [showEndDate, setShowEndDate] = useState(false);
+  const [showEndDate, setShowEndDate] = useState(
+    false
+  );
   const [manualMemberAddition, setManualMemberAddition] = useState(false);
   const [documentUploaded, setDocumentUploaded] = useState(false);
   const { toast } = useToast();
 
+  // Ensure initialData.type is either "committee" or "working-group"
   const initialType = initialData?.type === "committee" || initialData?.type === "working-group" 
     ? initialData.type 
     : "committee";
@@ -81,10 +87,7 @@ export function CreateWorkbodyForm({
   });
 
   const workbodyType = form.watch("type");
-
-  const showCommitteeTab = workbodyType === "committee";
-  const showWorkingGroupTab = workbodyType === "working-group";
-
+  
   const handleDocumentUpload = (documentId: string) => {
     setDocumentUploaded(true);
     toast({
@@ -100,42 +103,77 @@ export function CreateWorkbodyForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        <Tabs defaultValue={workbodyType} value={workbodyType} className="w-full">
+        <Tabs defaultValue={workbodyType} className="w-full">
           <TabsList className="w-full">
-            {showCommitteeTab && (
-              <TabsTrigger value="committee" className="flex-1" onClick={() => form.setValue("type", "committee")}>
-                Committee
-              </TabsTrigger>
-            )}
-            {showWorkingGroupTab && (
-              <TabsTrigger value="working-group" className="flex-1" onClick={() => form.setValue("type", "working-group")}>
-                Working Group
-              </TabsTrigger>
-            )}
+            <TabsTrigger value="committee" className="flex-1" onClick={() => form.setValue("type", "committee")}>
+              Committee
+            </TabsTrigger>
+            <TabsTrigger value="working-group" className="flex-1" onClick={() => form.setValue("type", "working-group")}>
+              Working Group
+            </TabsTrigger>
           </TabsList>
 
-          {showCommitteeTab && (
-            <TabsContent value="committee" className="space-y-4 mt-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Committee Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter committee name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          <TabsContent value="committee" className="space-y-4 mt-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Committee Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter committee name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
+            <FormField
+              control={form.control}
+              name="createdDate"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Creation Date</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value ? (
+                            format(field.value, "PPP")
+                          ) : (
+                            <span>Pick a date</span>
+                          )}
+                          <Calendar className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {showEndDate && (
               <FormField
                 control={form.control}
-                name="createdDate"
+                name="endDate"
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
-                    <FormLabel>Creation Date</FormLabel>
+                    <FormLabel>End Date</FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
                         <FormControl>
@@ -146,7 +184,11 @@ export function CreateWorkbodyForm({
                               !field.value && "text-muted-foreground"
                             )}
                           >
-                            {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                            {field.value ? (
+                              format(field.value, "PPP")
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
                             <Calendar className="ml-auto h-4 w-4 opacity-50" />
                           </Button>
                         </FormControl>
@@ -154,7 +196,7 @@ export function CreateWorkbodyForm({
                       <PopoverContent className="w-auto p-0" align="start">
                         <CalendarComponent
                           mode="single"
-                          selected={field.value}
+                          selected={field.value || undefined}
                           onSelect={field.onChange}
                           initialFocus
                         />
@@ -164,86 +206,88 @@ export function CreateWorkbodyForm({
                   </FormItem>
                 )}
               />
+            )}
 
-              {showEndDate && (
-                <FormField
-                  control={form.control}
-                  name="endDate"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>End Date</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={"outline"}
-                              className={cn(
-                                "w-full pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                              <Calendar className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <CalendarComponent
-                            mode="single"
-                            selected={field.value || undefined}
-                            onSelect={field.onChange}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+            <FormField
+              control={form.control}
+              name="termsOfReference"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Terms of Reference</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Enter terms of reference"
+                      className="min-h-[120px]"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
               )}
+            />
+          </TabsContent>
 
-              <FormField
-                control={form.control}
-                name="termsOfReference"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Terms of Reference</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Enter terms of reference"
-                        className="min-h-[120px]"
-                        {...field}
+          <TabsContent value="working-group" className="space-y-4 mt-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Working Group Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter working group name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="createdDate"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Creation Date</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value ? (
+                            format(field.value, "PPP")
+                          ) : (
+                            <span>Pick a date</span>
+                          )}
+                          <Calendar className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        initialFocus
                       />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </TabsContent>
-          )}
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          {showWorkingGroupTab && (
-            <TabsContent value="working-group" className="space-y-4 mt-4">
+            {showEndDate && (
               <FormField
                 control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Working Group Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter working group name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="createdDate"
+                name="endDate"
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
-                    <FormLabel>Creation Date</FormLabel>
+                    <FormLabel>End Date</FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
                         <FormControl>
@@ -254,7 +298,11 @@ export function CreateWorkbodyForm({
                               !field.value && "text-muted-foreground"
                             )}
                           >
-                            {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                            {field.value ? (
+                              format(field.value, "PPP")
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
                             <Calendar className="ml-auto h-4 w-4 opacity-50" />
                           </Button>
                         </FormControl>
@@ -262,7 +310,7 @@ export function CreateWorkbodyForm({
                       <PopoverContent className="w-auto p-0" align="start">
                         <CalendarComponent
                           mode="single"
-                          selected={field.value}
+                          selected={field.value || undefined}
                           onSelect={field.onChange}
                           initialFocus
                         />
@@ -272,63 +320,26 @@ export function CreateWorkbodyForm({
                   </FormItem>
                 )}
               />
+            )}
 
-              {showEndDate && (
-                <FormField
-                  control={form.control}
-                  name="endDate"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>End Date</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={"outline"}
-                              className={cn(
-                                "w-full pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                              <Calendar className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <CalendarComponent
-                            mode="single"
-                            selected={field.value || undefined}
-                            onSelect={field.onChange}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+            <FormField
+              control={form.control}
+              name="termsOfReference"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Terms of Reference</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Enter terms of reference"
+                      className="min-h-[120px]"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
               )}
-
-              <FormField
-                control={form.control}
-                name="termsOfReference"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Terms of Reference</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Enter terms of reference"
-                        className="min-h-[120px]"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </TabsContent>
-          )}
+            />
+          </TabsContent>
         </Tabs>
 
         <div className="flex justify-end space-x-4 pt-6 border-t">

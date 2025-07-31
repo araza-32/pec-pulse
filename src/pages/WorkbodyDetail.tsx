@@ -1,99 +1,70 @@
 
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
-import { useWorkbodies } from "@/hooks/useWorkbodies";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
+import { useParams } from "react-router-dom";
+import {
+  Calendar,
+  Download,
+  FileText,
+  MapPin,
+  Users,
+  CheckSquare,
+  FileSpreadsheet,
+  AlertCircle,
+  UserPlus,
+  Image,
+} from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { meetingMinutes } from "@/data/mockData";
+import { StatCard } from "@/components/dashboard/StatCard";
+import { useWorkbodies } from "@/hooks/useWorkbodies";
 import { Skeleton } from "@/components/ui/skeleton";
-import { WorkbodyHeader } from "@/components/workbody/detail/WorkbodyHeader";
-import { WorkbodyStats } from "@/components/workbody/detail/WorkbodyStats";
-import { WorkbodyMembers } from "@/components/workbody/detail/WorkbodyMembers";
-import { MeetingIntegration } from "@/components/dashboard/MeetingIntegration";
-import { WorkbodyMeetings } from "@/components/workbody/detail/WorkbodyMeetings";
-import { useAuth } from "@/contexts/AuthContext";
-import { ArrowLeft } from "lucide-react";
-import type { MeetingMinutes } from "@/types";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { ManualMemberAddition } from "@/components/workbody/ManualMemberAddition";
+import { useToast } from "@/hooks/use-toast";
 
 export default function WorkbodyDetail() {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("overview");
-  const [minutes, setMinutes] = useState<MeetingMinutes[]>([]);
-  const [isLoadingMinutes, setIsLoadingMinutes] = useState(false);
-  const { session } = useAuth();
+  const [showManualAddition, setShowManualAddition] = useState(false);
   
-  const userRole = session?.role || 'user';
-
+  // Use the useWorkbodies hook to fetch workbody data
   const { workbodies, isLoading, refetch } = useWorkbodies();
+  
+  // Find the workbody with the matching ID
   const workbody = workbodies.find((w) => w.id === id);
+  
+  // Get meeting minutes for this workbody (still using mock data for now)
+  const minutes = meetingMinutes.filter((m) => m.workbodyId === id);
 
+  // State to track if we should hide error alerts
+  const [hideErrors, setHideErrors] = useState(false);
+
+  // Reset hideErrors when workbody changes or is refetched
   useEffect(() => {
-    const fetchMinutes = async () => {
-      if (!id) return;
-      
-      setIsLoadingMinutes(true);
-      try {
-        const { data, error } = await supabase
-          .from('meeting_minutes')
-          .select('*')
-          .eq('workbody_id', id);
-        
-        if (error) {
-          console.error("Error fetching meeting minutes:", error);
-          throw error;
-        }
-        
-        if (data) {
-          console.log("Meeting minutes fetched:", data);
-          const formattedMinutes: MeetingMinutes[] = data.map(item => ({
-            id: item.id,
-            workbodyId: item.workbody_id,
-            workbodyName: workbody?.name || "",
-            meetingDate: item.date,
-            date: item.date,
-            venue: item.location,
-            location: item.location,
-            attendees: [],
-            agenda: item.agenda_items || [],
-            agendaItems: item.agenda_items || [],
-            minutes: [],
-            actionItems: [],
-            actionsAgreed: item.actions_agreed || [],
-            decisions: [],
-            createdAt: item.uploaded_at,
-            updatedAt: item.uploaded_at,
-            documentUrl: item.file_url,
-            uploadedAt: item.uploaded_at,
-            uploadedBy: item.uploaded_by || ""
-          }));
-          setMinutes(formattedMinutes);
-        }
-      } catch (error) {
-        console.error("Failed to fetch meeting minutes", error);
-        toast({
-          title: "Error",
-          description: "Failed to fetch meeting minutes",
-          variant: "destructive"
-        });
-      } finally {
-        setIsLoadingMinutes(false);
-      }
-    };
-    
-    if (id) {
-      fetchMinutes();
-    }
-  }, [id, toast, workbody]);
+    setHideErrors(false);
+  }, [id, workbody?.members]);
 
+  // Show loading state
   if (isLoading) {
     return (
       <div className="space-y-6">
         <div>
-          <Skeleton className="h-10 w-96" />
-          <Skeleton className="h-5 w-full max-w-md mt-2" />
+          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+            <div>
+              <Skeleton className="h-10 w-96" />
+              <Skeleton className="h-5 w-full max-w-md mt-2" />
+            </div>
+            <div className="flex gap-2">
+              <Skeleton className="h-10 w-32" />
+              <Skeleton className="h-10 w-36" />
+            </div>
+          </div>
         </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => (
@@ -105,51 +76,95 @@ export default function WorkbodyDetail() {
     );
   }
 
+  // If workbody not found show error state
   if (!workbody) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4 py-12">
         <h2 className="text-2xl font-bold">Workbody not found</h2>
-        <p className="text-muted-foreground text-center max-w-md">
+        <p className="text-muted-foreground">
           The workbody you are looking for doesn't exist or you don't have access to it.
-          Please check the URL or contact your administrator.
         </p>
-        <div className="flex gap-4 mt-4">
-          <Button asChild variant="outline">
-            <Link to="/workbodies" className="flex items-center">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Workbodies
-            </Link>
-          </Button>
-          <Button asChild>
-            <Link to="/dashboard">Return to Dashboard</Link>
-          </Button>
-        </div>
+        <Button asChild className="mt-4" variant="outline">
+          <a href="/">Return to Dashboard</a>
+        </Button>
       </div>
     );
   }
 
+  // Calculate completion percentage
   const completionPercentage = 
     workbody.actionsAgreed > 0
       ? Math.round((workbody.actionsCompleted / workbody.actionsAgreed) * 100)
       : 0;
 
+  // Get the latest successfully extracted members (non-error members)
+  const successfulMembers = workbody.members?.filter(
+    member => !member.name.includes("Error") && 
+              !member.name.includes("Processing") &&
+              !member.role.includes("Error") && 
+              !member.role.includes("error")
+  ) || [];
+
+  // Check if there are image extraction issues specifically
+  const hasImageExtractionIssues = workbody.members?.some(
+    member => member.name.includes("Image Content") || 
+             (member.role && member.role.includes("image") || 
+              member.role.includes("Image"))
+  );
+
+  // Check if all members have errors
+  const allMembersHaveErrors = workbody.members && 
+                              workbody.members.length > 0 && 
+                              successfulMembers.length === 0;
+
+  // Check if there are no members
+  const hasNoMembers = !workbody.members || workbody.members.length === 0;
+
+  // Handle manual member addition
+  const handleMembersAdded = () => {
+    setShowManualAddition(false);
+    setHideErrors(true);
+    toast({
+      title: "Members Added",
+      description: "Members have been successfully added manually."
+    });
+    refetch();
+  };
+
+  // Handle clearing error alerts
+  const handleDismissErrors = () => {
+    setHideErrors(true);
+    toast({
+      title: "Errors Dismissed",
+      description: "Error messages have been hidden."
+    });
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4 mb-6">
-        <Button variant="outline" size="sm" asChild>
-          <Link to="/workbodies" className="flex items-center">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Workbodies
-          </Link>
-        </Button>
+      <div>
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-3xl font-bold">{workbody.name}</h1>
+              <Badge variant="outline" className="capitalize">
+                {workbody.type.replace("-", " ")}
+              </Badge>
+            </div>
+            <p className="text-muted-foreground">{workbody.description || "No description available"}</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" className="gap-2">
+              <FileSpreadsheet className="h-4 w-4" />
+              Export Data
+            </Button>
+            <Button className="gap-2 bg-pec-green hover:bg-pec-green-700">
+              <Download className="h-4 w-4" />
+              Download Report
+            </Button>
+          </div>
+        </div>
       </div>
-
-      <WorkbodyHeader 
-        name={workbody.name}
-        type={workbody.type}
-        description={workbody.description}
-        code={workbody.code}
-      />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList>
@@ -159,21 +174,38 @@ export default function WorkbodyDetail() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
-          <WorkbodyStats
-            totalMeetings={workbody.totalMeetings}
-            meetingsThisYear={workbody.meetingsThisYear}
-            actionsAgreed={workbody.actionsAgreed}
-            actionsCompleted={workbody.actionsCompleted}
-          />
-
-          <MeetingIntegration 
-            workbodyId={workbody.id}
-            onScheduleMeeting={() => setActiveTab("meetings")}
-            onUploadMinutes={() => window.open('/upload-minutes', '_blank')}
-          />
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <StatCard
+              title="Total Meetings"
+              value={workbody.totalMeetings}
+              icon={Calendar}
+              colorClass="bg-blue-500"
+            />
+            <StatCard
+              title="Meetings This Year"
+              value={workbody.meetingsThisYear}
+              icon={Calendar}
+              colorClass="bg-pec-green"
+            />
+            <StatCard
+              title="Actions Agreed"
+              value={workbody.actionsAgreed}
+              icon={FileText}
+              colorClass="bg-pec-gold"
+            />
+            <StatCard
+              title="Actions Completed"
+              value={workbody.actionsCompleted}
+              icon={CheckSquare}
+              colorClass="bg-purple-500"
+            />
+          </div>
 
           <Card>
-            <CardContent className="pt-6">
+            <CardHeader>
+              <CardTitle>Action Completion Status</CardTitle>
+            </CardHeader>
+            <CardContent>
               <div className="flex items-center gap-4">
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
@@ -194,23 +226,242 @@ export default function WorkbodyDetail() {
               </div>
             </CardContent>
           </Card>
+
+          {minutes.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Latest Meeting</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {minutes
+                  .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                  .slice(0, 1)
+                  .map((meeting) => (
+                    <div key={meeting.id} className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <span>
+                          {new Date(meeting.date).toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                        <span>{meeting.location}</span>
+                      </div>
+
+                      <Separator />
+
+                      <div>
+                        <h4 className="mb-2 font-medium">Agenda Items</h4>
+                        <ul className="space-y-1">
+                          {meeting.agendaItems.map((item, index) => (
+                            <li key={index} className="flex items-start gap-2 text-sm">
+                              <span className="mt-0.5 h-1.5 w-1.5 rounded-full bg-pec-green" />
+                              {item}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      <Separator />
+
+                      <div>
+                        <h4 className="mb-2 font-medium">Actions Agreed</h4>
+                        <ul className="space-y-1">
+                          {meeting.actionsAgreed.map((action, index) => (
+                            <li key={index} className="flex items-start gap-2 text-sm">
+                              <span className="mt-0.5 h-1.5 w-1.5 rounded-full bg-pec-gold" />
+                              {action}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      <div className="flex justify-end">
+                        <Button variant="outline" size="sm">
+                          <FileText className="mr-2 h-4 w-4" />
+                          View Full Minutes
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
-        <TabsContent value="meetings">
-          <WorkbodyMeetings 
-            minutes={minutes}
-            isLoadingMinutes={isLoadingMinutes}
-            workbodyId={workbody.id}
-          />
+        <TabsContent value="meetings" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Meeting Minutes</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {minutes.length > 0 ? (
+                <div className="space-y-4">
+                  {minutes
+                    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                    .map((meeting) => (
+                      <Card key={meeting.id}>
+                        <CardContent className="p-4">
+                          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+                            <div>
+                              <h3 className="font-semibold">
+                                Meeting on{" "}
+                                {new Date(meeting.date).toLocaleDateString("en-US", {
+                                  year: "numeric",
+                                  month: "long",
+                                  day: "numeric",
+                                })}
+                              </h3>
+                              <p className="text-sm text-muted-foreground">{meeting.location}</p>
+                            </div>
+                            <Button variant="outline" size="sm">
+                              <FileText className="mr-2 h-4 w-4" />
+                              View Minutes
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                </div>
+              ) : (
+                <p>No meeting minutes available</p>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
-        <TabsContent value="members">
-          <WorkbodyMembers
-            workbodyId={workbody.id}
-            members={workbody.members}
-            userRole={userRole}
-            onMembersUpdate={refetch}
-          />
+        <TabsContent value="members" className="space-y-4">
+          {showManualAddition ? (
+            <ManualMemberAddition 
+              workbodyId={workbody.id} 
+              onMembersAdded={handleMembersAdded} 
+              onCancel={() => setShowManualAddition(false)}
+            />
+          ) : (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Workbody Composition</CardTitle>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setShowManualAddition(true)}
+                  className="gap-2"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  Add Members Manually
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {!hideErrors && allMembersHaveErrors && (
+                  <Alert 
+                    variant={hasImageExtractionIssues ? "warning" : "destructive"} 
+                    className="mb-4 flex items-center justify-between"
+                  >
+                    <div className="flex flex-col">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle>
+                        {hasImageExtractionIssues 
+                          ? "Image Content Requires Manual Entry" 
+                          : "Member Extraction Issue"}
+                      </AlertTitle>
+                      <AlertDescription>
+                        {hasImageExtractionIssues ? (
+                          <p>The uploaded image requires manual extraction of member information as automated extraction is limited for image files.</p>
+                        ) : (
+                          <p>There was a problem extracting members from the uploaded document.</p>
+                        )}
+                      </AlertDescription>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={handleDismissErrors}
+                      >
+                        Dismiss
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant={hasImageExtractionIssues ? "default" : "outline"}
+                        onClick={() => setShowManualAddition(true)}
+                      >
+                        {hasImageExtractionIssues ? (
+                          <>
+                            <Image className="mr-2 h-4 w-4" />
+                            Manual Entry
+                          </>
+                        ) : (
+                          "Add Members Manually"
+                        )}
+                      </Button>
+                    </div>
+                  </Alert>
+                )}
+
+                {successfulMembers.length > 0 ? (
+                  <div className="space-y-4">
+                    {successfulMembers.map((member) => (
+                      <div
+                        key={member.id}
+                        className="flex items-center justify-between rounded-lg border p-4"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Avatar>
+                            <AvatarFallback className="bg-pec-green text-white">
+                              {member.name
+                                .split(" ")
+                                .map((n) => n[0])
+                                .join("")
+                                .toUpperCase()
+                                .slice(0, 2)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-medium">{member.name}</p>
+                            <p className="text-sm text-muted-foreground">{member.role}</p>
+                          </div>
+                        </div>
+                        {member.hasCV && (
+                          <Button variant="outline" size="sm">
+                            <FileText className="mr-2 h-4 w-4" />
+                            View CV
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Users className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
+                    <p className="text-muted-foreground">
+                      {allMembersHaveErrors && !hideErrors 
+                        ? "No valid members found - please add members manually or upload a new document" 
+                        : "No members available for this workbody"}
+                    </p>
+                    <div className="mt-4 flex justify-center gap-2">
+                      <Button 
+                        variant="outline"
+                        onClick={() => window.location.href = `/workbody-management`}
+                      >
+                        Upload Members Document
+                      </Button>
+                      <Button 
+                        onClick={() => setShowManualAddition(true)}
+                      >
+                        Add Members Manually
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
     </div>

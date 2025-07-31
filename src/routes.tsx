@@ -1,126 +1,85 @@
 
-import { createBrowserRouter } from 'react-router-dom';
-import Index from './pages/Index';
-import Login from './pages/Login';
-import ModernDashboard from './pages/ModernDashboard';
-import ChairmanDashboard from './pages/ChairmanDashboard';
-import ChairmanExecutiveDashboard from './pages/ChairmanExecutiveDashboard';
-import WorkbodyManagement from './pages/WorkbodyManagement';
-import WorkbodyList from './pages/WorkbodyList';
-import WorkbodyDetail from './pages/WorkbodyDetail';
-import WorkbodyEdit from './pages/WorkbodyEdit';
-import WorkbodiesOverview from './pages/WorkbodiesOverview';
-import MeetingCalendar from './pages/MeetingCalendar';
-import MeetingsList from './pages/MeetingsList';
-import MeetingMinutes from './pages/MeetingMinutes';
-import EnhancedMeetingMinutes from './pages/EnhancedMeetingMinutes';
-import MinutesViewer from './pages/MinutesViewer';
-import DraftMinutes from './pages/DraftMinutes';
-import UploadMinutes from './pages/UploadMinutes';
-import Documents from './pages/Documents';
-import Reports from './pages/Reports';
-import Settings from './pages/Settings';
-import SetPassword from './pages/SetPassword';
-import NotFound from './pages/NotFound';
-import { AppLayout } from './components/layout/AppLayout';
+import { Routes, Route, Navigate } from "react-router-dom";
+import { useAuth } from "./contexts/AuthContext";
+import { Loading } from "./components/ui/loading";
+import { Layout } from "./components/layout/Layout";
+import Index from "./pages/Index";
+import Dashboard from "./pages/Dashboard";
+import NotFound from "./pages/NotFound";
+import WorkbodyDetail from "./pages/WorkbodyDetail";
+import UploadMinutes from "./pages/UploadMinutes";
+import Reports from "./pages/Reports";
+import WorkbodyManagement from "./pages/WorkbodyManagement";
+import MeetingCalendar from "./pages/MeetingCalendar";
+import ChairmanDashboard from "./pages/ChairmanDashboard";
+import { LoginForm } from "./components/auth/LoginForm";
 
-export const router = createBrowserRouter([
-  {
-    path: '/login',
-    element: <Login />,
-  },
-  {
-    path: '/set-password',
-    element: <SetPassword />,
-  },
-  {
-    path: '/',
-    element: <AppLayout />,
-    children: [
-      {
-        index: true,
-        element: <ModernDashboard />,
-      },
-      {
-        path: 'dashboard',
-        element: <ModernDashboard />,
-      },
-      {
-        path: 'workbodies',
-        element: <WorkbodyList />,
-      },
-      {
-        path: 'workbodies/overview',
-        element: <WorkbodiesOverview />,
-      },
-      {
-        path: 'workbodies/management',
-        element: <WorkbodyManagement />,
-      },
-      {
-        path: 'workbodies/:id',
-        element: <WorkbodyDetail />,
-      },
-      {
-        path: 'workbodies/:id/edit',
-        element: <WorkbodyEdit />,
-      },
-      {
-        path: 'calendar',
-        element: <MeetingCalendar />,
-      },
-      {
-        path: 'chairman-dashboard',
-        element: <ChairmanDashboard />,
-      },
-      {
-        path: 'meetings',
-        element: <MeetingsList />,
-      },
-      {
-        path: 'minutes',
-        element: <MeetingMinutes />,
-      },
-      {
-        path: 'minutes/draft',
-        element: <DraftMinutes />,
-      },
-      {
-        path: 'minutes/enhanced',
-        element: <EnhancedMeetingMinutes />,
-      },
-      {
-        path: 'minutes/upload',
-        element: <UploadMinutes />,
-      },
-      {
-        path: 'minutes/:id',
-        element: <MinutesViewer />,
-      },
-      {
-        path: 'admin/users',
-        element: <Settings />,
-      },
-      {
-        path: 'admin/audit',
-        element: <Reports />,
-      },
-      {
-        path: 'documents',
-        element: <Documents />,
-      },
-      {
-        path: 'reports',
-        element: <Reports />,
-      },
-      {
-        path: 'settings',
-        element: <Settings />,
-      },
-      {
-        path: '*',
-        element: <NotFound />,
-      },
-    ],
-  },
-]);
+export function AppRoutes() {
+  const { session, user, isLoading, isAuthChecked, signOut } = useAuth();
+
+  // Don't render anything until we've at least checked auth once
+  if (!isAuthChecked) {
+    return <Loading />;
+  }
+
+  // If we're still loading user data after auth check, show loading
+  if (isLoading) {
+    return <Loading />;
+  }
+
+  const handleLogin = (session: any) => {
+    // The login is handled by the AuthContext
+    console.log("Login successful:", session);
+  };
+
+  if (!session) {
+    return (
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/login" element={<LoginForm onLogin={handleLogin} />} />
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+    );
+  }
+
+  return (
+    <Routes>
+      <Route element={<Layout user={user} onLogout={signOut} />}>
+        <Route path="/" element={<Navigate to="/dashboard" />} />
+        <Route path="/login" element={<Navigate to="/dashboard" />} />
+        <Route 
+          path="/dashboard" 
+          element={
+            user?.role === 'chairman' && !user?.email?.includes('coordination') ? 
+              <ChairmanDashboard /> : 
+              <Dashboard />
+          } 
+        />
+        <Route path="/workbody/:id" element={<WorkbodyDetail />} />
+        
+        {/* Routes accessible to admin, coordination, and secretary */}
+        {(user?.role === 'secretary' || user?.role === 'admin' || user?.email?.includes('coordination')) && (
+          <Route path="/upload" element={<UploadMinutes />} />
+        )}
+        
+        {/* Calendar route for all users */}
+        <Route path="/calendar" element={<MeetingCalendar />} />
+        
+        {/* Admin and coordination only routes */}
+        {(user?.role === 'admin' || user?.email?.includes('coordination')) && (
+          <>
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/manage-workbodies" element={<WorkbodyManagement />} />
+          </>
+        )}
+        
+        {/* Chairman only routes */}
+        {user?.role === 'chairman' && (
+          <Route path="/chairman-dashboard" element={<ChairmanDashboard />} />
+        )}
+        
+        <Route path="*" element={<NotFound />} />
+      </Route>
+    </Routes>
+  );
+}

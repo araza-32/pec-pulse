@@ -1,13 +1,13 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { WorkbodyType } from "@/types";
-import { Workbody, WorkbodyFormData } from "@/types/workbody";
+import { Workbody, WorkbodyType } from "@/types";
+import { WorkbodyFormData } from "@/types/workbody";
 
 export const useWorkbodies = () => {
   const queryClient = useQueryClient();
 
-  const { data: workbodies = [], isLoading, error, refetch } = useQuery({
+  const { data: workbodies = [], isLoading, refetch } = useQuery({
     queryKey: ['workbodies'],
     queryFn: async () => {
       console.log("Fetching workbodies from Supabase");
@@ -17,7 +17,7 @@ export const useWorkbodies = () => {
           *,
           workbody_members (*)
         `)
-        .order('name', { ascending: true });
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error("Error fetching workbodies:", error);
@@ -25,18 +25,14 @@ export const useWorkbodies = () => {
       }
       
       console.log("Workbodies fetched:", data);
-      
-      // Fetch child workbodies separately to handle nested structure
-      const allWorkbodies = (data || []).map(item => ({
+      return (data || []).map(item => ({
         id: item.id,
-        code: item.name.split(' ').map(word => word[0]).join('').toUpperCase().substring(0, 3),
         name: item.name,
         type: item.type as WorkbodyType,
         description: item.description || undefined,
         createdDate: item.created_date,
         endDate: item.end_date || undefined,
         termsOfReference: item.terms_of_reference || undefined,
-        parentId: item.parent_id || undefined,
         totalMeetings: item.total_meetings || 0,
         meetingsThisYear: item.meetings_this_year || 0,
         actionsAgreed: item.actions_agreed || 0,
@@ -48,15 +44,8 @@ export const useWorkbodies = () => {
           email: member.email || undefined,
           phone: member.phone || undefined,
           hasCV: member.has_cv || false
-        })),
-        childWorkbodies: []
+        }))
       })) as Workbody[];
-
-      // Build nested structure
-      return allWorkbodies.map(workbody => ({
-        ...workbody,
-        childWorkbodies: allWorkbodies.filter(child => child.parentId === workbody.id)
-      }));
     }
   });
 
@@ -77,7 +66,6 @@ export const useWorkbodies = () => {
           created_date: newWorkbody.createdDate.toISOString(),
           end_date: newWorkbody.endDate ? newWorkbody.endDate.toISOString() : null,
           terms_of_reference: newWorkbody.termsOfReference || "",
-          parent_id: newWorkbody.parentId || null,
           total_meetings: 0,
           meetings_this_year: 0,
           actions_agreed: 0,
@@ -113,8 +101,7 @@ export const useWorkbodies = () => {
           description: updatedWorkbody.description || "",
           created_date: updatedWorkbody.createdDate.toISOString(),
           end_date: updatedWorkbody.endDate ? updatedWorkbody.endDate.toISOString() : null,
-          terms_of_reference: updatedWorkbody.termsOfReference || "",
-          parent_id: updatedWorkbody.parentId || null
+          terms_of_reference: updatedWorkbody.termsOfReference || ""
         })
         .eq('id', updatedWorkbody.id)
         .select()
@@ -152,7 +139,6 @@ export const useWorkbodies = () => {
   return {
     workbodies,
     isLoading,
-    error,
     refetch,
     createWorkbody,
     updateWorkbody,

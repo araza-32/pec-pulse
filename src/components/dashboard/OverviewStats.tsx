@@ -1,7 +1,6 @@
 
 import { Users, CalendarClock, CheckSquare, BookOpen } from "lucide-react";
 import { StatCard } from "./StatCard";
-import { useNavigate } from "react-router-dom";
 
 interface OverviewStatsProps {
   stats: {
@@ -10,67 +9,34 @@ interface OverviewStatsProps {
     completionRate: number;
     upcomingMeetingsCount: number;
   };
-  onStatClick?: (statType: string) => void;
 }
 
-export const OverviewStats = ({ stats, onStatClick }: OverviewStatsProps) => {
-  const navigate = useNavigate();
-
-  const handleClick = (statType: string) => {
-    // Handle navigation based on stat type
-    if (onStatClick) {
-      onStatClick(statType);
-    } else {
-      switch (statType) {
-        case 'totalWorkbodies':
-          navigate('/workbodies/list');
-          break;
-        case 'meetingsThisYear':
-          navigate('/meetings/year');
-          break;
-        case 'upcomingMeetings':
-          navigate('/calendar');
-          break;
-        case 'actionCompletion':
-          navigate('/reports');
-          break;
-      }
-    }
-  };
-
+export const OverviewStats = ({ stats }: OverviewStatsProps) => {
   return (
-    <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 animate-fade-in">
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <StatCard
         title="Total Workbodies"
         value={stats.totalWorkbodies}
         icon={Users}
         colorClass="bg-pec-green"
-        onClick={() => handleClick('totalWorkbodies')}
-        clickable={true}
       />
       <StatCard
         title="Meetings This Year"
         value={stats.meetingsThisYear}
         icon={CalendarClock}
-        colorClass="bg-amber-500"
-        onClick={() => handleClick('meetingsThisYear')}
-        clickable={true}
+        colorClass="bg-pec-gold"
       />
       <StatCard
         title="Action Completion"
         value={`${stats.completionRate}%`}
         icon={CheckSquare}
         colorClass="bg-blue-500"
-        onClick={() => handleClick('actionCompletion')}
-        clickable={true}
       />
       <StatCard
         title="Upcoming Meetings"
         value={stats.upcomingMeetingsCount}
         icon={BookOpen}
         colorClass="bg-purple-500"
-        onClick={() => handleClick('upcomingMeetings')}
-        clickable={true}
       />
     </div>
   );

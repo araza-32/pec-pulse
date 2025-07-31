@@ -1,323 +1,420 @@
 
 import { useState } from "react";
-import { ChairmanStatCards } from "@/components/chairman/ChairmanStatCards";
-import { EngagementChart } from "@/components/chairman/EngagementChart";
-import { ExpiringTaskForceList } from "@/components/chairman/ExpiringTaskForceList";
-import { NestedWorkbodiesView } from "@/components/chairman-dashboard/NestedWorkbodiesView";
-import { AlertsQuickAccess } from "@/components/chairman-dashboard/AlertsQuickAccess";
-import { PerformanceMetrics } from "@/components/chairman-dashboard/PerformanceMetrics";
-import { Modal } from "@/components/ui/modal";
-import { DonutChart } from "@/components/chairman/DonutChart";
-import { MeetingsList } from "@/components/chairman/MeetingsList";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Users,
+  CalendarClock,
+  FileText,
+  CheckSquare,
+  BarChart4,
+  PieChart,
+  Activity,
+  AlertTriangle,
+  Clock,
+  Mail,
+  BookOpen,
+  MapPin
+} from "lucide-react";
+import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  PieChart as RePieChart,
+  Pie,
+  Cell,
+} from "recharts";
+
 import { Button } from "@/components/ui/button";
-import { useChairmanDashboard } from "@/hooks/useChairmanDashboard";
-import { TimePeriod } from "@/hooks/usePerformanceMetrics";
+import { StatCard } from "@/components/dashboard/StatCard";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+
+import { workbodies, meetingMinutes, getWorkbodyStats } from "@/data/mockData";
+import { initialMeetings } from "../data/mockData";  // We'll need to export these from mockData
+
+const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8"];
 
 export default function ChairmanDashboard() {
-  const {
-    workbodies,
-    organizedWorkbodies,
-    stats,
-    upcomingMeetings,
-    isLoading,
-    selectedCategory,
-    setSelectedCategory
-  } = useChairmanDashboard();
-
-  const [showDonutModal, setShowDonutModal] = useState(false);
-  const [showMeetingsModal, setShowMeetingsModal] = useState(false);
-  const [showUpcomingModal, setShowUpcomingModal] = useState(false);
-  const [activeTab, setActiveTab] = useState("overview");
-  const [performanceTimeFilter, setPerformanceTimeFilter] = useState<TimePeriod>("quarter");
-
-  // Mock engagement data (this would come from analytics in production)
-  const mockEngagementData = [
-    { month: "Jan", attendance: 78, participation: 65, actionRate: 72 },
-    { month: "Feb", attendance: 82, participation: 70, actionRate: 68 },
-    { month: "Mar", attendance: 75, participation: 68, actionRate: 70 },
-    { month: "Apr", attendance: 85, participation: 75, actionRate: 76 },
-    { month: "May", attendance: 87, participation: 78, actionRate: 80 },
-    { month: "Jun", attendance: 84, participation: 80, actionRate: 82 },
-  ];
-
-  // Convert workbodies for AlertsQuickAccess component
-  const convertedWorkbodies = workbodies.map(wb => ({
-    ...wb,
-    members: wb.members || []
-  }));
-
-  // Type distribution for pie chart
+  const [timeframe, setTimeframe] = useState<"month" | "quarter" | "year">("month");
+  
+  const stats = getWorkbodyStats();
+  
+  // Calculate workbody type distribution for pie chart
   const typeDistribution = [
-    { name: "Committees", value: stats.committees, color: "#3B82F6" },
-    { name: "Working Groups", value: stats.workingGroups, color: "#10B981" },
-    { name: "Task Forces", value: stats.taskForces, color: "#F59E0B" }
+    { name: "Committees", value: stats.committees },
+    { name: "Working Groups", value: stats.workingGroups },
+    { name: "Task Forces", value: stats.taskForces },
   ];
-
-  // Mock past meetings data (would come from meeting_minutes table in production)
-  const pastMeetings = [
-    { 
-      id: "001",
-      date: "2025-04-15",
-      workbodyName: "Committee on Professional Development",
-      agendaExcerpt: "Review of ongoing CPD programs and planning for upcoming national conference."
+  
+  // Calculate action completion by workbody type
+  const completionByType = [
+    {
+      name: "Committees",
+      agreed: workbodies
+        .filter(w => w.type === "committee")
+        .reduce((sum, w) => sum + w.actionsAgreed, 0),
+      completed: workbodies
+        .filter(w => w.type === "committee")
+        .reduce((sum, w) => sum + w.actionsCompleted, 0),
     },
-    { 
-      id: "002",
-      date: "2025-04-10",
-      workbodyName: "Working Group on Young Engineers Affairs",
-      agendaExcerpt: "Discussion on mentorship program expansion and university outreach initiatives."
+    {
+      name: "Working Groups",
+      agreed: workbodies
+        .filter(w => w.type === "working-group")
+        .reduce((sum, w) => sum + w.actionsAgreed, 0),
+      completed: workbodies
+        .filter(w => w.type === "working-group")
+        .reduce((sum, w) => sum + w.actionsCompleted, 0),
     },
-    { 
-      id: "003",
-      date: "2025-04-05",
-      workbodyName: "Task Force on Digital Transformation",
-      agendaExcerpt: "Evaluation of new membership management system implementation progress."
+    {
+      name: "Task Forces",
+      agreed: workbodies
+        .filter(w => w.type === "task-force")
+        .reduce((sum, w) => sum + w.actionsAgreed, 0),
+      completed: workbodies
+        .filter(w => w.type === "task-force")
+        .reduce((sum, w) => sum + w.actionsCompleted, 0),
     },
   ];
-
+  
+  // Get upcoming meetings (next 30 days)
+  const today = new Date();
+  const thirtyDaysFromNow = new Date();
+  thirtyDaysFromNow.setDate(today.getDate() + 30);
+  
+  const upcomingMeetings = initialMeetings?.filter(meeting => {
+    const meetingDate = parseISO(meeting.date);
+    return meetingDate >= today && meetingDate <= thirtyDaysFromNow;
+  }).sort((a, b) => parseISO(a.date).getTime() - parseISO(b.date).getTime());
+  
+  // Get recently held meetings (last 30 days)
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(today.getDate() - 30);
+  
+  const recentMeetings = meetingMinutes
+    .filter(minutes => {
+      const meetingDate = new Date(minutes.date);
+      return meetingDate >= thirtyDaysAgo && meetingDate <= today;
+    })
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  
+  // Calculate meetings per month for the current year
+  const currentYear = new Date().getFullYear();
+  const monthlyMeetings = Array.from({ length: 12 }, (_, i) => {
+    const month = i;
+    const start = startOfMonth(new Date(currentYear, month));
+    const end = endOfMonth(new Date(currentYear, month));
+    
+    const count = meetingMinutes.filter(minutes => {
+      const date = new Date(minutes.date);
+      return isWithinInterval(date, { start, end });
+    }).length;
+    
+    return {
+      month: format(new Date(currentYear, month), "MMM"),
+      meetings: count,
+    };
+  });
+  
+  // Task Forces nearing completion (expire within 30 days)
+  const expiringTaskForces = workbodies
+    .filter(wb => 
+      wb.type === "task-force" && 
+      wb.endDate && 
+      new Date(wb.endDate) >= today && 
+      new Date(wb.endDate) <= thirtyDaysFromNow
+    )
+    .sort((a, b) => new Date(a.endDate!).getTime() - new Date(b.endDate!).getTime());
+  
   return (
     <div className="space-y-6">
-      <div className="bg-gradient-to-r from-pec-green to-emerald-700 text-white p-6 rounded-lg shadow-md">
+      <div>
         <h1 className="text-3xl font-bold">Chairman's Dashboard</h1>
-        <p className="text-sm mt-1 opacity-90">
-          Comprehensive overview of PEC workbodies, meetings and actions
+        <p className="text-muted-foreground">
+          Comprehensive overview of all PEC workbodies and their performance
         </p>
       </div>
-
-      {/* KPI Statistics Cards */}
-      <ChairmanStatCards 
-        totalWorkbodies={stats.totalWorkbodies}
-        committees={stats.committees}
-        workingGroups={stats.workingGroups}
-        taskForces={stats.taskForces}
-        meetingsThisYear={stats.meetingsThisYear}
-        completionRate={stats.completionRate}
-        upcomingMeetingsCount={stats.upcomingMeetingsCount}
-        actionsCompleted={stats.actionsCompleted}
-        actionsAgreed={stats.actionsAgreed}
-        overdueActions={stats.overdueActions}
-        onWorkbodiesClick={() => setShowDonutModal(true)}
-        onMeetingsClick={() => setShowMeetingsModal(true)}
-        onUpcomingClick={() => setShowUpcomingModal(true)}
-      />
-
-      {/* Main Dashboard Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="performance">Performance Metrics</TabsTrigger>
-          <TabsTrigger value="analysis">Analysis</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-            {/* Main Workbodies Overview - 8 columns */}
-            <div className="md:col-span-8">
-              <NestedWorkbodiesView
-                nestedWorkbodies={organizedWorkbodies.nested}
-                selectedCategory={selectedCategory}
-                onCategoryChange={setSelectedCategory}
-                isLoading={isLoading}
-              />
+      
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title="Total Workbodies"
+          value={stats.totalWorkbodies}
+          icon={Users}
+          colorClass="bg-pec-green"
+        />
+        <StatCard
+          title="Meetings This Year"
+          value={stats.meetingsThisYear}
+          icon={CalendarClock}
+          colorClass="bg-pec-gold"
+        />
+        <StatCard
+          title="Action Completion Rate"
+          value={`${stats.completionRate}%`}
+          icon={CheckSquare}
+          colorClass="bg-blue-500"
+        />
+        <StatCard
+          title="Upcoming Meetings"
+          value={upcomingMeetings?.length || 0}
+          icon={BookOpen}
+          colorClass="bg-purple-500"
+        />
+      </div>
+      
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card className="col-span-1">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-lg font-medium">
+              Workbody Type Distribution
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <RePieChart>
+                  <Pie
+                    data={typeDistribution}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {typeDistribution.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </RePieChart>
+              </ResponsiveContainer>
             </div>
-
-            {/* Right Side: Split Column for Alerts/Quick Access and Additional Info */}
-            <div className="md:col-span-4 space-y-6">
-              {/* Alert & Quick Access Card */}
-              <AlertsQuickAccess
-                workbodies={convertedWorkbodies}
-                meetings={upcomingMeetings.map(m => ({
-                  id: m.id,
-                  workbodyId: workbodies.find(wb => wb.name === m.workbodyName)?.id || '',
-                  workbodyName: m.workbodyName,
-                  date: m.date.toISOString().split('T')[0],
-                  time: "14:00",
-                  location: "Conference Room",
-                  agendaItems: []
-                }))}
-                isLoading={isLoading}
-              />
-              
-              {/* Task Force Status */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle>Task Force Status</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Tabs defaultValue="active">
-                    <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger value="active">Active</TabsTrigger>
-                      <TabsTrigger value="completed">Completed</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="active" className="mt-4">
-                      <ExpiringTaskForceList 
-                        taskForces={organizedWorkbodies.taskForces.filter(tf => !tf.endDate || new Date(tf.endDate) > new Date())}
-                        isLoading={isLoading}
-                      />
-                    </TabsContent>
-                    <TabsContent value="completed" className="mt-4">
-                      <ExpiringTaskForceList 
-                        taskForces={organizedWorkbodies.taskForces.filter(tf => tf.endDate && new Date(tf.endDate) <= new Date())}
-                        isLoading={isLoading}
-                        ended
-                      />
-                    </TabsContent>
-                  </Tabs>
-                </CardContent>
-              </Card>
-
-              {/* Engagement Analysis */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle>Engagement Analysis</CardTitle>
-                </CardHeader>
-                <CardContent className="h-64">
-                  <EngagementChart data={mockEngagementData} />
-                </CardContent>
-              </Card>
+          </CardContent>
+        </Card>
+        
+        <Card className="col-span-1">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-lg font-medium">
+              Actions Completion Rate by Type
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={completionByType}
+                  margin={{
+                    top: 20,
+                    right: 30,
+                    left: 20,
+                    bottom: 5,
+                  }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar name="Actions Agreed" dataKey="agreed" fill="#8884d8" />
+                  <Bar name="Actions Completed" dataKey="completed" fill="#82ca9d" />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="performance" className="space-y-6">
-          <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-bold">Performance Metrics</h2>
-            <div className="flex gap-2">
-              <Button 
-                variant={performanceTimeFilter === "30days" ? "default" : "outline"}
+          </CardContent>
+        </Card>
+      </div>
+      
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card className="col-span-2">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-lg font-medium">
+              Monthly Meetings in {currentYear}
+            </CardTitle>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant={timeframe === "month" ? "default" : "outline"}
                 size="sm"
-                onClick={() => setPerformanceTimeFilter("30days")}
+                onClick={() => setTimeframe("month")}
               >
-                30 Days
+                Month
               </Button>
-              <Button 
-                variant={performanceTimeFilter === "quarter" ? "default" : "outline"}
+              <Button
+                variant={timeframe === "quarter" ? "default" : "outline"}
                 size="sm"
-                onClick={() => setPerformanceTimeFilter("quarter")}
+                onClick={() => setTimeframe("quarter")}
               >
                 Quarter
               </Button>
-              <Button 
-                variant={performanceTimeFilter === "year" ? "default" : "outline"}
+              <Button
+                variant={timeframe === "year" ? "default" : "outline"}
                 size="sm"
-                onClick={() => setPerformanceTimeFilter("year")}
+                onClick={() => setTimeframe("year")}
               >
                 Year
               </Button>
             </div>
-          </div>
-          
-          <PerformanceMetrics 
-            workbodies={workbodies}
-            meetings={upcomingMeetings.map(m => ({
-              id: m.id,
-              workbodyId: workbodies.find(wb => wb.name === m.workbodyName)?.id || '',
-              workbodyName: m.workbodyName,
-              date: m.date.toISOString().split('T')[0],
-              time: "14:00",
-              location: "Conference Room",
-              agendaItems: []
-            }))}
-            timeFilter={performanceTimeFilter}
-            isLoading={isLoading}
-          />
-        </TabsContent>
-
-        <TabsContent value="analysis" className="space-y-6">
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <div>
-                <h2 className="text-2xl font-bold">Meeting Calendar</h2>
-                <p className="text-muted-foreground">View your Google Calendar with all scheduled meetings</p>
-              </div>
-              <Button
-                variant="outline"
-                onClick={() => window.open("https://calendar.google.com/calendar/u/0/r/month/2025/7/1", "_blank")}
-              >
-                Open in New Tab
-              </Button>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={monthlyMeetings}
+                  margin={{
+                    top: 20,
+                    right: 30,
+                    left: 20,
+                    bottom: 5,
+                  }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar name="Meetings" dataKey="meetings" fill="#0088FE" />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
-            
-            <Card>
-              <CardContent className="p-0">
-                <div className="relative w-full h-[600px]">
-                  <iframe
-                    src="https://calendar.google.com/calendar/embed?src=YOUR_CALENDAR_ID&ctz=YOUR_TIMEZONE"
-                    className="w-full h-full border-0 rounded-lg"
-                    title="Google Calendar"
-                    style={{ minHeight: '600px' }}
-                  />
-                  
-                  {/* Fallback content if iframe is blocked */}
-                  <div className="absolute inset-0 flex items-center justify-center bg-muted/50 rounded-lg backdrop-blur-sm opacity-0 hover:opacity-100 transition-opacity">
-                    <div className="text-center p-6 bg-background/90 rounded-lg border shadow-lg">
-                      <h3 className="font-semibold mb-2">Calendar View</h3>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        If the calendar doesn't load, it may be due to browser security restrictions.
-                      </p>
-                      <Button
-                        onClick={() => window.open("https://calendar.google.com/calendar/u/0/r/month/2025/7/1", "_blank")}
-                      >
-                        View Full Calendar
+          </CardContent>
+        </Card>
+      </div>
+      
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg font-medium">
+              Upcoming Meetings
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {upcomingMeetings && upcomingMeetings.length > 0 ? (
+              <div className="space-y-4">
+                {upcomingMeetings.slice(0, 5).map(meeting => (
+                  <div key={meeting.id} className="flex items-start space-x-4 border-b pb-4 last:border-0">
+                    <div className="bg-blue-100 rounded p-2 text-blue-700">
+                      <CalendarClock className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <div className="font-medium">{meeting.workbodyName}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {format(parseISO(meeting.date), "EEEE, MMM d")} at {meeting.time}
+                      </div>
+                      <div className="text-sm text-muted-foreground mt-1">
+                        <span className="inline-flex items-center">
+                          <MapPin className="h-3 w-3 mr-1" />
+                          {meeting.location}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {upcomingMeetings.length > 5 && (
+                  <Button variant="link" className="mt-2">
+                    View all {upcomingMeetings.length} upcoming meetings
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <p>No upcoming meetings scheduled in the next 30 days.</p>
+            )}
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg font-medium">
+              Task Forces Nearing Completion
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {expiringTaskForces.length > 0 ? (
+              <div className="space-y-4">
+                {expiringTaskForces.map(taskForce => (
+                  <div key={taskForce.id} className="flex items-start space-x-4 border-b pb-4 last:border-0">
+                    <div className="bg-amber-100 rounded p-2 text-amber-700">
+                      <Clock className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <div className="font-medium">{taskForce.name}</div>
+                      <div className="text-sm text-muted-foreground">
+                        Expires on {format(new Date(taskForce.endDate!), "MMMM d, yyyy")}
+                      </div>
+                      <div className="text-sm mt-1">
+                        <Badge variant="outline" className="bg-amber-50 text-amber-800">
+                          {getDaysRemaining(new Date(taskForce.endDate!))} days remaining
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p>No task forces are expiring in the next 30 days.</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg font-medium">
+            Recent Meeting Minutes
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {recentMeetings.length > 0 ? (
+            <div className="space-y-4">
+              {recentMeetings.slice(0, 5).map(minutes => {
+                const workbody = workbodies.find(wb => wb.id === minutes.workbodyId);
+                return (
+                  <div key={minutes.id} className="flex items-start space-x-4 border-b pb-4 last:border-0">
+                    <div className="bg-green-100 rounded p-2 text-green-700">
+                      <FileText className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <div className="font-medium">{workbody?.name}</div>
+                      <div className="text-sm text-muted-foreground">
+                        Meeting on {format(new Date(minutes.date), "MMMM d, yyyy")}
+                      </div>
+                      <div className="text-sm text-muted-foreground mt-1">
+                        <span className="inline-flex items-center">
+                          <MapPin className="h-3 w-3 mr-1" />
+                          {minutes.location}
+                        </span>
+                      </div>
+                      <Button variant="link" className="h-auto p-0 text-sm mt-1">
+                        View Minutes
                       </Button>
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-      </Tabs>
-
-      {/* Modals */}
-      <Modal
-        title="Workbodies Distribution"
-        isOpen={showDonutModal}
-        onClose={() => setShowDonutModal(false)}
-      >
-        <div className="h-[400px]">
-          <DonutChart data={typeDistribution} />
-          <div className="mt-4 space-y-2">
-            <div className="grid grid-cols-3 gap-4 text-center">
-              <div className="p-3 bg-blue-50 rounded-md">
-                <div className="text-xl font-bold text-blue-600">{stats.committees}</div>
-                <div className="text-sm text-blue-800">Committees</div>
-              </div>
-              <div className="p-3 bg-green-50 rounded-md">
-                <div className="text-xl font-bold text-green-600">{stats.workingGroups}</div>
-                <div className="text-sm text-green-800">Working Groups</div>
-              </div>
-              <div className="p-3 bg-amber-50 rounded-md">
-                <div className="text-xl font-bold text-amber-600">{stats.taskForces}</div>
-                <div className="text-sm text-amber-800">Task Forces</div>
-              </div>
+                );
+              })}
+              {recentMeetings.length > 5 && (
+                <Button variant="link" className="mt-2">
+                  View all {recentMeetings.length} recent meetings
+                </Button>
+              )}
             </div>
-          </div>
-        </div>
-      </Modal>
-
-      <Modal
-        title="Meetings This Year"
-        isOpen={showMeetingsModal}
-        onClose={() => setShowMeetingsModal(false)}
-      >
-        <MeetingsList meetings={pastMeetings} />
-      </Modal>
-
-      <Modal
-        title="Upcoming Meetings"
-        isOpen={showUpcomingModal}
-        onClose={() => setShowUpcomingModal(false)}
-      >
-        <MeetingsList meetings={upcomingMeetings.map(m => ({
-          id: m.id,
-          date: m.date.toISOString().split('T')[0],
-          workbodyName: m.workbodyName,
-          agendaExcerpt: `Upcoming meeting of ${m.workbodyName}`
-        }))} />
-      </Modal>
+          ) : (
+            <p>No meeting minutes uploaded in the last 30 days.</p>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
+}
+
+// Helper function to calculate remaining days
+function getDaysRemaining(endDate: Date): number {
+  const today = new Date();
+  const diffTime = endDate.getTime() - today.getTime();
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 }

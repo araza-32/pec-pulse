@@ -39,12 +39,12 @@ export const ActionCompletionProgress = ({ workbodies }: ActionCompletionProgres
   ];
 
   return (
-    <Card className="w-full">
+    <Card>
       <CardHeader>
-        <CardTitle className="text-xl text-left">Action Completion Progress</CardTitle>
+        <CardTitle>Action Completion Progress</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-[250px] sm:h-[300px]">
+        <div className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
             <RadialBarChart
               cx="50%"
@@ -55,16 +55,11 @@ export const ActionCompletionProgress = ({ workbodies }: ActionCompletionProgres
               data={chartData}
             >
               <RadialBar
-                label={{ position: 'insideStart', fill: '#fff', fontSize: '0.8em' }}
+                label={{ position: 'insideStart', fill: '#fff' }}
                 background
                 dataKey="value"
               />
-              <Legend 
-                layout="horizontal" 
-                verticalAlign="bottom" 
-                align="center"
-                wrapperStyle={{ fontSize: '0.8rem', paddingTop: '10px' }}
-              />
+              <Legend />
               <Tooltip />
             </RadialBarChart>
           </ResponsiveContainer>

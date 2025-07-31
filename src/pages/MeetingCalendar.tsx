@@ -1,262 +1,432 @@
 
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CalendarHeader } from '@/components/calendar/CalendarHeader';
-import { CalendarGrid } from '@/components/calendar/CalendarGrid';
-import { AddMeetingDialog } from '@/components/calendar/AddMeetingDialog';
-import { ViewMeetingDialog } from '@/components/calendar/ViewMeetingDialog';
-import { MeetingImport } from '@/components/calendar/MeetingImport';
-import { MeetingNotifications } from '@/components/calendar/MeetingNotifications';
-import { useScheduledMeetings } from '@/hooks/useScheduledMeetings';
-import { useWorkbodies } from '@/hooks/useWorkbodies';
-import { useAuth } from '@/contexts/AuthContext';
-import { useNotifications } from '@/hooks/useNotifications';
-import { ScheduledMeeting } from '@/types';
-import { Plus, Calendar, Import, Bell, ExternalLink } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { useState } from "react";
+import {
+  Calendar as CalendarIcon,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  MapPin,
+  Clock,
+  FileText,
+  Users,
+} from "lucide-react";
+import { format, addMonths, subMonths, isSameDay, parseISO } from "date-fns";
+
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useToast } from "@/components/ui/use-toast";
+
+import { ScheduledMeeting } from "@/types";
+import { workbodies } from "@/data/mockData";
+
+// Mock scheduled meetings
+const initialMeetings: ScheduledMeeting[] = [
+  {
+    id: "meeting-1",
+    workbodyId: "committee-1",
+    workbodyName: "Education Committee",
+    date: "2025-05-10",
+    time: "10:00",
+    location: "PEC Headquarters, Islamabad",
+    agendaItems: [
+      "Review of Accreditation Process",
+      "Curriculum Standardization",
+      "New Engineering Programs Approval",
+    ],
+  },
+  {
+    id: "meeting-2",
+    workbodyId: "workgroup-1",
+    workbodyName: "Digital Transformation Working Group",
+    date: "2025-04-22",
+    time: "14:30",
+    location: "Virtual Meeting",
+    agendaItems: [
+      "Online Portal Progress Update",
+      "Mobile App Development Status",
+      "Digital Verification System Implementation",
+    ],
+  },
+];
 
 export default function MeetingCalendar() {
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [selectedMeeting, setSelectedMeeting] = useState<ScheduledMeeting | null>(null);
-  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('calendar');
-  
-  const { meetings, isLoading: meetingsLoading, addMeeting, updateMeeting, deleteMeeting } = useScheduledMeetings();
-  const { workbodies, isLoading: workbodiesLoading } = useWorkbodies();
-  const { user } = useAuth();
   const { toast } = useToast();
-  const { checkWeeklyMeetings } = useNotifications();
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [meetings, setMeetings] = useState<ScheduledMeeting[]>(initialMeetings);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [selectedMeeting, setSelectedMeeting] = useState<ScheduledMeeting | null>(null);
+  const [newMeeting, setNewMeeting] = useState({
+    workbodyId: "",
+    date: format(new Date(), "yyyy-MM-dd"),
+    time: "10:00",
+    location: "",
+    agendaItems: "",
+  });
 
-  const canAddMeeting = user?.role === 'admin' || user?.role === 'coordination' || user?.role === 'secretary';
+  const daysInMonth = new Date(
+    currentDate.getFullYear(),
+    currentDate.getMonth() + 1,
+    0
+  ).getDate();
+  const firstDayOfMonth = new Date(
+    currentDate.getFullYear(),
+    currentDate.getMonth(),
+    1
+  ).getDay();
 
-  // Check for weekly meetings and notifications
-  useEffect(() => {
-    if (meetings.length > 0) {
-      checkWeeklyMeetings(meetings);
+  // Generate calendar grid
+  const calendarDays = [];
+  for (let i = 0; i < firstDayOfMonth; i++) {
+    calendarDays.push({ day: 0, isCurrentMonth: false });
+  }
+  for (let i = 1; i <= daysInMonth; i++) {
+    calendarDays.push({ day: i, isCurrentMonth: true });
+  }
+
+  // Group meetings by date
+  const meetingsByDate: { [key: string]: ScheduledMeeting[] } = {};
+  meetings.forEach((meeting) => {
+    if (!meetingsByDate[meeting.date]) {
+      meetingsByDate[meeting.date] = [];
     }
-  }, [meetings, checkWeeklyMeetings]);
+    meetingsByDate[meeting.date].push(meeting);
+  });
 
-  const handleDateClick = (date: Date) => {
-    console.log('Date clicked:', date);
-    // Future: Could open a day view or quick add dialog
+  const nextMonth = () => {
+    setCurrentDate(addMonths(currentDate, 1));
   };
 
-  const handleMeetingClick = (meeting: ScheduledMeeting) => {
+  const prevMonth = () => {
+    setCurrentDate(subMonths(currentDate, 1));
+  };
+
+  const getMeetingsForDate = (day: number) => {
+    if (day === 0) return [];
+    
+    const dateStr = format(
+      new Date(currentDate.getFullYear(), currentDate.getMonth(), day),
+      "yyyy-MM-dd"
+    );
+    return meetingsByDate[dateStr] || [];
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setNewMeeting({ ...newMeeting, [name]: value });
+  };
+
+  const handleAddMeeting = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const selectedWorkbody = workbodies.find(wb => wb.id === newMeeting.workbodyId);
+    if (!selectedWorkbody) return;
+    
+    const newMeetingRecord: ScheduledMeeting = {
+      id: `meeting-${Date.now()}`,
+      workbodyId: newMeeting.workbodyId,
+      workbodyName: selectedWorkbody.name,
+      date: newMeeting.date,
+      time: newMeeting.time,
+      location: newMeeting.location,
+      agendaItems: newMeeting.agendaItems.split('\n').filter(item => item.trim() !== ''),
+    };
+    
+    setMeetings([...meetings, newMeetingRecord]);
+    toast({
+      title: "Meeting Scheduled",
+      description: `Meeting for ${selectedWorkbody.name} has been scheduled for ${format(
+        parseISO(newMeeting.date),
+        "MMMM dd, yyyy"
+      )} at ${newMeeting.time}.`,
+    });
+    setIsAddDialogOpen(false);
+  };
+
+  const viewMeeting = (meeting: ScheduledMeeting) => {
     setSelectedMeeting(meeting);
     setIsViewDialogOpen(true);
   };
 
-  const handleAddMeeting = async (meetingData: any) => {
-    try {
-      await addMeeting(meetingData);
-      setIsAddDialogOpen(false);
-      toast({
-        title: "Meeting Added",
-        description: "Meeting has been successfully scheduled",
-      });
-    } catch (error) {
-      console.error('Failed to add meeting:', error);
-      throw error;
-    }
-  };
-
-  const handleImportMeeting = async (meetingData: any) => {
-    try {
-      await addMeeting(meetingData);
-      toast({
-        title: "Meeting Imported",
-        description: "Meeting has been successfully imported to your calendar",
-      });
-    } catch (error) {
-      console.error('Failed to import meeting:', error);
-      toast({
-        title: "Import Failed",
-        description: "Failed to import meeting. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleUpdateMeeting = async (updates: Partial<ScheduledMeeting>) => {
-    if (!selectedMeeting) return;
-    
-    try {
-      await updateMeeting(selectedMeeting.id, updates);
-      setSelectedMeeting(null);
-      setIsViewDialogOpen(false);
-      toast({
-        title: "Meeting Updated",
-        description: "Meeting has been successfully updated",
-      });
-    } catch (error) {
-      console.error('Failed to update meeting:', error);
-      throw error;
-    }
-  };
-
-  const handleDeleteMeeting = async (id: string) => {
-    try {
-      await deleteMeeting(id);
-      setSelectedMeeting(null);
-      setIsViewDialogOpen(false);
-      toast({
-        title: "Meeting Deleted",
-        description: "Meeting has been successfully deleted",
-      });
-    } catch (error) {
-      console.error('Failed to delete meeting:', error);
-      throw error;
-    }
-  };
-
-  if (meetingsLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pec-green mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading calendar...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="container mx-auto p-4 max-w-6xl">
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-left">Meeting Calendar</h1>
-          <p className="text-muted-foreground text-left">
-            View and manage scheduled workbody meetings
-          </p>
-        </div>
-        {canAddMeeting && (
-          <Button
-            onClick={() => setIsAddDialogOpen(true)}
-            className="bg-pec-green hover:bg-pec-green/90"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Schedule Meeting
-          </Button>
-        )}
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold">Meeting Calendar</h1>
+        <p className="text-muted-foreground">
+          View and manage scheduled workbody meetings
+        </p>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="calendar" className="flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            Calendar
-          </TabsTrigger>
-          <TabsTrigger value="notifications" className="flex items-center gap-2">
-            <Bell className="h-4 w-4" />
-            Notifications
-          </TabsTrigger>
-          <TabsTrigger value="import" className="flex items-center gap-2">
-            <Import className="h-4 w-4" />
-            Import
-          </TabsTrigger>
-          <TabsTrigger value="external" className="flex items-center gap-2">
-            <ExternalLink className="h-4 w-4" />
-            External
-          </TabsTrigger>
-        </TabsList>
+      <div className="flex justify-between items-center">
+        <div className="flex items-center space-x-4">
+          <Button variant="outline" size="icon" onClick={prevMonth}>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <h2 className="text-xl font-semibold">
+            {format(currentDate, "MMMM yyyy")}
+          </h2>
+          <Button variant="outline" size="icon" onClick={nextMonth}>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+        <Button onClick={() => setIsAddDialogOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" />
+          Schedule Meeting
+        </Button>
+      </div>
 
-        <TabsContent value="calendar" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CalendarHeader
-                currentDate={currentDate}
-                onDateChange={setCurrentDate}
-              />
-            </CardHeader>
-            <CardContent>
-              <CalendarGrid
-                currentDate={currentDate}
-                meetings={meetings}
-                onDateClick={handleDateClick}
-                onMeetingClick={handleMeetingClick}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="notifications" className="space-y-6">
-          <MeetingNotifications meetings={meetings} />
-        </TabsContent>
-
-        <TabsContent value="import" className="space-y-6">
-          <div className="max-w-2xl mx-auto">
-            <MeetingImport onImportMeeting={handleImportMeeting} />
+      <div className="grid grid-cols-7 gap-1">
+        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+          <div
+            key={day}
+            className="h-8 flex items-center justify-center font-semibold text-xs"
+          >
+            {day}
           </div>
-        </TabsContent>
+        ))}
 
-        <TabsContent value="external" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ExternalLink className="h-5 w-5" />
-                External Calendar Access
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-muted-foreground">
-                Access your external calendar without OAuth authentication
-              </p>
-              
-              <div className="space-y-4">
-                <div className="p-4 border rounded-lg">
-                  <h3 className="font-medium mb-2">Google Calendar (Public View)</h3>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    View the public PEC calendar without signing in
-                  </p>
-                  <Button
-                    variant="outline"
-                    onClick={() => window.open("https://calendar.google.com/calendar/embed?src=c_811e0f51fc4619f9685f4ebd0d487e9ae57f4e7d35e77e5ed8e68c44bb76b11a%40group.calendar.google.com&ctz=Asia%2FKarachi", "_blank")}
-                    className="w-full"
-                  >
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Open Public Calendar
-                  </Button>
-                </div>
-                
-                <div className="p-4 border rounded-lg">
-                  <h3 className="font-medium mb-2">Manual Sync Instructions</h3>
-                  <div className="text-sm text-muted-foreground space-y-2">
-                    <p>1. Export your calendar as .ics file from your calendar app</p>
-                    <p>2. Use the Import tab to upload the .ics file</p>
-                    <p>3. Or manually add meetings using the Import → Manual Entry option</p>
+        {calendarDays.map((day, i) => {
+          const dateStr = day.isCurrentMonth
+            ? format(
+                new Date(
+                  currentDate.getFullYear(),
+                  currentDate.getMonth(),
+                  day.day
+                ),
+                "yyyy-MM-dd"
+              )
+            : "";
+
+          const isToday =
+            day.isCurrentMonth &&
+            isSameDay(
+              new Date(
+                currentDate.getFullYear(),
+                currentDate.getMonth(),
+                day.day
+              ),
+              new Date()
+            );
+
+          const dayMeetings = day.isCurrentMonth
+            ? getMeetingsForDate(day.day)
+            : [];
+
+          return (
+            <div
+              key={i}
+              className={`border rounded-md min-h-[100px] p-1 ${
+                !day.isCurrentMonth
+                  ? "bg-gray-50"
+                  : isToday
+                  ? "bg-blue-50 border-blue-200"
+                  : ""
+              }`}
+            >
+              {day.isCurrentMonth && (
+                <>
+                  <div className="flex justify-between items-center">
+                    <span
+                      className={`text-xs font-semibold ${
+                        isToday ? "text-blue-600" : ""
+                      }`}
+                    >
+                      {day.day}
+                    </span>
                   </div>
-                </div>
+                  <div className="mt-1 space-y-0.5">
+                    {dayMeetings.map((meeting) => (
+                      <div
+                        key={meeting.id}
+                        className="bg-green-100 px-1.5 py-0.5 rounded text-[11px] cursor-pointer hover:bg-green-200 transition-colors"
+                        onClick={() => viewMeeting(meeting)}
+                      >
+                        <div className="font-medium truncate">
+                          {meeting.time} - {meeting.workbodyName}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Add Meeting Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Schedule a Meeting</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleAddMeeting} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="workbodyId">Workbody</Label>
+              <Select
+                name="workbodyId"
+                value={newMeeting.workbodyId}
+                onValueChange={(value) => handleInputChange({
+                  target: { name: "workbodyId", value }
+                } as any)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a workbody" />
+                </SelectTrigger>
+                <SelectContent>
+                  {workbodies.map((wb) => (
+                    <SelectItem key={wb.id} value={wb.id}>
+                      {wb.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="date">Date</Label>
+                <Input
+                  id="date"
+                  name="date"
+                  type="date"
+                  value={newMeeting.date}
+                  onChange={handleInputChange}
+                />
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+              <div className="space-y-2">
+                <Label htmlFor="time">Time</Label>
+                <Input
+                  id="time"
+                  name="time"
+                  type="time"
+                  value={newMeeting.time}
+                  onChange={handleInputChange}
+                />
+              </div>
+            </div>
 
-      {/* Dialogs */}
-      <AddMeetingDialog
-        isOpen={isAddDialogOpen}
-        onClose={() => setIsAddDialogOpen(false)}
-        onAddMeeting={handleAddMeeting}
-        workbodies={workbodies}
-        isLoadingWorkbodies={workbodiesLoading}
-      />
+            <div className="space-y-2">
+              <Label htmlFor="location">Location</Label>
+              <Input
+                id="location"
+                name="location"
+                placeholder="Meeting location"
+                value={newMeeting.location}
+                onChange={handleInputChange}
+              />
+            </div>
 
-      <ViewMeetingDialog
-        meeting={selectedMeeting}
-        isOpen={isViewDialogOpen}
-        onClose={() => {
-          setIsViewDialogOpen(false);
-          setSelectedMeeting(null);
-        }}
-        onUpdate={handleUpdateMeeting}
-        onDelete={handleDeleteMeeting}
-        workbodies={workbodies}
-        isLoadingWorkbodies={workbodiesLoading}
-        userRole={user?.role}
-      />
+            <div className="space-y-2">
+              <Label htmlFor="agendaItems">Agenda Items</Label>
+              <Textarea
+                id="agendaItems"
+                name="agendaItems"
+                placeholder="Enter agenda items (one per line)"
+                rows={4}
+                value={newMeeting.agendaItems}
+                onChange={handleInputChange}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="notificationFile">
+                Upload Meeting Notification (Optional)
+              </Label>
+              <Input id="notificationFile" type="file" />
+            </div>
+
+            <div className="flex justify-end space-x-4 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsAddDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit">Schedule Meeting</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Meeting Dialog */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Meeting Details</DialogTitle>
+          </DialogHeader>
+          {selectedMeeting && (
+            <div className="space-y-4">
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-medium">
+                        {selectedMeeting.workbodyName}
+                      </h3>
+                    </div>
+
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      <CalendarIcon className="mr-1 h-4 w-4" />
+                      <span>
+                        {format(parseISO(selectedMeeting.date), "EEEE, MMMM d, yyyy")}
+                      </span>
+                      <Clock className="ml-3 mr-1 h-4 w-4" />
+                      <span>{selectedMeeting.time}</span>
+                    </div>
+
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      <MapPin className="mr-1 h-4 w-4" />
+                      <span>{selectedMeeting.location}</span>
+                    </div>
+
+                    <div className="pt-2">
+                      <h4 className="text-sm font-medium mb-2 flex items-center">
+                        <FileText className="mr-1 h-4 w-4" />
+                        Agenda Items
+                      </h4>
+                      <ul className="space-y-1 text-sm">
+                        {selectedMeeting.agendaItems.map((item, index) => (
+                          <li key={index} className="flex items-start gap-2">
+                            <span className="mt-1.5 h-1 w-1 rounded-full bg-primary" />
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="flex justify-end space-x-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsViewDialogOpen(false)}
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
