@@ -259,7 +259,7 @@ export const TaskforcePrintableSummary = ({ form }: TaskforcePrintableSummaryPro
       </div>
 
       {/* Print styling */}
-      <style jsx global>{`
+      <style>{`
         @media print {
           @page {
             margin: 2cm;

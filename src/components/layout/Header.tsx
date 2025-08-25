@@ -6,6 +6,7 @@ import {
   User,
 } from "lucide-react";
 import { useState } from "react";
+import { GlobalMemberSearch } from "@/components/search/GlobalMemberSearch";
 
 interface HeaderProps {
   toggleSidebar: () => void;
@@ -48,6 +49,10 @@ export function Header({ toggleSidebar, user, onLogout }: HeaderProps) {
             PEC Pulse
           </h1>
         </div>
+      </div>
+
+      <div className="flex-1 flex justify-center px-4">
+        <GlobalMemberSearch />
       </div>
       
       {user && (
